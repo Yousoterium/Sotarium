@@ -17,7 +17,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { key } = req.body;
+    let body = req.body;
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        body = { key: body };
+      }
+    }
+
+    const key = body?.key || (typeof req.body === "string" ? req.body : null);
 
     if (!key || typeof key !== "string") {
       return res.status(400).json({ valid: false, message: "Missing key" });
@@ -42,6 +51,7 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (error) {
+      console.error("Supabase query error:", error);
       return res.status(500).json({ valid: false, message: "Key Invalid" });
     }
 
@@ -76,6 +86,7 @@ export default async function handler(req, res) {
       remaining_seconds: null,
     });
   } catch (err) {
+    console.error("Verify key handler error:", err);
     return res.status(500).json({ valid: false, message: "Key Invalid" });
   }
 }

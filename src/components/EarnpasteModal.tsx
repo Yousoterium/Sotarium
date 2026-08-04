@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Copy, AlertCircle } from "lucide-react";
+import { Copy, AlertCircle, Clock } from "lucide-react";
+import { saveKeyToDatabase } from "../lib/supabase";
 
 interface EarnpasteModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface EarnpasteModalProps {
   providerName?: string;
   providerIcon?: string;
   initialStep?: number;
+  comebackStep?: number;
 }
 
 // Earnpaste API URL Creator
@@ -37,6 +39,32 @@ export const createEarnpasteUrl = async (targetUrl: string): Promise<string> => 
     }
   } catch (err) {
     console.error("Earnpaste API Error:", err);
+  }
+  return targetUrl;
+};
+
+// Lootlabs API URL Creator
+export const createLootlabsUrl = async (targetUrl: string, step: number): Promise<string> => {
+  try {
+    const response = await fetch("/api/lootlabs-proxy?action=create_link", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: `Sotarium Checkpoint ${step}`,
+        destinationUrl: targetUrl,
+        tierId: 1,
+        numberOfTasks: 1,
+      }),
+    });
+
+    const data = await response.json();
+    if (data && data.lootUrl) {
+      return data.lootUrl;
+    }
+  } catch (err) {
+    console.error("Lootlabs API Error:", err);
   }
   return targetUrl;
 };
@@ -136,96 +164,6 @@ export const translations: Record<string, Record<string, string>> = {
     invalidToken: "Security Error: Invalid token.",
     tokenUsed: "URL Expired: Token already used.",
   },
-  fr: {
-    unlockKey: "Débloquez votre clé",
-    startCheckpoint: "Démarrer le checkpoint",
-    cancel: "Annuler",
-    verified: "Vérifié !",
-    freeKeyReady: "Votre clé gratuite est prête",
-    yourKey: "Votre clé",
-    close: "Fermer",
-    obtainNewKey: "Obtenir une nouvelle clé",
-    copied: "Copié !",
-    copy: "Copier",
-    closeLabel: "Fermer",
-    invalidToken: "Erreur de sécurité : Jeton invalide.",
-    tokenUsed: "URL expirée : Jeton déjà utilisé.",
-  },
-  es: {
-    unlockKey: "Desbloquea tu clave",
-    startCheckpoint: "Iniciar punto de control",
-    cancel: "Cancelar",
-    verified: "¡Verificado!",
-    freeKeyReady: "Tu clave gratuita está lista",
-    yourKey: "Tu clave",
-    close: "Cerrar",
-    obtainNewKey: "Obtener una nueva clave",
-    copied: "¡Copiado!",
-    copy: "Copiar",
-    closeLabel: "Cerrar",
-    invalidToken: "Error de seguridad: Token no válido.",
-    tokenUsed: "URL expirada: Token ya utilizado.",
-  },
-  de: {
-    unlockKey: "Schlüssel freischalten",
-    startCheckpoint: "Checkpoint starten",
-    cancel: "Abbrechen",
-    verified: "Bestätigt!",
-    freeKeyReady: "Ihr kostenloser Schlüssel ist bereit",
-    yourKey: "Ihr Schlüssel",
-    close: "Schließen",
-    obtainNewKey: "Neuen Schlüssel anfordern",
-    copied: "Kopiert!",
-    copy: "Kopieren",
-    closeLabel: "Schließen",
-    invalidToken: "Sicherheitsfehler: Ungültiger Token.",
-    tokenUsed: "URL abgelaufen: Token bereits verwendet.",
-  },
-  pt: {
-    unlockKey: "Desbloqueie sua chave",
-    startCheckpoint: "Iniciar ponto de controle",
-    cancel: "Cancelar",
-    verified: "Verificado!",
-    freeKeyReady: "Sua chave gratuita está pronta",
-    yourKey: "Sua chave",
-    close: "Fechar",
-    obtainNewKey: "Obter uma nova chave",
-    copied: "Copiado!",
-    copy: "Copiar",
-    closeLabel: "Fechar",
-    invalidToken: "Erro de segurança: Token inválido.",
-    tokenUsed: "URL expirada: Token já utilizado.",
-  },
-  ru: {
-    unlockKey: "Разблокируйте ваш ключ",
-    startCheckpoint: "Начать чекпоинт",
-    cancel: "Отмена",
-    verified: "Проверено!",
-    freeKeyReady: "Ваш бесплатный ключ готов",
-    yourKey: "Ваш ключ",
-    close: "Закрыть",
-    obtainNewKey: "Получить новый ключ",
-    copied: "Скопировано!",
-    copy: "Копировать",
-    closeLabel: "Закрыть",
-    invalidToken: "Ошибка безопасности: Недействительный токен.",
-    tokenUsed: "Ссылка истекла: Токен уже использован.",
-  },
-  zh: {
-    unlockKey: "解锁您的密钥",
-    startCheckpoint: "开始检查点",
-    cancel: "取消",
-    verified: "已验证！",
-    freeKeyReady: "您的免费密钥已准备就绪",
-    yourKey: "您的密钥",
-    close: "关闭",
-    obtainNewKey: "获取新密钥",
-    copied: "已复制！",
-    copy: "复制",
-    closeLabel: "关闭",
-    invalidToken: "安全错误：无效的令牌。",
-    tokenUsed: "链接已过期：令牌已被使用。",
-  },
 };
 
 // Generate key in XXX-XXX-XXX format without any prefix
@@ -234,6 +172,15 @@ export const generateFinalKeyString = (): string => {
   const genGroup = () =>
     Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
   return `${genGroup()}-${genGroup()}-${genGroup()}`;
+};
+
+const formatCountdown = (ms: number): string => {
+  if (ms <= 0) return "00:00:00";
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
 export const ProviderIcon: React.FC<{ name: string; iconUrl?: string; className?: string }> = ({
@@ -274,17 +221,61 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   providerName = "Earnpaste",
   providerIcon = "https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s88-c-k-c0xffffffff-no-rj-mo",
   initialStep = 1,
+  comebackStep = 0,
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [keyExpiry, setKeyExpiry] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Auto-detect language
   const userLang = getBrowserLanguage();
   const t = translations[userLang] || translations.en;
+
+  // Load existing free key from localStorage if valid
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`sotarium_free_key_${providerName}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.key && parsed.expiry && parsed.expiry > Date.now()) {
+          setGeneratedKey(parsed.key);
+          setKeyExpiry(parsed.expiry);
+          setTimeLeft(parsed.expiry - Date.now());
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  }, [providerName]);
+
+  // Live countdown timer for active key
+  useEffect(() => {
+    if (!keyExpiry) return;
+    const interval = setInterval(() => {
+      const remaining = keyExpiry - Date.now();
+      if (remaining <= 0) {
+        setTimeLeft(0);
+        setGeneratedKey(null);
+        setKeyExpiry(null);
+        clearInterval(interval);
+      } else {
+        setTimeLeft(remaining);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [keyExpiry]);
+
+  // Handle comeback step from LootLabs / Lockr / Earnpaste
+  useEffect(() => {
+    if (!isOpen) return;
+    if (comebackStep > 0) {
+      triggerComebackVerification(comebackStep);
+    }
+  }, [isOpen, comebackStep]);
 
   // Anti-bypass detection and verification check
   useEffect(() => {
@@ -294,7 +285,6 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     const tokenRegex = /^[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}$/;
     const search = window.location.search;
 
-    // Detect manual ?step bypass attempt or /caught path
     if (search.includes("step") || window.location.pathname === "/caught") {
       onCaught();
       return;
@@ -322,7 +312,6 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     setSecurityError(null);
     setIsVerifying(true);
 
-    // Instant URL rotation: clean token from address bar immediately
     window.history.replaceState({}, "", "/");
 
     setTimeout(() => {
@@ -331,7 +320,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       setCompletedSteps((prev) => {
         const updated = Array.from(new Set([...prev, stepToVerify]));
         if (updated.length >= 3) {
-          generateFinalKey();
+          void generateFinalKey();
         }
         return updated;
       });
@@ -339,13 +328,32 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       if (stepToVerify < 3) {
         setCurrentStep(stepToVerify + 1);
       } else {
-        generateFinalKey();
+        void generateFinalKey();
       }
     }, 1200);
   };
 
-  const generateFinalKey = () => {
-    setGeneratedKey(generateFinalKeyString());
+  const generateFinalKey = async () => {
+    const keyStr = generateFinalKeyString();
+    const durationMs = 24 * 60 * 60 * 1000; // 24 Hours
+    const expiryTimestamp = Date.now() + durationMs;
+    const expiresAtIso = new Date(expiryTimestamp).toISOString();
+
+    setGeneratedKey(keyStr);
+    setKeyExpiry(expiryTimestamp);
+    setTimeLeft(durationMs);
+
+    try {
+      localStorage.setItem(
+        `sotarium_free_key_${providerName}`,
+        JSON.stringify({ key: keyStr, expiry: expiryTimestamp })
+      );
+    } catch {
+      // Ignore storage errors
+    }
+
+    // Save key to Supabase so Roblox can verify it!
+    await saveKeyToDatabase(keyStr, providerName, expiresAtIso, false);
   };
 
   const handleStartCheckpoint = async () => {
@@ -353,10 +361,15 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     markTokenAsUsed(token);
 
     const comebackUrl = `${window.location.origin}/${token}`;
+    const pName = providerName.toLowerCase();
 
-    if (providerName.toLowerCase().includes("earnpaste")) {
-      setIsVerifying(true);
+    setIsVerifying(true);
+
+    if (pName.includes("earnpaste")) {
       const destinationUrl = await createEarnpasteUrl(comebackUrl);
+      window.location.href = destinationUrl;
+    } else if (pName.includes("lootlabs")) {
+      const destinationUrl = await createLootlabsUrl(comebackUrl, currentStep);
       window.location.href = destinationUrl;
     } else {
       const verificationPath = `/${token}`;
@@ -374,9 +387,16 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   };
 
   const resetProgress = () => {
+    try {
+      localStorage.removeItem(`sotarium_free_key_${providerName}`);
+    } catch {
+      // Ignore
+    }
     setCompletedSteps([]);
     setCurrentStep(1);
     setGeneratedKey(null);
+    setKeyExpiry(null);
+    setTimeLeft(0);
     setIsVerifying(false);
     setSecurityError(null);
     window.history.replaceState({}, "", "/");
@@ -387,16 +407,14 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const isFullyUnlocked = completedSteps.length >= 3 || generatedKey !== null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent pointer-events-none animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto animate-fadeIn">
       {!isFullyUnlocked ? (
-        /* Stepper Checkpoint Floating Modal */
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="key-modal-title"
           className="pointer-events-auto animate-modal-in relative flex w-[440px] max-w-full flex-col gap-6 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#131317] p-7 shadow-2xl text-white"
         >
-          {/* Modal Header */}
           <div className="relative flex items-start justify-between gap-3">
             <div className="flex items-center gap-3.5">
               <ProviderIcon name={providerName} iconUrl={providerIcon} />
@@ -407,6 +425,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                 >
                   {t.unlockKey}
                 </h2>
+                <p className="text-xs text-zinc-400">Provider: {providerName}</p>
               </div>
             </div>
             <button
@@ -419,7 +438,6 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
             </button>
           </div>
 
-          {/* Stepper Header (3 steps) */}
           <div className="relative flex items-center gap-2.5 px-0.5">
             {[1, 2, 3].map((stepNum, idx) => {
               const isDone = completedSteps.includes(stepNum);
@@ -432,9 +450,8 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                       idx < 2 ? "flex-1" : "flex-none"
                     }`}
                   >
-                    {/* Circle Indicator */}
                     {isDone ? (
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1AF513] text-white transition-all duration-300 animate-check-pop-stay">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1AF513] text-white transition-all duration-300">
                         <svg
                           width="16"
                           height="16"
@@ -447,7 +464,6 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                             strokeWidth="3.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            className="animate-check-draw-stay"
                           />
                         </svg>
                       </div>
@@ -461,7 +477,6 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                       </div>
                     )}
 
-                    {/* Progress bar line */}
                     {idx < 2 && (
                       <div className="relative h-[2px] min-w-[18px] flex-1 overflow-hidden rounded-full bg-white/[0.07]">
                         <div
@@ -478,10 +493,9 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
             })}
           </div>
 
-          {/* Content Box */}
           <div className="relative flex min-h-[150px] flex-col justify-center items-center rounded-[18px] border border-white/[0.06] bg-white/[0.025] p-6">
             {securityError ? (
-              <div className="animate-view flex flex-col items-center justify-center gap-2 text-center py-2">
+              <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
                 <AlertCircle className="w-8 h-8 text-rose-500" />
                 <span className="text-sm font-semibold text-rose-400">
                   {securityError}
@@ -494,9 +508,8 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                 </button>
               </div>
             ) : isVerifying ? (
-              /* Verified state */
-              <div className="animate-view flex flex-col items-center justify-center gap-2 text-center py-2">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1AF513] text-white animate-check-pop-stay">
+              <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1AF513] text-white animate-pulse">
                   <svg
                     width="22"
                     height="22"
@@ -509,7 +522,6 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                       strokeWidth="3.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="animate-check-draw-stay"
                     />
                   </svg>
                 </div>
@@ -518,19 +530,18 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                 </span>
               </div>
             ) : (
-              <div className="animate-view w-full flex flex-col justify-center">
+              <div className="w-full flex flex-col justify-center">
                 <button
                   type="button"
                   onClick={handleStartCheckpoint}
                   className="inline-flex w-full cursor-pointer items-center justify-center gap-[9px] rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-[26px] py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)] hover:-translate-y-px hover:bg-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_28px_rgba(0,0,0,0.5)] active:translate-y-0"
                 >
-                  {t.startCheckpoint}
+                  {t.startCheckpoint} (Step {currentStep}/3)
                 </button>
               </div>
             )}
           </div>
 
-          {/* Modal Actions */}
           <div className="relative flex gap-2.5">
             <button
               type="button"
@@ -543,38 +554,27 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
           </div>
         </div>
       ) : (
-        /* Floating aw-panel overlay layout */
-        <div className="aw-panel pointer-events-auto animate-modal-in relative flex w-[440px] max-w-full flex-col gap-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#131317] p-7 shadow-2xl text-white">
-          <header className="aw-head relative flex items-center justify-between">
-            <div className="aw-head-text flex flex-col gap-0.5">
-              <h3 className="aw-title text-[19px] font-bold tracking-tight text-[#f2f1f4]">
+        <div className="pointer-events-auto animate-modal-in relative flex w-[440px] max-w-full flex-col gap-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#131317] p-7 shadow-2xl text-white">
+          <header className="relative flex items-center justify-between">
+            <div className="flex flex-col gap-0.5">
+              <h3 className="text-[19px] font-bold tracking-tight text-[#f2f1f4]">
                 {t.freeKeyReady}
               </h3>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="aw-close flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.05] text-sm leading-none text-[#8b8b93] transition-colors hover:bg-white/[0.1] hover:text-[#f2f1f4]"
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.05] text-sm leading-none text-[#8b8b93] transition-colors hover:bg-white/[0.1] hover:text-[#f2f1f4]"
               aria-label={t.closeLabel}
             >
-              <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
-                <path
-                  d="M3.5 3.5l7 7M10.5 3.5l-7 7"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
+              ✕
             </button>
           </header>
 
-          <div className="aw-body relative">
-            <div className="aw-center flex flex-col items-center text-center gap-4 py-2">
+          <div className="relative">
+            <div className="flex flex-col items-center text-center gap-4 py-2">
               <div className="relative flex items-center justify-center my-1">
-                <span
-                  className="aw-success-mark flex h-14 w-14 items-center justify-center rounded-full bg-[#1AF513] text-white animate-check-pop-stay"
-                  aria-hidden="true"
-                >
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1AF513] text-white">
                   <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
                     <path
                       d="M5 12.5l4.5 4.5L19 7"
@@ -582,17 +582,15 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                       strokeWidth="3.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="animate-check-draw-stay"
                     />
                   </svg>
                 </span>
               </div>
 
-              <p className="aw-center-title text-sm font-semibold tracking-wide text-[#8b8b93]">
+              <p className="text-sm font-semibold tracking-wide text-[#8b8b93]">
                 {t.yourKey}
               </p>
 
-              {/* Key Box with Copy functionality */}
               <div className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#1a1a1e] p-3.5 font-mono text-base tracking-widest text-[#1AF513] shadow-inner">
                 <span className="truncate mr-2 font-bold select-all">{generatedKey}</span>
                 <button
@@ -605,20 +603,25 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                 </button>
               </div>
 
-              {/* Done / Close Button */}
+              {timeLeft > 0 && (
+                <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-mono">
+                  <Clock className="w-3.5 h-3.5 text-[#1AF513]" />
+                  <span>Valid for: <strong className="text-[#1AF513] font-bold">{formatCountdown(timeLeft)}</strong></span>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={onClose}
-                className="btn btn-primary btn-block aw-done-cta inline-flex w-full cursor-pointer items-center justify-center gap-[9px] rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-[26px] py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)] hover:-translate-y-px hover:bg-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_28px_rgba(0,0,0,0.5)] active:translate-y-0"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-[9px] rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-[26px] py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)] hover:-translate-y-px hover:bg-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_28px_rgba(0,0,0,0.5)] active:translate-y-0"
               >
                 {t.close}
               </button>
 
-              {/* Obtain a new key button */}
               <button
                 type="button"
                 onClick={resetProgress}
-                className="aw-text-btn text-xs font-medium text-[#8b8b93] hover:text-[#f2f1f4] transition-colors cursor-pointer pt-1"
+                className="text-xs font-medium text-[#8b8b93] hover:text-[#f2f1f4] transition-colors cursor-pointer pt-1"
               >
                 {t.obtainNewKey}
               </button>
@@ -626,26 +629,6 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
           </div>
         </div>
       )}
-
-      {/* Styles */}
-      <style>{`
-        @keyframes circlePopStay {
-          0% { transform: scale(0.4); opacity: 0; }
-          60% { transform: scale(1.08); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes checkDrawOnly {
-          0% { stroke-dasharray: 28; stroke-dashoffset: 28; opacity: 0; }
-          20% { opacity: 1; }
-          100% { stroke-dasharray: 28; stroke-dashoffset: 0; opacity: 1; }
-        }
-        .animate-check-pop-stay {
-          animation: circlePopStay 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-        .animate-check-draw-stay {
-          animation: checkDrawOnly 0.35s ease-out 0.1s forwards;
-        }
-      `}</style>
     </div>
   );
 };

@@ -34,9 +34,6 @@ const loadLootLabsStep = (): number => {
   }
 };
 
-const stepToUrl = (step: number): string =>
-  step === 3 ? "/lootlabs?verify" : `/lootlabs?verify${step}`;
-
 function App() {
   const [page, setPage] = useState<"home" | "products">("home");
   const [showEarnpaste, setShowEarnpaste] = useState<boolean>(false);
@@ -58,7 +55,6 @@ function App() {
     }
 
     // LootLabs comeback: ?verify1=step1, ?verify2=step2, ?verify=step3
-    // All redirect to ?verify so the URL bar shows a clean URL
     if (path === "/lootlabs" && (params.has("verify") || params.has("verify1") || params.has("verify2"))) {
       let step = 3;
       if (params.has("verify1")) step = 1;
@@ -97,21 +93,12 @@ function App() {
   };
 
   const handleGetKeyClick = () => {
-    setShowProviderChooser(true);
+    setShowProviderChooser((prev) => !prev);
   };
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#0e0e11] text-white">
-      <div
-        className="absolute inset-0 pointer-events-none select-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(26,245,19,0.13) 0%, transparent 70%)",
-        }}
-      />
-
-      <nav className="relative z-10 flex items-center justify-between px-8 py-5">
-      </nav>
+      <nav className="relative z-10 flex items-center justify-between px-8 py-5" />
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6 text-center gap-10">
         <div className="flex flex-col items-center gap-5">
@@ -127,57 +114,59 @@ function App() {
           </div>
         </div>
 
-        {!showEarnpaste && !showProviderChooser && (
-          <div className="flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             <button
               type="button"
               onClick={handleGetKeyClick}
-              className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
+              className={`px-8 py-3 rounded-full border transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base ${
+                showProviderChooser
+                  ? "bg-[#26262d] border-[#1AF513]/50 text-white"
+                  : "bg-[#1c1c21] border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70"
+              }`}
             >
               Get Key
             </button>
-            <div className="flex gap-4">
-              <button
-                type="button"
-                onClick={() => { setPage("products"); window.history.pushState({}, "", "/products"); }}
-                className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
-              >
-                Buy key
-              </button>
-              <button
-                type="button"
-                className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
-              >
-                Scripts
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => { setPage("products"); window.history.pushState({}, "", "/products"); }}
+              className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
+            >
+              Buy key
+            </button>
+            <button
+              type="button"
+              className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
+            >
+              Scripts
+            </button>
           </div>
-        )}
 
-        {showProviderChooser && !showEarnpaste && (
-          <div className="flex flex-col items-center gap-4 animate-modal-in">
-            <p className="text-zinc-500 text-sm uppercase tracking-widest font-semibold">Choose a provider</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {PROVIDERS.map((provider, idx) => (
-                <button
-                  key={`${provider.name}-${idx}`}
-                  type="button"
-                  onClick={() => handleProviderClick(provider)}
-                  className="flex items-center gap-3 px-8 py-4 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg group cursor-pointer active:scale-95"
-                >
-                  <img
-                    src={provider.icon}
-                    alt={provider.name}
-                    referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
-                    className="w-6 h-6 rounded-full object-cover shrink-0"
-                  />
-                  <span className="text-white text-xl font-bold tracking-wide">{provider.name}</span>
-                </button>
-              ))}
+          {showProviderChooser && !showEarnpaste && (
+            <div className="flex flex-col items-center gap-4 animate-modal-in mt-4">
+              <p className="text-zinc-400 text-xs uppercase tracking-widest font-semibold">Choose a provider</p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {PROVIDERS.map((provider) => (
+                  <button
+                    key={provider.name}
+                    type="button"
+                    onClick={() => handleProviderClick(provider)}
+                    className="flex items-center gap-3 px-8 py-4 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg group cursor-pointer active:scale-95"
+                  >
+                    <img
+                      src={provider.icon}
+                      alt={provider.name}
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
+                      className="w-6 h-6 rounded-full object-cover shrink-0"
+                    />
+                    <span className="text-white text-xl font-bold tracking-wide">{provider.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <EarnpasteModal

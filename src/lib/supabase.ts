@@ -5,7 +5,12 @@ const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || ""
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export async function saveKeyToDatabase(keyString: string, provider: string = "polar") {
+export async function saveKeyToDatabase(
+  keyString: string,
+  provider: string = "polar",
+  expiresAt: string | null = null,
+  isProductsKey: boolean = false
+) {
   if (!supabaseUrl || !supabaseAnonKey) {
     console.warn("Supabase credentials missing");
     return null;
@@ -17,7 +22,8 @@ export async function saveKeyToDatabase(keyString: string, provider: string = "p
       {
         key_string: keyString,
         provider: provider,
-        is_products_key: true,
+        expires_at: expiresAt,
+        is_products_key: isProductsKey,
       },
     ])
     .select()
