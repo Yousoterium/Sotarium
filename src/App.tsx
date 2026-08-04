@@ -116,10 +116,9 @@ function App() {
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6 text-center gap-10">
         <div className="flex flex-col items-center gap-5">
           <img
-            src="/Sotarium.png"
+            src="https://i.imgur.com/qye2L7M.png"
             alt="Sotarium"
             className="w-20 h-20 object-contain drop-shadow-lg"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
           <div className="space-y-3">
             <h1 className="text-6xl font-black tracking-tight leading-none text-white">

@@ -173,10 +173,9 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
 
         <div className="flex flex-col items-center gap-3 mb-6">
           <img
-            src="/Sotarium.png"
+            src="https://i.imgur.com/qye2L7M.png"
             alt="Sotarium"
             className="w-20 h-20 object-contain rounded-lg drop-shadow-lg"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
           <h1 className="text-2xl font-extrabold tracking-tight text-white">
             Sotarium
