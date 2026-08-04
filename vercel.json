@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/lootlabs-proxy.js": {
+      "maxDuration": 30
+    },
+    "api/verify-key.js": {
+      "maxDuration": 30
+    }
+  }
+}

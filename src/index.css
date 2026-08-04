@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.react-flow__attribution {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.react-flow__pane {
+  cursor: default !important;
+}
+
+.react-flow__node {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.react-flow__node.selected,
+.react-flow__node:focus,
+.react-flow__node:focus-visible,
+.react-flow__node:hover {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
