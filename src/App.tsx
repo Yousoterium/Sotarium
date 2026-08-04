@@ -100,7 +100,7 @@ function App() {
         </div>
 
         <div className="flex flex-col items-center gap-6">
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex flex-col items-center gap-4">
             <button
               type="button"
               onClick={handleGetKeyClick}
@@ -112,19 +112,21 @@ function App() {
             >
               Get Key
             </button>
-            <button
-              type="button"
-              onClick={() => { setPage("products"); window.history.pushState({}, "", "/products"); }}
-              className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
-            >
-              Buy key
-            </button>
-            <button
-              type="button"
-              className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
-            >
-              Scripts
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => { setPage("products"); window.history.pushState({}, "", "/products"); }}
+                className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
+              >
+                Buy key
+              </button>
+              <button
+                type="button"
+                className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
+              >
+                Scripts
+              </button>
+            </div>
           </div>
 
           {showProviderChooser && !showEarnpaste && (

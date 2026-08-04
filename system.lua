@@ -255,6 +255,97 @@ local ScreenGui = make("ScreenGui", {
     Parent          = PlayerGui,
 })
 
+-- ── Notification Toast System ─────────────────────────────
+local function showNotification(messageText, displayDuration)
+    displayDuration = displayDuration or 5
+
+    local NotifFrame = make("Frame", {
+        Name                   = "NotificationToast",
+        Size                   = UDim2.new(0, 360, 0, 46),
+        Position               = UDim2.new(0.5, -180, 0, 24),
+        BackgroundColor3       = Color3.fromRGB(18, 18, 18),
+        BorderSizePixel        = 0,
+        ClipsDescendants       = true,
+        ZIndex                 = 10000,
+        Parent                 = ScreenGui,
+    })
+    make("UICorner", { CornerRadius = UDim.new(0, 12), Parent = NotifFrame })
+    make("UIStroke", { Color = Color3.fromRGB(45, 45, 45), Thickness = 1, Parent = NotifFrame })
+
+    local MessageLabel = make("TextLabel", {
+        Name                   = "Message",
+        Size                   = UDim2.new(1, -44, 1, -4),
+        Position               = UDim2.new(0, 16, 0, 0),
+        BackgroundTransparency = 1,
+        Text                   = messageText,
+        TextColor3             = Color3.fromRGB(255, 255, 255),
+        Font                   = Enum.Font.GothamBold,
+        TextSize               = 14,
+        TextXAlignment         = Enum.TextXAlignment.Left,
+        TextYAlignment         = Enum.TextYAlignment.Center,
+        ZIndex                 = 10001,
+        Parent                 = NotifFrame,
+    })
+
+    local CloseXBtn = make("TextButton", {
+        Name                   = "CloseX",
+        Size                   = UDim2.new(0, 24, 0, 24),
+        Position               = UDim2.new(1, -30, 0.5, -12),
+        BackgroundTransparency = 1,
+        Text                   = "✕",
+        TextColor3             = Color3.fromRGB(140, 140, 140),
+        Font                   = Enum.Font.GothamMedium,
+        TextSize               = 14,
+        ZIndex                 = 10001,
+        Parent                 = NotifFrame,
+    })
+
+    local ProgressBarBackground = make("Frame", {
+        Name                   = "ProgressBarBG",
+        Size                   = UDim2.new(1, 0, 0, 3),
+        Position               = UDim2.new(0, 0, 1, -3),
+        BackgroundColor3       = Color3.fromRGB(30, 30, 30),
+        BorderSizePixel        = 0,
+        ZIndex                 = 10001,
+        Parent                 = NotifFrame,
+    })
+
+    local ProgressBarFill = make("Frame", {
+        Name                   = "ProgressBarFill",
+        Size                   = UDim2.new(1, 0, 1, 0),
+        Position               = UDim2.new(0, 0, 0, 0),
+        BackgroundColor3       = Color3.fromRGB(247, 197, 46),
+        BorderSizePixel        = 0,
+        ZIndex                 = 10002,
+        Parent                 = ProgressBarBackground,
+    })
+
+    local dismissed = false
+    local function dismissNotif()
+        if dismissed then return end
+        dismissed = true
+        local tweenOut = TweenService:Create(NotifFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0.5, -180, 0, -60),
+            BackgroundTransparency = 1,
+        })
+        tweenOut:Play()
+        tweenOut.Completed:Connect(function()
+            NotifFrame:Destroy()
+        end)
+    end
+
+    CloseXBtn.MouseButton1Click:Connect(dismissNotif)
+
+    local barTween = TweenService:Create(ProgressBarFill, TweenInfo.new(displayDuration, Enum.EasingStyle.Linear), {
+        Size = UDim2.new(0, 0, 1, 0)
+    })
+    barTween:Play()
+
+    task.delay(displayDuration, function()
+        dismissNotif()
+    end)
+end
+
 -- ── Overlay ───────────────────────────────────────────────
 local Overlay = make("Frame", {
     Name                  = "KeyOverlay",
@@ -640,10 +731,13 @@ ValidateBtn.MouseButton1Click:Connect(function()
                 end
                 if remaining == nil then
                     showLifetime()
+                    showNotification("Key Validated — Lifetime Access", 5)
                 else
                     startCountdown(remaining)
+                    local formattedTime = formatCountdown(remaining)
+                    showNotification("Key Validated — " .. formattedTime .. " Remaining", 5)
                 end
-                task.wait(1)
+                task.wait(0.5)
                 showKeyOverlay(false)
             else
                 setStatus("Key Invalid")
@@ -676,8 +770,11 @@ if savedKey and savedKey ~= "" then
                 saveKey(normalizeKey(savedKey))
                 if remaining == nil then
                     showLifetime()
+                    showNotification("Key Validated — Lifetime Access", 5)
                 else
                     startCountdown(remaining)
+                    local formattedTime = formatCountdown(remaining)
+                    showNotification("Key Validated — " .. formattedTime .. " Remaining", 5)
                 end
             else
                 showKeyOverlay(true)
