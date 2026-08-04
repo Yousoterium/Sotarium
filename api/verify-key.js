@@ -27,9 +27,15 @@ export default async function handler(req, res) {
     }
 
     const key = body?.key || (typeof req.body === "string" ? req.body : null);
+    const robloxId = body?.roblox_id || body?.robloxId || null;
+    const robloxUsername = body?.roblox_username || body?.robloxUsername || null;
 
     if (!key || typeof key !== "string") {
       return res.status(400).json({ valid: false, message: "Missing key" });
+    }
+
+    if (!robloxId || typeof robloxId !== "string" || !robloxId.trim()) {
+      return res.status(400).json({ valid: false, message: "Missing Roblox account" });
     }
 
     const normalized = key.trim().toUpperCase();
@@ -46,7 +52,7 @@ export default async function handler(req, res) {
 
     const { data, error } = await supabase
       .from("keys")
-      .select("id, key_string, expires_at")
+      .select("id, key_string, expires_at, claimed, owner_roblox_id, owner_username")
       .eq("key_string", normalized)
       .maybeSingle();
 
@@ -57,6 +63,30 @@ export default async function handler(req, res) {
 
     if (!data) {
       return res.status(200).json({ valid: false, message: "Key Invalid" });
+    }
+
+    if (data.claimed && data.owner_roblox_id) {
+      const ownerId = String(data.owner_roblox_id);
+      const incomingId = String(robloxId).trim();
+      if (ownerId !== incomingId) {
+        return res.status(200).json({ valid: false, message: "Key already assigned to another account" });
+      }
+    }
+
+    if (!data.claimed) {
+      const { error: updateError } = await supabase
+        .from("keys")
+        .update({
+          claimed: true,
+          owner_roblox_id: String(robloxId).trim(),
+          owner_username: robloxUsername ? String(robloxUsername).trim() : null,
+        })
+        .eq("id", data.id);
+
+      if (updateError) {
+        console.error("Supabase update error:", updateError);
+        return res.status(500).json({ valid: false, message: "Could not bind key to account" });
+      }
     }
 
     if (data.expires_at) {

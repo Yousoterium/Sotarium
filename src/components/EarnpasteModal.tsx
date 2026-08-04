@@ -226,6 +226,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const [showVerificationSuccess, setShowVerificationSuccess] = useState<boolean>(false);
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [keyExpiry, setKeyExpiry] = useState<number | null>(null);
@@ -291,6 +292,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     }
 
     if (tokenRegex.test(pathToken)) {
+      setShowVerificationSuccess(false);
       if (!validateTokenSignature(pathToken)) {
         setSecurityError(t.invalidToken);
         window.history.replaceState({}, "", "/");
@@ -311,11 +313,13 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const triggerComebackVerification = (stepToVerify: number) => {
     setSecurityError(null);
     setIsVerifying(true);
+    setShowVerificationSuccess(false);
 
     window.history.replaceState({}, "", "/");
 
     setTimeout(() => {
       setIsVerifying(false);
+      setShowVerificationSuccess(true);
 
       setCompletedSteps((prev) => {
         const updated = Array.from(new Set([...prev, stepToVerify]));
@@ -398,6 +402,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     setKeyExpiry(null);
     setTimeLeft(0);
     setIsVerifying(false);
+    setShowVerificationSuccess(false);
     setSecurityError(null);
     window.history.replaceState({}, "", "/");
   };
@@ -507,7 +512,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                   Try Again
                 </button>
               </div>
-            ) : isVerifying ? (
+            ) : isVerifying || showVerificationSuccess ? (
               <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1AF513] text-white animate-pulse">
                   <svg
