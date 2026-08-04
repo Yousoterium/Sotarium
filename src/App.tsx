@@ -41,9 +41,9 @@ function App() {
       return;
     }
 
-    // LootLabs comeback: ?verify1=step1, ?verify2=step2, ?verify=step3
+    // Keep the existing verification URLs working while using the new 2-step flow.
     if (path === "/lootlabs" && (params.has("verify") || params.has("verify1") || params.has("verify2"))) {
-      let step = 3;
+      let step = 2;
       if (params.has("verify1")) step = 1;
       else if (params.has("verify2")) step = 2;
 

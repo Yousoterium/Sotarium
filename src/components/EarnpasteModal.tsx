@@ -12,6 +12,8 @@ interface EarnpasteModalProps {
   comebackStep?: number;
 }
 
+const TOTAL_STEPS = 2;
+
 // Earnpaste API URL Creator
 export const createEarnpasteUrl = async (targetUrl: string): Promise<string> => {
   const apiKey = "ep_1fc0807b695b99c7f244b4d0dd6ac65bd49085dc6a6a2cd2";
@@ -323,13 +325,13 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 
       setCompletedSteps((prev) => {
         const updated = Array.from(new Set([...prev, stepToVerify]));
-        if (updated.length >= 3) {
+        if (updated.length >= TOTAL_STEPS) {
           void generateFinalKey();
         }
         return updated;
       });
 
-      if (stepToVerify < 3) {
+      if (stepToVerify < TOTAL_STEPS) {
         setCurrentStep(stepToVerify + 1);
       } else {
         void generateFinalKey();
@@ -409,7 +411,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isFullyUnlocked = completedSteps.length >= 3 || generatedKey !== null;
+  const isFullyUnlocked = completedSteps.length >= TOTAL_STEPS || generatedKey !== null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto animate-fadeIn">
@@ -444,7 +446,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
           </div>
 
           <div className="relative flex items-center gap-2.5 px-0.5">
-            {[1, 2, 3].map((stepNum, idx) => {
+            {[1, 2].map((stepNum, idx) => {
               const isDone = completedSteps.includes(stepNum);
               const isCurrent = currentStep === stepNum && !isDone;
 
@@ -541,7 +543,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                   onClick={handleStartCheckpoint}
                   className="inline-flex w-full cursor-pointer items-center justify-center gap-[9px] rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-[26px] py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)] hover:-translate-y-px hover:bg-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_28px_rgba(0,0,0,0.5)] active:translate-y-0"
                 >
-                  {t.startCheckpoint} (Step {currentStep}/3)
+                  {t.startCheckpoint} (Step {currentStep}/{TOTAL_STEPS})
                 </button>
               </div>
             )}
