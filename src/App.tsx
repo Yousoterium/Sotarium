@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { EarnpasteModal } from "./components/EarnpasteModal";
 import { ProductsPage } from "./components/ProductsPage";
+import { LogsPage, type LogEntry } from "./components/LogsPage";
 
 interface ProviderOption {
   name: string;
@@ -23,12 +24,23 @@ const PROVIDERS: ProviderOption[] = [
 ];
 
 function App() {
-  const [page, setPage] = useState<"home" | "products">("home");
+  const [page, setPage] = useState<"home" | "products" | "logs">("home");
   const [showEarnpaste, setShowEarnpaste] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
   const [comebackStep, setComebackStep] = useState<number>(0);
   const [showProviderChooser, setShowProviderChooser] = useState<boolean>(false);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+
+  const appendLog = (entry: Omit<LogEntry, "id" | "time">) => {
+    const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const time = new Date().toLocaleTimeString();
+    setLogs((prev) => [{ id, time, ...entry }, ...prev].slice(0, 200));
+  };
+
+  const clearLogs = () => setLogs([]);
 
   useEffect(() => {
     document.title = "Sotarium";
@@ -36,6 +48,10 @@ function App() {
     const path = window.location.pathname;
     const search = window.location.search;
     const params = new URLSearchParams(search);
+    if (path === "/logs") {
+      setPage("logs");
+      return;
+    }
     if (path === "/products") {
       setPage("products");
       return;
@@ -69,6 +85,10 @@ function App() {
     return <ProductsPage onBack={() => { setPage("home"); window.history.replaceState({}, "", "/"); }} />;
   }
 
+  if (page === "logs") {
+    return <LogsPage logs={logs} onBack={() => { setPage("home"); window.history.replaceState({}, "", "/"); }} onClear={clearLogs} />;
+  }
+
   const handleProviderClick = (provider: ProviderOption) => {
     setSelectedProvider(provider);
     setShowEarnpaste(true);
@@ -79,6 +99,11 @@ function App() {
 
   const handleGetKeyClick = () => {
     setShowProviderChooser((prev) => !prev);
+  };
+
+  const openLogs = () => {
+    setPage("logs");
+    window.history.pushState({}, "", "/logs");
   };
 
   return (
@@ -165,6 +190,7 @@ function App() {
           setShowProviderChooser(false);
         }}
         onCaught={() => {}}
+        onLog={appendLog}
         providerName={selectedProvider.name}
         providerIcon={selectedProvider.icon}
         initialStep={1}
