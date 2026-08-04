@@ -11,7 +11,9 @@ local LocalPlayer = Players.LocalPlayer
 local KEY_FILE     = "SoteriaKey.txt"
 -- TODO: replace with YOUR Supabase project URL (the same one the website writes keys to)
 local SUPABASE_PROJECT_URL = "https://ihrrwrjsdqqpgmyanpgg.supabase.co"
-local VALIDATE_URL = SUPABASE_PROJECT_URL .. "/functions/v1/verify-key"
+local SUPABASE_ANON_KEY    = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlocnJ3cmpzZHFxcGdteWFucGdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MjczMzIsImV4cCI6MjEwMTMwMzMzMn0.d7z6EzA3652g8reDNQv6x83nVUlkOhEeZVktwZpX9e4"
+local VERCEL_API_URL       = "https://sotarium.vercel.app/api/verify-key"
+local VALIDATE_URL         = VERCEL_API_URL
 local GET_KEY_URL  = "https://sotarium.vercel.app/"
 
 local ICON_URL     = "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/public/Sotarium.png"
@@ -538,40 +540,73 @@ local function validateKey(key, onResult)
     end
 
     setStatus("Validating...")
+
+    -- 1. Try Vercel Serverless API first
     local ok, body = safePost(VALIDATE_URL, { key = norm })
-    if not ok or type(body) ~= "string" then
-        onResult(false, "Key Invalid", 0)
-        return
+    if ok and type(body) == "string" then
+        local decOk, data = pcall(function() return HttpService:JSONDecode(body) end)
+        if decOk and type(data) == "table" and (data.valid == true or data.status == "success") then
+            local rem = data.remaining_seconds
+            local isLifetime = data.lifetime == true or rem == nil or tostring(rem) == "null"
+            if isLifetime then
+                onResult(true, "Access granted.", nil)
+            else
+                onResult(true, "Access granted.", tonumber(rem) or 86400)
+            end
+            return
+        end
     end
 
-    local decOk, data = pcall(function() return HttpService:JSONDecode(body) end)
-    if not decOk or type(data) ~= "table" then
-        onResult(false, "Key Invalid", 0)
-        return
+    -- 2. Direct Supabase REST API Query (100% failproof fallback)
+    local queryUrl = SUPABASE_PROJECT_URL .. "/rest/v1/keys?key_string=eq." .. norm .. "&select=id,key_string,expires_at,is_products_key"
+    local reqFn = request
+        or (syn and syn.request)
+        or (http and http.request)
+        or http_request
+        or (fluxus and fluxus.request)
+
+    local headers = {
+        ["apikey"] = SUPABASE_ANON_KEY,
+        ["Authorization"] = "Bearer " .. SUPABASE_ANON_KEY,
+        ["Accept"] = "application/json",
+    }
+
+    if reqFn then
+        local s, res = pcall(reqFn, { Url = queryUrl, Method = "GET", Headers = headers })
+        if s and res then
+            local respBody = type(res) == "table" and res.Body or res
+            if type(respBody) == "string" then
+                local decOk, data = pcall(function() return HttpService:JSONDecode(respBody) end)
+                if decOk and type(data) == "table" and #data > 0 then
+                    local rec = data[1]
+                    local expiresAtIso = rec.expires_at
+                    local isLifetime = rec.is_products_key == true or not expiresAtIso or expiresAtIso == ""
+
+                    if isLifetime then
+                        onResult(true, "Access granted.", nil)
+                        return
+                    end
+
+                    local y, m, d, h, min, sec = tostring(expiresAtIso):match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
+                    if y and m and d and h and min and sec then
+                        local expireTime = os.time({ year = tonumber(y), month = tonumber(m), day = tonumber(d), hour = tonumber(h), min = tonumber(min), sec = tonumber(sec) })
+                        local remainingSec = expireTime - os.time()
+                        if remainingSec <= 0 then
+                            onResult(false, "Key Expired", 0)
+                            return
+                        end
+                        onResult(true, "Access granted.", remainingSec)
+                        return
+                    end
+
+                    onResult(true, "Access granted.", 86400)
+                    return
+                end
+            end
+        end
     end
 
-    local isValid = data.valid == true or data.success == true or tostring(data.status or ""):lower() == "success"
-    local message = tostring(data.message or data.error or (isValid and "Access granted." or "Key Invalid"))
-
-    -- The server now explicitly tells us whether this is a lifetime key.
-    -- Lifetime keys (bought from /products, provider "polar") never expire.
-    -- Free keys from the homepage have an expires_at and a remaining countdown.
-    local isLifetime = data.lifetime == true
-    local remaining = data.remaining_seconds
-
-    if isValid and isLifetime then
-        onResult(true, message, nil)
-        return
-    end
-
-    if isValid and (remaining == nil or tostring(remaining) == "null") then
-        -- Server didn't send a lifetime flag but also didn't send an expiry;
-        -- treat as lifetime for safety.
-        onResult(true, message, nil)
-        return
-    end
-
-    onResult(isValid, message, tonumber(remaining) or 86400)
+    onResult(false, "Key Invalid", 0)
 end
 
 -- ── Button logic ──────────────────────────────────────────

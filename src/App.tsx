@@ -22,24 +22,11 @@ const PROVIDERS: ProviderOption[] = [
   },
 ];
 
-const loadLootLabsStep = (): number => {
-  try {
-    const raw = localStorage.getItem("sotarium_progress_lootlabs");
-    if (!raw) return 1;
-    const data = JSON.parse(raw);
-    if (data.completedSteps?.length >= 3) return 3;
-    return data.currentStep || 1;
-  } catch {
-    return 1;
-  }
-};
-
 function App() {
   const [page, setPage] = useState<"home" | "products">("home");
   const [showEarnpaste, setShowEarnpaste] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
-  const [lootlabsCompletedStep, setLootlabsCompletedStep] = useState<number>(0);
   const [comebackStep, setComebackStep] = useState<number>(0);
   const [showProviderChooser, setShowProviderChooser] = useState<boolean>(false);
 
@@ -87,8 +74,6 @@ function App() {
     setShowEarnpaste(true);
     setIsModalOpen(true);
     setShowProviderChooser(false);
-    const step = loadLootLabsStep();
-    setLootlabsCompletedStep(step === 3 ? step : 0);
     setComebackStep(0);
   };
 
@@ -170,7 +155,7 @@ function App() {
       </div>
 
       <EarnpasteModal
-        key={`${selectedProvider.name}-${lootlabsCompletedStep}`}
+        key={selectedProvider.name}
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
@@ -180,7 +165,7 @@ function App() {
         onCaught={() => {}}
         providerName={selectedProvider.name}
         providerIcon={selectedProvider.icon}
-        initialStep={lootlabsCompletedStep || 1}
+        initialStep={1}
         comebackStep={comebackStep}
       />
 
