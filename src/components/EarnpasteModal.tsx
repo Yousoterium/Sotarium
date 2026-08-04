@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Copy, AlertCircle, Clock } from "lucide-react";
 import { saveKeyToDatabase } from "../lib/supabase";
+import type { LogEntry } from "./LogsPage";
 
 interface EarnpasteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCaught: () => void;
+  onLog?: (entry: Omit<LogEntry, "id" | "time">) => void;
   providerName?: string;
   providerIcon?: string;
   initialStep?: number;
@@ -318,6 +320,13 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     setShowVerificationSuccess(false);
 
     window.history.replaceState({}, "", "/");
+
+    onLog?.({
+      providerName,
+      providerIcon,
+      status: "pending",
+      message: `Started verification step ${stepToVerify}`,
+    });
 
     setTimeout(() => {
       setIsVerifying(false);
