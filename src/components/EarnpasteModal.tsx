@@ -449,12 +449,13 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
             {[1, 2].map((stepNum, idx) => {
               const isDone = completedSteps.includes(stepNum);
               const isCurrent = currentStep === stepNum && !isDone;
+              const isLastStep = idx === 1;
 
               return (
                 <React.Fragment key={stepNum}>
                   <div
                     className={`flex min-w-0 items-center gap-2.5 ${
-                      idx < 2 ? "flex-1" : "flex-none"
+                      isLastStep ? "flex-none" : "flex-1"
                     }`}
                   >
                     {isDone ? (
@@ -484,12 +485,12 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                       </div>
                     )}
 
-                    {idx < 2 && (
+                    {!isLastStep && (
                       <div className="relative h-[2px] min-w-[18px] flex-1 overflow-hidden rounded-full bg-white/[0.07]">
                         <div
                           className="absolute inset-y-0 left-0 rounded-full bg-[#1AF513] transition-all duration-500"
                           style={{
-                            width: completedSteps.includes(stepNum) ? "100%" : "0%",
+                            width: completedSteps.includes(stepNum) || currentStep > stepNum ? "100%" : "0%",
                           }}
                         />
                       </div>
