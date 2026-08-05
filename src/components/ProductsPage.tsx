@@ -57,11 +57,10 @@ const formatCountdown = (ms: number): string => {
 };
 
 async function createCheckoutSession(productId: string): Promise<string> {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/polar-checkout`, {
+  const res = await fetch(`/api/polar-checkout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
     body: JSON.stringify({
       productId,

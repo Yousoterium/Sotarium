@@ -100,16 +100,18 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs, onBack, onClear }) => 
               >
                 <div className="flex items-center gap-3">
                   {group.providerIcon ? (
-                    <img
-                      src={group.providerIcon}
-                      alt={group.providerName}
-                      className="h-12 w-12 rounded-2xl object-cover"
-                      referrerPolicy="no-referrer"
-                      crossOrigin="anonymous"
-                    />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/5 shadow-sm">
+                      <img
+                        src={group.providerIcon}
+                        alt={group.providerName}
+                        className="h-10 w-10 rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
+                      />
+                    </div>
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-white">
-                      <CircleDot className="h-5 w-5" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/5 text-white shadow-sm">
+                      <CircleDot className="h-6 w-6" />
                     </div>
                   )}
                   <div>
