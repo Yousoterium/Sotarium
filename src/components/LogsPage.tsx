@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, CircleDot, Loader2, RefreshCw, Trash2, ShieldAlert } from "lucide-react";
+import { ArrowLeft, CircleDot, Loader2, RefreshCw, Trash2, ShieldAlert, CheckSquare, Square, X } from "lucide-react";
 import { fetchKeysFromDatabase } from "../lib/supabase";
 
 export type LogStatus = "info" | "pending" | "success" | "error";
@@ -51,6 +51,17 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
   const [dbLogs, setDbLogs] = useState<LogEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [filter, setFilter] = useState<"all" | "success" | "pending" | "error">("all");
+
+  const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
+  const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
+  const [deletedIds, setDeletedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("sotarium_deleted_log_ids");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const [userIp, setUserIp] = useState<string | null>(null);
   const [isIpChecking, setIsIpChecking] = useState<boolean>(true);
@@ -167,18 +178,56 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
     }
   }
 
-  const logs = combinedLogs;
+  // Filter out logs marked as deleted
+  const logs = combinedLogs.filter((l) => !deletedIds.includes(l.id));
 
   const filteredLogs = logs.filter((entry) => {
     if (filter === "all") return true;
     return entry.status === filter;
   });
 
+  const toggleLogSelection = (id: string) => {
+    setSelectedLogIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedLogIds.length === filteredLogs.length && filteredLogs.length > 0) {
+      setSelectedLogIds([]);
+    } else {
+      setSelectedLogIds(filteredLogs.map((l) => l.id));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedLogIds.length === 0) return;
+    const updated = [...deletedIds, ...selectedLogIds];
+    setDeletedIds(updated);
+    try {
+      localStorage.setItem("sotarium_deleted_log_ids", JSON.stringify(updated));
+    } catch {}
+    setSelectedLogIds([]);
+    setIsSelectMode(false);
+  };
+
+  const handleClearAll = () => {
+    const allIds = logs.map((l) => l.id);
+    const updated = [...deletedIds, ...allIds];
+    setDeletedIds(updated);
+    try {
+      localStorage.setItem("sotarium_deleted_log_ids", JSON.stringify(updated));
+    } catch {}
+    onClear();
+    setSelectedLogIds([]);
+    setIsSelectMode(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#0e0e11] text-white px-6 py-8">
       <div className="mx-auto w-full max-w-4xl">
         {/* Floating Top Control Bar (No Card Wrapper) */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between gap-3 flex-wrap">
           <button
             type="button"
             onClick={onBack}
@@ -188,25 +237,71 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={loadDatabaseLogs}
-              disabled={isLoading}
-              title="Refresh"
-              className="p-2.5 rounded-full border border-white/[0.08] bg-white/5 hover:bg-white/10 text-white transition disabled:opacity-50 cursor-pointer"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-            </button>
-            <button
-              type="button"
-              onClick={onClear}
-              title="Clear"
-              className="p-2.5 rounded-full border border-white/[0.08] bg-white/5 hover:bg-white/10 text-white transition cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4 text-zinc-300 hover:text-rose-400" />
-            </button>
-          </div>
+          {isSelectMode ? (
+            <div className="flex items-center gap-2 flex-wrap animate-fadeIn">
+              <button
+                type="button"
+                onClick={toggleSelectAll}
+                className="px-3.5 py-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-zinc-300 transition flex items-center gap-1.5 cursor-pointer"
+              >
+                {selectedLogIds.length === filteredLogs.length && filteredLogs.length > 0 ? (
+                  <CheckSquare className="w-4 h-4 text-[#1AF513]" />
+                ) : (
+                  <Square className="w-4 h-4 text-zinc-400" />
+                )}
+                Select All
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeleteSelected}
+                disabled={selectedLogIds.length === 0}
+                className="px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition disabled:opacity-40 cursor-pointer shadow-lg"
+              >
+                Delete Selected ({selectedLogIds.length})
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="px-3.5 py-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-semibold transition cursor-pointer"
+              >
+                Clear All
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSelectMode(false);
+                  setSelectedLogIds([]);
+                }}
+                className="p-1.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition cursor-pointer"
+                title="Cancel"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={loadDatabaseLogs}
+                disabled={isLoading}
+                title="Refresh"
+                className="p-2.5 rounded-full border border-white/[0.08] bg-white/5 hover:bg-white/10 text-white transition disabled:opacity-50 cursor-pointer"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSelectMode(true)}
+                title="Delete Logs"
+                className="p-2.5 rounded-full border border-white/[0.08] bg-white/5 hover:bg-rose-500/20 hover:border-rose-500/50 text-white transition cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4 text-zinc-300 hover:text-rose-400" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Centered Lootlabs provider card */}
@@ -269,32 +364,59 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
               <div className="text-zinc-500 text-sm p-6 text-center">No {filter !== "all" ? filter : ""} log entries found.</div>
             ) : (
               <div className="space-y-3">
-                {filteredLogs.map((entry) => (
-                  <div key={entry.id} className="flex items-start gap-3 rounded-lg border border-white/[0.03] bg-[#111114] p-3">
-                    <div className="flex-shrink-0">
-                      {entry.providerIcon ? (
-                        <div className="h-10 w-10 rounded-full overflow-hidden border border-white/[0.04] bg-white/5 flex items-center justify-center">
-                          <img src={entry.providerIcon} alt={entry.providerName} className="h-10 w-10 object-cover rounded-full" referrerPolicy="no-referrer" crossOrigin="anonymous" />
-                        </div>
-                      ) : (
-                        <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center">
-                          <CircleDot className="h-5 w-5 text-zinc-400" />
+                {filteredLogs.map((entry) => {
+                  const isSelected = selectedLogIds.includes(entry.id);
+                  return (
+                    <div
+                      key={entry.id}
+                      onClick={() => {
+                        if (isSelectMode) toggleLogSelection(entry.id);
+                      }}
+                      className={`flex items-start gap-3 rounded-lg border transition-all p-3 ${
+                        isSelectMode ? "cursor-pointer select-none" : ""
+                      } ${
+                        isSelected
+                          ? "border-rose-500/50 bg-rose-500/10"
+                          : "border-white/[0.03] bg-[#111114] hover:bg-[#15151a]"
+                      }`}
+                    >
+                      {isSelectMode && (
+                        <div className="flex items-center justify-center self-center shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleLogSelection(entry.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-rose-500 focus:ring-0 cursor-pointer"
+                          />
                         </div>
                       )}
-                    </div>
 
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-white">{entry.providerName || "Unknown"}</span>
-                          <span className="text-xs text-zinc-400">{statusLabel(entry.status)}</span>
-                        </div>
-                        <span className="text-xs text-zinc-500">{entry.time}</span>
+                      <div className="flex-shrink-0">
+                        {entry.providerIcon ? (
+                          <div className="h-10 w-10 rounded-full overflow-hidden border border-white/[0.04] bg-white/5 flex items-center justify-center">
+                            <img src={entry.providerIcon} alt={entry.providerName} className="h-10 w-10 object-cover rounded-full" referrerPolicy="no-referrer" crossOrigin="anonymous" />
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center">
+                            <CircleDot className="h-5 w-5 text-zinc-400" />
+                          </div>
+                        )}
                       </div>
-                      <p className="mt-1 text-sm text-zinc-300">{entry.message}</p>
+
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-white">{entry.providerName || "Unknown"}</span>
+                            <span className="text-xs text-zinc-400">{statusLabel(entry.status)}</span>
+                          </div>
+                          <span className="text-xs text-zinc-500">{entry.time}</span>
+                        </div>
+                        <p className="mt-1 text-sm text-zinc-300">{entry.message}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
