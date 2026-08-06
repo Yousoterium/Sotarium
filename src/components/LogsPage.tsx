@@ -47,12 +47,7 @@ const statusLabel = (status: LogStatus): string => {
 };
 
 const DEFAULT_PROVIDERS = [
-  {
-    name: "Earnpaste",
-    icon: "https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s88-c-k-c0xffffffff-no-rj-mo",
-  },
   { name: "Lootlabs", icon: "https://i.imgur.com/hmJCWhI.png" },
-  { name: "Lockr", icon: "https://favicon.pub/api/lockr.net?s=32" },
 ];
 
 const getProviderIcon = (providerName?: string) => {

@@ -73,6 +73,54 @@ export const createLootlabsUrl = async (targetUrl: string, step: number): Promis
   return targetUrl;
 };
 
+// Lockr AES-GCM Encrypted Link Creator
+export const createLockrUrl = async (targetUrl: string, step: number = 1): Promise<string> => {
+  const magicKeyHex = "abbfcc5aa889f0c35a760c7aff5e907a0280918d8abb36d2c5fdffb460d16df0";
+  
+  const stepLockerId = step === 2 
+    ? (import.meta.env.VITE_LOCKR_ID_STEP2 as string)
+    : (import.meta.env.VITE_LOCKR_ID_STEP1 as string);
+
+  const lockerId = stepLockerId || (import.meta.env.VITE_LOCKR_ID as string) || "YOUR_LOCKER_ID";
+
+  try {
+    const keyBytes = new Uint8Array(
+      magicKeyHex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16))
+    );
+
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      keyBytes,
+      { name: "AES-GCM" },
+      false,
+      ["encrypt"]
+    );
+
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const payload = new TextEncoder().encode(JSON.stringify({ targetUrl }));
+
+    const ciphertextBuffer = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv, tagLength: 128 },
+      cryptoKey,
+      payload
+    );
+
+    const toHex = (buf: Uint8Array) =>
+      Array.from(buf)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+    const ivHex = toHex(iv);
+    const encryptedHex = toHex(new Uint8Array(ciphertextBuffer));
+    const r = ivHex + encryptedHex;
+
+    return `https://lockr.net/${lockerId}?r=${r}`;
+  } catch (err) {
+    console.error("Lockr Encryption Error:", err);
+    return targetUrl;
+  }
+};
+
 // Internal secret salt for cryptographic token signature verification
 const SECURITY_SALT = "SOTERIA_V2_SECURE_SALT_99421";
 
@@ -386,6 +434,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       window.location.href = destinationUrl;
     } else if (pName.includes("lootlabs")) {
       const destinationUrl = await createLootlabsUrl(comebackUrl, currentStep);
+      window.location.href = destinationUrl;
+    } else if (pName.includes("lockr")) {
+      const lockrComebackUrl = `${window.location.origin}/lockr?verify${currentStep}&token=${token}`;
+      const destinationUrl = await createLockrUrl(lockrComebackUrl, currentStep);
       window.location.href = destinationUrl;
     } else {
       const verificationPath = `/${token}`;

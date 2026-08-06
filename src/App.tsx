@@ -10,16 +10,8 @@ interface ProviderOption {
 
 const PROVIDERS: ProviderOption[] = [
   {
-    name: "Earnpaste",
-    icon: "https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s88-c-k-c0xffffffff-no-rj-mo",
-  },
-  {
     name: "Lootlabs",
     icon: "https://i.imgur.com/hmJCWhI.png",
-  },
-  {
-    name: "Lockr",
-    icon: "https://favicon.pub/api/lockr.net?s=32",
   },
 ];
 
@@ -29,7 +21,6 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
   const [comebackStep, setComebackStep] = useState<number>(0);
-  const [showProviderChooser, setShowProviderChooser] = useState<boolean>(false);
   const [logs, setLogs] = useState<LogEntry[]>(() => {
     try {
       const saved = localStorage.getItem("sotarium_logs");
@@ -75,7 +66,7 @@ function App() {
       return;
     }
 
-    // Keep the existing verification URLs working while using the new 2-step flow.
+    // Keep Lootlabs verification URLs working (verify, verify1, verify2)
     if (path === "/lootlabs" && (params.has("verify") || params.has("verify1") || params.has("verify2"))) {
       let step = 2;
       if (params.has("verify1")) step = 1;
@@ -83,18 +74,10 @@ function App() {
 
       window.history.replaceState({}, "", "/lootlabs?verify");
 
-      setSelectedProvider(PROVIDERS[1]);
+      setSelectedProvider(PROVIDERS[0]);
       setShowEarnpaste(true);
       setIsModalOpen(true);
       setComebackStep(step);
-      return;
-    }
-
-    // Lockr comeback
-    if (path === "/lockr" && params.has("verify")) {
-      setSelectedProvider(PROVIDERS[2]);
-      setShowEarnpaste(true);
-      setIsModalOpen(true);
       return;
     }
   }, []);
@@ -107,16 +90,11 @@ function App() {
     return <LogsPage logs={logs} onBack={() => { setPage("home"); window.history.replaceState({}, "", "/"); }} onClear={clearLogs} />;
   }
 
-  const handleProviderClick = (provider: ProviderOption) => {
-    setSelectedProvider(provider);
+  const handleGetKeyClick = () => {
+    setSelectedProvider(PROVIDERS[0]);
     setShowEarnpaste(true);
     setIsModalOpen(true);
-    setShowProviderChooser(false);
     setComebackStep(0);
-  };
-
-  const handleGetKeyClick = () => {
-    setShowProviderChooser((prev) => !prev);
   };
 
   const openLogs = () => {
@@ -160,11 +138,7 @@ function App() {
             <button
               type="button"
               onClick={handleGetKeyClick}
-              className={`px-8 py-3 rounded-full border transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base ${
-                showProviderChooser
-                  ? "bg-[#26262d] border-[#1AF513]/50 text-white"
-                  : "bg-[#1c1c21] border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70"
-              }`}
+              className="px-8 py-3 rounded-full border border-zinc-700/60 bg-[#1c1c21] hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
             >
               Get Key
             </button>
@@ -184,31 +158,6 @@ function App() {
               </button>
             </div>
           </div>
-
-          {showProviderChooser && !showEarnpaste && (
-            <div className="flex flex-col items-center gap-4 animate-modal-in mt-4">
-              <p className="text-zinc-400 text-xs uppercase tracking-widest font-semibold">Choose a provider</p>
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                {PROVIDERS.map((provider) => (
-                  <button
-                    key={provider.name}
-                    type="button"
-                    onClick={() => handleProviderClick(provider)}
-                    className="flex items-center gap-3 px-8 py-4 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg group cursor-pointer active:scale-95"
-                  >
-                    <img
-                      src={provider.icon}
-                      alt={provider.name}
-                      referrerPolicy="no-referrer"
-                      crossOrigin="anonymous"
-                      className="w-6 h-6 rounded-full object-cover shrink-0"
-                    />
-                    <span className="text-white text-xl font-bold tracking-wide">{provider.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -218,7 +167,6 @@ function App() {
         onClose={() => {
           setIsModalOpen(false);
           setShowEarnpaste(false);
-          setShowProviderChooser(false);
         }}
         onCaught={() => {}}
         onLog={appendLog}
