@@ -55,8 +55,9 @@ export default async function handler(req, res) {
       }
 
       const msg = extractMessage(apiData);
+      const lootUrl = msg?.loot_url || msg?.url || apiData?.loot_url || apiData?.url || (typeof apiData?.message === "string" && apiData.message.startsWith("http") ? apiData.message : null);
       return res.status(200).json({
-        lootUrl: msg?.loot_url || null,
+        lootUrl: lootUrl,
         short: msg?.short || null,
       });
     }

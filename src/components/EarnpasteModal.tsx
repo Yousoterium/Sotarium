@@ -48,7 +48,7 @@ export const createEarnpasteUrl = async (targetUrl: string): Promise<string> => 
 };
 
 // Lootlabs API URL Creator
-export const createLootlabsUrl = async (targetUrl: string, step: number): Promise<string> => {
+export const createLootlabsUrl = async (targetUrl: string, step: number): Promise<string | null> => {
   try {
     const response = await fetch("/api/lootlabs-proxy?action=create_link", {
       method: "POST",
@@ -64,13 +64,13 @@ export const createLootlabsUrl = async (targetUrl: string, step: number): Promis
     });
 
     const data = await response.json();
-    if (data && data.lootUrl) {
+    if (data && data.lootUrl && typeof data.lootUrl === "string" && data.lootUrl.startsWith("http")) {
       return data.lootUrl;
     }
   } catch (err) {
     console.error("Lootlabs API Error:", err);
   }
-  return targetUrl;
+  return null;
 };
 
 // Lockr AES-GCM Encrypted Link Creator
@@ -438,7 +438,12 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       window.location.href = destinationUrl;
     } else if (pName.includes("lootlabs")) {
       const destinationUrl = await createLootlabsUrl(comebackUrl, currentStep);
-      window.location.href = destinationUrl;
+      if (destinationUrl && destinationUrl.startsWith("http")) {
+        window.location.href = destinationUrl;
+      } else {
+        setIsRedirecting(false);
+        setSecurityError("Failed to generate Lootlabs link. Please check Lootlabs API configuration or try again.");
+      }
     } else if (pName.includes("lockr")) {
       const lockrComebackUrl = `${window.location.origin}/lockr?verify${currentStep}&token=${token}`;
       const destinationUrl = await createLockrUrl(lockrComebackUrl, currentStep);
