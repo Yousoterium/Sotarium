@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Copy, AlertCircle, Clock } from "lucide-react";
+import { Copy, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { saveKeyToDatabase } from "../lib/supabase";
 import type { LogEntry } from "./LogsPage";
 
@@ -278,6 +278,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [showVerificationSuccess, setShowVerificationSuccess] = useState<boolean>(false);
   const [securityError, setSecurityError] = useState<string | null>(null);
@@ -365,6 +366,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 
   const triggerComebackVerification = (stepToVerify: number) => {
     setSecurityError(null);
+    setIsRedirecting(false);
     setIsVerifying(true);
     setShowVerificationSuccess(false);
 
@@ -427,7 +429,9 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     const comebackUrl = `${window.location.origin}/${token}`;
     const pName = providerName.toLowerCase();
 
-    setIsVerifying(true);
+    setIsRedirecting(true);
+    setIsVerifying(false);
+    setShowVerificationSuccess(false);
 
     if (pName.includes("earnpaste")) {
       const destinationUrl = await createEarnpasteUrl(comebackUrl);
@@ -465,6 +469,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     setGeneratedKey(null);
     setKeyExpiry(null);
     setTimeLeft(0);
+    setIsRedirecting(false);
     setIsVerifying(false);
     setShowVerificationSuccess(false);
     setSecurityError(null);
@@ -577,7 +582,21 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                   Try Again
                 </button>
               </div>
-            ) : isVerifying || showVerificationSuccess ? (
+            ) : isRedirecting ? (
+              <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
+                <Loader2 className="w-8 h-8 animate-spin text-[#1AF513]" />
+                <span className="text-sm font-semibold text-zinc-300">
+                  Redirecting to {providerName}...
+                </span>
+              </div>
+            ) : isVerifying ? (
+              <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
+                <Loader2 className="w-8 h-8 animate-spin text-[#1AF513]" />
+                <span className="text-sm font-semibold text-zinc-300">
+                  Verifying step...
+                </span>
+              </div>
+            ) : showVerificationSuccess ? (
               <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1AF513] text-white animate-pulse">
                   <svg
