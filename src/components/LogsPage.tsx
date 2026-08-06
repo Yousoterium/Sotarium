@@ -141,11 +141,11 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex justify-center">
           {DEFAULT_PROVIDERS.map((provider) => {
             const count = logs.filter((l) => (l.providerName || "").toLowerCase() === provider.name.toLowerCase()).length;
             return (
-              <div key={provider.name} className="rounded-[26px] border border-white/[0.08] bg-[#131317] p-5 shadow-sm">
+              <div key={provider.name} className="w-full max-w-md rounded-[26px] border border-white/[0.08] bg-[#131317] p-5 shadow-sm">
                 <div className="flex items-center gap-3">
                   {provider.icon ? (
                     <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/5 shadow-sm">
@@ -168,7 +168,6 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
           })}
         </div>
         <div className="mt-6">
-          <h2 className="text-xl font-bold text-white mb-3">Live & Database Logs</h2>
           <div className="rounded-[18px] border border-white/[0.04] bg-[#0f0f12] p-3 max-h-[48vh] overflow-auto">
             {isLoading ? (
               <div className="flex items-center justify-center gap-2 text-zinc-400 text-sm p-6">
