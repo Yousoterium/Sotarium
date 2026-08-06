@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, CircleDot, CheckCircle, XCircle, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, CircleDot, CheckCircle, XCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { fetchKeysFromDatabase } from "../lib/supabase";
 
 export type LogStatus = "info" | "pending" | "success" | "error";
@@ -19,19 +19,6 @@ interface LogsPageProps {
   onBack: () => void;
   onClear: () => void;
 }
-
-const statusIcon = (status: LogStatus) => {
-  switch (status) {
-    case "pending":
-      return <Loader2 className="w-4 h-4 animate-spin text-sky-400" />;
-    case "success":
-      return <CheckCircle className="w-4 h-4 text-emerald-400" />;
-    case "error":
-      return <XCircle className="w-4 h-4 text-rose-400" />;
-    default:
-      return <CircleDot className="w-4 h-4 text-zinc-400" />;
-  }
-};
 
 const statusLabel = (status: LogStatus): string => {
   switch (status) {
@@ -61,6 +48,7 @@ const getProviderIcon = (providerName?: string) => {
 export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onClear }) => {
   const [dbLogs, setDbLogs] = useState<LogEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [filter, setFilter] = useState<"all" | "success" | "pending" | "error">("all");
 
   const loadDatabaseLogs = async () => {
     setIsLoading(true);
@@ -69,7 +57,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
       const converted: LogEntry[] = keys.map((k: any, idx: number) => {
         const provider = k.provider
           ? k.provider.charAt(0).toUpperCase() + k.provider.slice(1)
-          : "Earnpaste";
+          : "Lootlabs";
         
         let msg = `Key generated: ${k.key_string}`;
         if (k.claimed) {
@@ -106,42 +94,71 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
 
   const logs = combinedLogs;
 
+  const filteredLogs = logs.filter((entry) => {
+    if (filter === "all") return true;
+    return entry.status === filter;
+  });
 
   return (
-    <div className="min-h-screen bg-[#0e0e11] text-white px-6 py-10">
+    <div className="min-h-screen bg-[#0e0e11] text-white px-6 py-8">
       <div className="mx-auto w-full max-w-4xl">
-        <div className="mb-6 flex items-center justify-between gap-4 rounded-[26px] border border-white/[0.08] bg-[#131317] p-6 shadow-2xl">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Logs</h1>
-            <p className="mt-1 text-sm text-zinc-400">Live step activity, completion status, and workflow events.</p>
+        {/* Sleek top control bar */}
+        <div className="mb-6 flex items-center justify-between gap-4 rounded-[26px] border border-white/[0.08] bg-[#131317] p-4 shadow-2xl">
+          <button
+            type="button"
+            onClick={onBack}
+            title="Back"
+            className="p-2.5 rounded-full border border-white/[0.08] bg-white/5 hover:bg-white/10 text-white transition cursor-pointer"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2">
+            {(["all", "success", "pending", "error"] as const).map((cat) => {
+              const catCount = logs.filter((l) => cat === "all" || l.status === cat).length;
+              const isActive = filter === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setFilter(cat)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-[#1AF513] text-black shadow-md font-bold"
+                      : "bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  {cat} ({catCount})
+                </button>
+              );
+            })}
           </div>
-          <div className="flex gap-3">
+
+          {/* Action Icon Buttons */}
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={loadDatabaseLogs}
               disabled={isLoading}
-              className="rounded-full border border-white/[0.08] px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/5 disabled:opacity-50 flex items-center gap-2"
+              title="Refresh"
+              className="p-2.5 rounded-full border border-white/[0.08] bg-white/5 hover:bg-white/10 text-white transition disabled:opacity-50 cursor-pointer"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} /> Refresh
+              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
             </button>
             <button
               type="button"
               onClick={onClear}
-              className="rounded-full border border-white/[0.08] px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/5"
+              title="Clear"
+              className="p-2.5 rounded-full border border-white/[0.08] bg-white/5 hover:bg-white/10 text-white transition cursor-pointer"
             >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={onBack}
-              className="rounded-full border border-white/[0.08] px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/5"
-            >
-              <ArrowLeft className="inline-block w-4 h-4 mr-2" /> Back
+              <Trash2 className="w-4 h-4 text-zinc-300 hover:text-rose-400" />
             </button>
           </div>
         </div>
 
-        <div className="flex justify-center">
+        {/* Centered Lootlabs provider card */}
+        <div className="flex justify-center mb-6">
           {DEFAULT_PROVIDERS.map((provider) => {
             const count = logs.filter((l) => (l.providerName || "").toLowerCase() === provider.name.toLowerCase()).length;
             return (
@@ -162,22 +179,23 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
                     <p className="mt-1 text-3xl font-bold text-white">{count}</p>
                   </div>
                 </div>
-                <p className="mt-4 text-sm text-zinc-400">Started steps & generated keys detected.</p>
               </div>
             );
           })}
         </div>
-        <div className="mt-6">
-          <div className="rounded-[18px] border border-white/[0.04] bg-[#0f0f12] p-3 max-h-[48vh] overflow-auto">
+
+        {/* Log Entries Container */}
+        <div>
+          <div className="rounded-[18px] border border-white/[0.04] bg-[#0f0f12] p-3 max-h-[52vh] overflow-auto">
             {isLoading ? (
               <div className="flex items-center justify-center gap-2 text-zinc-400 text-sm p-6">
                 <Loader2 className="w-5 h-5 animate-spin" /> Loading logs from database...
               </div>
-            ) : logs.length === 0 ? (
-              <div className="text-zinc-500 text-sm p-6 text-center">No log entries yet.</div>
+            ) : filteredLogs.length === 0 ? (
+              <div className="text-zinc-500 text-sm p-6 text-center">No {filter !== "all" ? filter : ""} log entries found.</div>
             ) : (
               <div className="space-y-3">
-                {logs.map((entry) => (
+                {filteredLogs.map((entry) => (
                   <div key={entry.id} className="flex items-start gap-3 rounded-lg border border-white/[0.03] bg-[#111114] p-3">
                     <div className="flex-shrink-0">
                       {entry.providerIcon ? (
