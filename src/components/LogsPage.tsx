@@ -119,7 +119,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
           providerName: provider,
           providerIcon: getProviderIcon(provider),
           message: msg,
-          status: k.claimed ? ("success" as LogStatus) : ("info" as LogStatus),
+          status: k.claimed ? ("success" as LogStatus) : ("pending" as LogStatus),
         };
       });
       setDbLogs(converted);
