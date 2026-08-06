@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, CircleDot, CheckCircle, XCircle, Loader2, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, CircleDot, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { fetchKeysFromDatabase } from "../lib/supabase";
 
 export type LogStatus = "info" | "pending" | "success" | "error";
@@ -102,8 +102,8 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
   return (
     <div className="min-h-screen bg-[#0e0e11] text-white px-6 py-8">
       <div className="mx-auto w-full max-w-4xl">
-        {/* Sleek top control bar */}
-        <div className="mb-6 flex items-center justify-between gap-4 rounded-[26px] border border-white/[0.08] bg-[#131317] p-4 shadow-2xl">
+        {/* Floating Top Control Bar (No Card Wrapper) */}
+        <div className="mb-6 flex items-center justify-between">
           <button
             type="button"
             onClick={onBack}
@@ -113,30 +113,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
             <ArrowLeft className="w-5 h-5" />
           </button>
 
-          {/* Category Filter Pills */}
           <div className="flex items-center gap-2">
-            {(["all", "success", "pending", "error"] as const).map((cat) => {
-              const catCount = logs.filter((l) => cat === "all" || l.status === cat).length;
-              const isActive = filter === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setFilter(cat)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-[#1AF513] text-black shadow-md font-bold"
-                      : "bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  {cat} ({catCount})
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Action Icon Buttons */}
-          <div className="flex gap-2">
             <button
               type="button"
               onClick={loadDatabaseLogs}
@@ -158,7 +135,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
         </div>
 
         {/* Centered Lootlabs provider card */}
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-4">
           {DEFAULT_PROVIDERS.map((provider) => {
             const count = logs.filter((l) => (l.providerName || "").toLowerCase() === provider.name.toLowerCase()).length;
             return (
@@ -180,6 +157,28 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
                   </div>
                 </div>
               </div>
+            );
+          })}
+        </div>
+
+        {/* Floating Category Filter Buttons Under Lootlabs Card */}
+        <div className="flex items-center justify-center gap-2 mb-6">
+          {(["all", "success", "pending", "error"] as const).map((cat) => {
+            const catCount = logs.filter((l) => cat === "all" || l.status === cat).length;
+            const isActive = filter === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setFilter(cat)}
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[#1AF513] text-black shadow-md font-bold"
+                    : "bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                {cat} ({catCount})
+              </button>
             );
           })}
         </div>
