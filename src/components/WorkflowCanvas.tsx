@@ -142,7 +142,6 @@ export const WorkflowCanvas: React.FC<WorkflowCanvasProps> = ({
         panOnDrag={false}
         zoomOnScroll={false}
         zoomOnPinch={false}
-        zoomOnDoubleTap={false}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}

@@ -30,17 +30,35 @@ function App() {
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
   const [comebackStep, setComebackStep] = useState<number>(0);
   const [showProviderChooser, setShowProviderChooser] = useState<boolean>(false);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem("sotarium_logs");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const appendLog = (entry: Omit<LogEntry, "id" | "time">) => {
     const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const time = new Date().toLocaleTimeString();
-    setLogs((prev) => [{ id, time, ...entry }, ...prev].slice(0, 200));
+    setLogs((prev) => {
+      const updated = [{ id, time, ...entry }, ...prev].slice(0, 200);
+      try {
+        localStorage.setItem("sotarium_logs", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   };
 
-  const clearLogs = () => setLogs([]);
+  const clearLogs = () => {
+    setLogs([]);
+    try {
+      localStorage.removeItem("sotarium_logs");
+    } catch {}
+  };
 
   useEffect(() => {
     document.title = "Sotarium";
@@ -108,7 +126,20 @@ function App() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#0e0e11] text-white">
-      <nav className="relative z-10 flex items-center justify-between px-8 py-5" />
+      <nav className="relative z-10 flex items-center justify-between px-8 py-5">
+        <div className="flex items-center gap-3">
+          <span className="font-extrabold text-lg tracking-wider text-white">Sotarium</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={openLogs}
+            className="px-4 py-2 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
+          >
+            View Logs
+          </button>
+        </div>
+      </nav>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6 text-center gap-10">
         <div className="flex flex-col items-center gap-5">

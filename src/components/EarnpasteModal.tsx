@@ -222,6 +222,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   isOpen,
   onClose,
   onCaught,
+  onLog,
   providerName = "Earnpaste",
   providerIcon = "https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s88-c-k-c0xffffffff-no-rj-mo",
   initialStep = 1,

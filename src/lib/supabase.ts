@@ -36,3 +36,28 @@ export async function saveKeyToDatabase(
 
   return data;
 }
+
+export async function fetchKeysFromDatabase() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("keys")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error("Error fetching keys from Supabase:", error);
+      return [];
+    }
+
+    return data || [];
+  } catch (err) {
+    console.error("Failed to fetch keys:", err);
+    return [];
+  }
+}
+
