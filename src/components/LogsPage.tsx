@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, CircleDot, Loader2, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, CircleDot, Loader2, RefreshCw, Trash2, ShieldAlert } from "lucide-react";
 import { fetchKeysFromDatabase } from "../lib/supabase";
 
 export type LogStatus = "info" | "pending" | "success" | "error";
@@ -19,6 +19,8 @@ interface LogsPageProps {
   onBack: () => void;
   onClear: () => void;
 }
+
+const ALLOWED_IP = "24.49.252.230";
 
 const statusLabel = (status: LogStatus): string => {
   switch (status) {
@@ -49,6 +51,42 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
   const [dbLogs, setDbLogs] = useState<LogEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [filter, setFilter] = useState<"all" | "success" | "pending" | "error">("all");
+
+  const [userIp, setUserIp] = useState<string | null>(null);
+  const [isIpChecking, setIsIpChecking] = useState<boolean>(true);
+  const [isAllowed, setIsAllowed] = useState<boolean>(false);
+
+  useEffect(() => {
+    const checkIp = async () => {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        if (data && data.ip) {
+          const ip = String(data.ip).trim();
+          setUserIp(ip);
+          if (ip === ALLOWED_IP) {
+            setIsAllowed(true);
+          }
+        }
+      } catch {
+        try {
+          const res = await fetch("https://ipapi.co/json/");
+          const data = await res.json();
+          if (data && data.ip) {
+            const ip = String(data.ip).trim();
+            setUserIp(ip);
+            if (ip === ALLOWED_IP) {
+              setIsAllowed(true);
+            }
+          }
+        } catch {
+          // If IP check fails
+        }
+      }
+      setIsIpChecking(false);
+    };
+    checkIp();
+  }, []);
 
   const loadDatabaseLogs = async () => {
     setIsLoading(true);
@@ -81,8 +119,45 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
   };
 
   useEffect(() => {
-    loadDatabaseLogs();
-  }, []);
+    if (isAllowed) {
+      loadDatabaseLogs();
+    }
+  }, [isAllowed]);
+
+  if (isIpChecking) {
+    return (
+      <div className="min-h-screen bg-[#0e0e11] text-white flex flex-col items-center justify-center gap-3 px-6">
+        <Loader2 className="w-8 h-8 animate-spin text-[#1AF513]" />
+        <p className="text-sm font-semibold text-zinc-400">Checking access permissions...</p>
+      </div>
+    );
+  }
+
+  if (!isAllowed) {
+    return (
+      <div className="min-h-screen bg-[#0e0e11] text-white flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 shadow-xl">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black tracking-tight text-white">Access Denied</h1>
+          <p className="text-sm text-zinc-400 max-w-sm">
+            This logs page is restricted to authorized IP addresses.
+          </p>
+          {userIp && (
+            <p className="text-xs text-zinc-500 font-mono mt-2">Your IP: {userIp}</p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onBack}
+          className="mt-2 px-6 py-2.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition cursor-pointer"
+        >
+          Return Home
+        </button>
+      </div>
+    );
+  }
 
   // Merge prop logs (live session) and dbLogs (persisted in Supabase), removing duplicate IDs
   const combinedLogs = [...propLogs];
@@ -161,7 +236,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
           })}
         </div>
 
-        {/* Floating Category Filter Buttons Under Lootlabs Card */}
+        {/* Floating Category Filter Buttons Under Lootlabs Card (White Outline on Active) */}
         <div className="flex items-center justify-center gap-2 mb-6">
           {(["all", "success", "pending", "error"] as const).map((cat) => {
             const catCount = logs.filter((l) => cat === "all" || l.status === cat).length;
@@ -173,7 +248,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
                 onClick={() => setFilter(cat)}
                 className={`px-4 py-1.5 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
                   isActive
-                    ? "bg-[#1AF513] text-black shadow-md font-bold"
+                    ? "border-2 border-white text-white font-bold bg-white/10 shadow-lg"
                     : "bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10"
                 }`}
               >
