@@ -104,20 +104,7 @@ function App() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#0e0e11] text-white">
-      <nav className="relative z-10 flex items-center justify-between px-8 py-5">
-        <div className="flex items-center gap-3">
-          <span className="font-extrabold text-lg tracking-wider text-white">Sotarium</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={openLogs}
-            className="px-4 py-2 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
-          >
-            View Logs
-          </button>
-        </div>
-      </nav>
+
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6 text-center gap-10">
         <div className="flex flex-col items-center gap-5">
@@ -126,11 +113,7 @@ function App() {
             alt="Sotarium"
             className="w-20 h-20 object-contain drop-shadow-lg"
           />
-          <div className="space-y-3">
-            <h1 className="text-6xl font-black tracking-tight leading-none text-white">
-              Sotarium
-            </h1>
-          </div>
+
         </div>
 
         <div className="flex flex-col items-center gap-6">
