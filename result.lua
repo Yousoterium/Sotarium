@@ -292,12 +292,13 @@ local function showNotification(text, notifType, duration)
 end
 
 -- ===========================================
--- Top Bar (Dragging & Window Controls)
+-- Top Bar (Dragging & Window Controls - Visible on Every Page)
 -- ===========================================
 local TopBar = Instance.new("Frame")
 TopBar.Name = "TopBar"
 TopBar.Size = UDim2.new(1, 0, 0, 42)
 TopBar.BackgroundTransparency = 1
+TopBar.ZIndex = 60
 TopBar.Parent = MainFrame
 
 local Controls = Instance.new("Frame")
@@ -305,6 +306,7 @@ Controls.Name = "Controls"
 Controls.Size = UDim2.new(0, 105, 1, 0)
 Controls.Position = UDim2.new(1, -115, 0, 0)
 Controls.BackgroundTransparency = 1
+Controls.ZIndex = 61
 Controls.Parent = TopBar
 
 local ControlsLayout = Instance.new("UIListLayout")
@@ -322,6 +324,7 @@ local function createButtonContainer(name, layoutOrder)
     btn.BackgroundTransparency = 1
     btn.Text = ""
     btn.LayoutOrder = layoutOrder
+    btn.ZIndex = 62
     btn.Parent = Controls
     return btn
 end

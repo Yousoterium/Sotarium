@@ -16,50 +16,59 @@ const PROVIDERS: ProviderOption[] = [
 ];
 
 function App() {
-  const [page, setPage] = useState<"home" | "products" | "add">("home");
+  const [page, setPage] = useState<"home" | "products" | "add">(() => {
+    const p = window.location.pathname;
+    if (p === "/add") return "add";
+    if (p === "/products") return "products";
+    return "home";
+  });
   const [showEarnpaste, setShowEarnpaste] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
   const [comebackStep, setComebackStep] = useState<number>(0);
 
+  const navigateTo = (newPage: "home" | "products" | "add") => {
+    setPage(newPage);
+    const targetUrl = newPage === "home" ? "/" : `/${newPage}`;
+    window.history.pushState({ page: newPage }, "", targetUrl);
+    document.title = newPage === "add" ? "Add Game" : newPage === "products" ? "Products" : "Home";
+  };
+
   useEffect(() => {
-    document.title = "Home";
+    const handlePopState = () => {
+      const p = window.location.pathname;
+      if (p === "/add") setPage("add");
+      else if (p === "/products") setPage("products");
+      else setPage("home");
+    };
+
+    window.addEventListener("popstate", handlePopState);
 
     const path = window.location.pathname;
     const search = window.location.search;
     const params = new URLSearchParams(search);
-    if (path === "/add") {
-      setPage("add");
-      document.title = "Add Game";
-      return;
-    }
-    if (path === "/products") {
-      setPage("products");
-      return;
-    }
 
-    // Keep Lootlabs verification URLs working (verify, verify1, verify2)
     if (path === "/lootlabs" && (params.has("verify") || params.has("verify1") || params.has("verify2"))) {
       let step = 2;
       if (params.has("verify1")) step = 1;
       else if (params.has("verify2")) step = 2;
 
       window.history.replaceState({}, "", "/lootlabs?verify");
-
       setSelectedProvider(PROVIDERS[0]);
       setShowEarnpaste(true);
       setIsModalOpen(true);
       setComebackStep(step);
-      return;
     }
+
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   if (page === "add") {
-    return <AddGamePage onBack={() => { setPage("home"); window.history.replaceState({}, "", "/"); }} />;
+    return <AddGamePage onBack={() => navigateTo("home")} />;
   }
 
   if (page === "products") {
-    return <ProductsPage onBack={() => { setPage("home"); window.history.replaceState({}, "", "/"); }} />;
+    return <ProductsPage onBack={() => navigateTo("home")} />;
   }
 
   const handleGetKeyClick = () => {
