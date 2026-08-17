@@ -17,6 +17,7 @@ import {
   FileCode
 } from "lucide-react";
 import { GameItem } from "./AddGamePage";
+import { generateFullKeySystemScript } from "../lib/scriptGenerator";
 
 const ALLOWED_IP = "24.49.252.230";
 
@@ -215,143 +216,8 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
 
   // Compiles the entire final executable script with Key System + Injected Unlocked Payload
   const generateFinalUnlockedScript = (): string => {
-    const matchedGame = games.find(g => g.id === selectedGameId);
-    const gameTitle = matchedGame ? matchedGame.name : "San Diego Border Roleplay";
-
-    const gamesLuaArray = games.map((g, idx) => {
-      return `    [${idx + 1}] = {
-        Name = "${g.name.replace(/"/g, '\\"')}",
-        Image = "${g.imageUrl.replace(/"/g, '\\"')}",
-        PlaceId = "${(g.placeId || "").replace(/"/g, '\\"')}",
-        ScriptUrl = "${(g.scriptUrl || "").replace(/"/g, '\\"')}"
-    }`;
-    }).join(",\n");
-
-    return `-- Standalone Key System GUI Script (Generated from /scripts)
--- Framework Version: ${CURRENT_KEY_SYSTEM_VERSION}
--- Target Game: ${gameTitle}
-
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local Players = game:GetService("Players")
-
-local function getSafeGuiParent()
-    if gethui then
-        local success, res = pcall(gethui)
-        if success and res then return res end
-    end
-    local hasCoreGui, core = pcall(function() return game:GetService("CoreGui") end)
-    if hasCoreGui and core then return core end
-    local lp = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.PlayerAdded:Wait()
-    return lp:WaitForChild("PlayerGui", 5) or lp.PlayerGui
-end
-
-local parentGui = getSafeGuiParent()
-if parentGui:FindFirstChild("KeySystemUI") then
-    parentGui:FindFirstChild("KeySystemUI"):Destroy()
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KeySystemUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-if syn and syn.protect_gui then pcall(syn.protect_gui, ScreenGui) end
-ScreenGui.Parent = parentGui
-
--- ===========================================
--- Supported Games Database from /add
--- ===========================================
-local SupportedGamesList = {
-${gamesLuaArray}
-}
-
--- ===========================================
--- Execution Payload (Unlocked after Key validation)
--- ===========================================
-local function executeUnlockedPayload()
-    print("[Sotarium] Executing unlocked payload for ${gameTitle}...")
-    task.spawn(function()
-${currentPayload.split("\n").map(l => "        " + l).join("\n")}
-    end)
-end
-
--- ===========================================
--- Asset Loader with Failovers
--- ===========================================
-local function toRawGithubUrl(url)
-    if url:find("github.com") and url:find("/blob/") then
-        return url:gsub("github.com", "raw.githubusercontent.com"):gsub("/blob/", "/")
-    end
-    return url
-end
-
-local function loadRemoteAsset(fileName, primaryUrl, fallbackUrl)
-    if getcustomasset and writefile then
-        local success, assetId = pcall(function()
-            local localPath = "sotarium_" .. fileName
-            if not isfile or not isfile(localPath) then
-                local body = nil
-                pcall(function()
-                    if syn and syn.request then
-                        local r = syn.request({Url = toRawGithubUrl(primaryUrl), Method = "GET"})
-                        if r and r.StatusCode == 200 and #r.Body > 50 then body = r.Body end
-                    elseif request then
-                        local r = request({Url = toRawGithubUrl(primaryUrl), Method = "GET"})
-                        if r and r.StatusCode == 200 and #r.Body > 50 then body = r.Body end
-                    else
-                        body = game:HttpGet(toRawGithubUrl(primaryUrl))
-                    end
-                end)
-                if (not body or #body < 50) and fallbackUrl then
-                    pcall(function() body = game:HttpGet(fallbackUrl) end)
-                end
-                if body and #body > 50 then
-                    writefile(localPath, body)
-                end
-            end
-            return getcustomasset(localPath)
-        end)
-        if success and assetId then return assetId end
-    end
-    return primaryUrl
-end
-
-local GamesAssetId = loadRemoteAsset("games.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/games.png")
-local SanDiegoAssetId = loadRemoteAsset("sandiego_v2.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png", "https://tr.rbxcdn.com/180DAY-a8e7148123010ced8bdce8c0542cc662/768/432/Image/Webp/noFilter")
-local LucideLoaderAssetId = loadRemoteAsset("loader_256.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/loader.png")
-local LucideArrowLeftAssetId = loadRemoteAsset("arrow_left_256.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/arrow-left.png")
-
--- ===========================================
--- Main GUI Window (14px Corner Radius)
--- ===========================================
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 720, 0, 440)
-MainFrame.Position = UDim2.new(0.5, -360, 0.5, -220)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.BorderSizePixel = 0
-MainFrame.ClipsDescendants = true
-MainFrame.Parent = ScreenGui
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14)
-MainCorner.Parent = MainFrame
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Color = Color3.fromRGB(30, 30, 30)
-MainStroke.Thickness = 1
-MainStroke.Parent = MainFrame
-
--- Key Validation Action (Unlocks & Executes Payload)
--- When entered key is valid ("test" or server check):
--- 1. Plays success animation
--- 2. Closes GUI smoothly
--- 3. Runs executeUnlockedPayload()
-
-print("[Sotarium] Key System Ready. Target: ${gameTitle}");
-`;
+    const matchedGame = games.find(g => g.id === selectedGameId) || games[0];
+    return generateFullKeySystemScript(games, matchedGame, currentPayload);
   };
 
   const handleCopyScript = () => {

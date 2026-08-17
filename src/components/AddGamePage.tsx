@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
+import { generateFullKeySystemScript } from "../lib/scriptGenerator";
 
 const ALLOWED_IP = "24.49.252.230";
 
@@ -146,86 +147,9 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     showToast(`Removed "${name}"`);
   };
 
-  // Generate dynamic Lua script incorporating all games arranged left to right
+  // Generate dynamic Lua script incorporating all games
   const generateLuaScript = (): string => {
-    const gamesEntries = games.map((g, idx) => {
-      return `    [${idx + 1}] = {
-        Name = "${g.name.replace(/"/g, '\\"')}",
-        Image = "${g.imageUrl.replace(/"/g, '\\"')}",
-        PlaceId = "${(g.placeId || "").replace(/"/g, '\\"')}",
-        ScriptUrl = "${(g.scriptUrl || "").replace(/"/g, '\\"')}"
-    }`;
-    }).join(",\n");
-
-    return `-- Standalone Key System GUI Script (Generated with Left-to-Right Horizontal Card Layout)
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local Players = game:GetService("Players")
-
-local function getSafeGuiParent()
-    if gethui then
-        local success, res = pcall(gethui)
-        if success and res then return res end
-    end
-    local hasCoreGui, core = pcall(function() return game:GetService("CoreGui") end)
-    if hasCoreGui and core then return core end
-    local lp = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer"):Wait() or Players.PlayerAdded:Wait()
-    return lp:WaitForChild("PlayerGui", 5) or lp.PlayerGui
-end
-
-local parentGui = getSafeGuiParent()
-if parentGui:FindFirstChild("KeySystemUI") then
-    parentGui:FindFirstChild("KeySystemUI"):Destroy()
-end
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KeySystemUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-if syn and syn.protect_gui then pcall(syn.protect_gui, ScreenGui) end
-ScreenGui.Parent = parentGui
-
--- Supported Games Database (Arranged from Left to Right)
-local SupportedGamesList = {
-${gamesEntries}
-}
-
--- Asset Loader with Failovers
-local function loadRemoteAsset(fileName, primaryUrl, fallbackUrl)
-    if getcustomasset and writefile then
-        local success, assetId = pcall(function()
-            local localPath = "sotarium_" .. fileName
-            if not isfile or not isfile(localPath) then
-                local body = nil
-                pcall(function()
-                    if syn and syn.request then
-                        local r = syn.request({Url = primaryUrl, Method = "GET"})
-                        if r and r.StatusCode == 200 and #r.Body > 50 then body = r.Body end
-                    elseif request then
-                        local r = request({Url = primaryUrl, Method = "GET"})
-                        if r and r.StatusCode == 200 and #r.Body > 50 then body = r.Body end
-                    else
-                        body = game:HttpGet(primaryUrl)
-                    end
-                end)
-                if (not body or #body < 50) and fallbackUrl then
-                    pcall(function() body = game:HttpGet(fallbackUrl) end)
-                end
-                if body and #body > 50 then
-                    writefile(localPath, body)
-                end
-            end
-            return getcustomasset(localPath)
-        end)
-        if success and assetId then return assetId end
-    end
-    return primaryUrl
-end
-
-print("[Sotarium] Loaded ${games.length} Supported Games from Left to Right!")
-`;
+    return generateFullKeySystemScript(games, games[0], "");
   };
 
   const handleCopyScript = () => {
