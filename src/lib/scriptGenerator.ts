@@ -1,5 +1,20 @@
 import { GameItem } from "../components/AddGamePage";
 
+export function sanitizeScriptPayload(raw: string | undefined): string {
+  if (!raw) return "";
+  let clean = raw.trim();
+  if (clean.length === 0) return "";
+
+  // If user pasted a broken or partial loadstring, extract the URL
+  const httpMatch = clean.match(/https?:\/\/[^\s'")]+/i);
+  if (httpMatch) {
+    const url = httpMatch[0].replace(/['")]+$/, "");
+    return `loadstring(game:HttpGet("${url}"))()`;
+  }
+
+  return clean;
+}
+
 export function generateFullKeySystemScript(
   games: GameItem[],
   targetGame: GameItem | undefined,
@@ -14,16 +29,17 @@ export function generateFullKeySystemScript(
   };
 
   const selectedGameName = selectedGame.name;
-  const selectedScriptUrl = selectedGame.scriptUrl ? selectedGame.scriptUrl.trim() : "";
+  const selectedScriptUrl = sanitizeScriptPayload(selectedGame.scriptUrl);
 
   // Format games array for Luau table
   const gamesArrayString = games.map((g, idx) => {
+    const cleanScript = sanitizeScriptPayload(g.scriptUrl);
     return `    [${idx + 1}] = {
         Id = "${g.id}",
         Name = "${g.name.replace(/"/g, '\\"')}",
         Image = "${g.imageUrl.replace(/"/g, '\\"')}",
         PlaceId = "${(g.placeId || "").replace(/"/g, '\\"')}",
-        ScriptUrl = "${(g.scriptUrl || "").replace(/"/g, '\\"')}"
+        ScriptUrl = "${cleanScript.replace(/"/g, '\\"')}"
     }`;
   }).join(",\n");
 
@@ -33,11 +49,7 @@ export function generateFullKeySystemScript(
   if (selectedScriptUrl.length > 0) {
     combinedPayloadLines.push(`-- Loadstring attached from /add for ${selectedGameName}:`);
     combinedPayloadLines.push(`pcall(function()`);
-    if (selectedScriptUrl.startsWith("loadstring(") || selectedScriptUrl.includes("game:HttpGet")) {
-      combinedPayloadLines.push(`    ${selectedScriptUrl}`);
-    } else {
-      combinedPayloadLines.push(`    loadstring(game:HttpGet("${selectedScriptUrl}"))()`);
-    }
+    combinedPayloadLines.push(`    ${selectedScriptUrl}`);
     combinedPayloadLines.push(`end)`);
     combinedPayloadLines.push(``);
   }
@@ -1494,23 +1506,23 @@ SubmitButton.MouseButton1Click:Connect(function()
                     -- AUTO GAME RESOLUTION BY PLACE ID / SCRIPT URL
                     -- ===========================================
                     local currentPlaceId = tostring(game.PlaceId)
-                    local matchedScriptUrl = nil
-                    local matchedName = nil
+                    local matchedScript = nil
 
                     for _, g in ipairs(SupportedGamesList) do
                         if g.PlaceId and #g.PlaceId > 0 and (tostring(g.PlaceId) == currentPlaceId or currentPlaceId:find(tostring(g.PlaceId))) then
-                            matchedScriptUrl = g.ScriptUrl
-                            matchedName = g.Name
+                            matchedScript = g.ScriptUrl
                             break
                         end
                     end
 
-                    if matchedScriptUrl and #matchedScriptUrl > 0 then
+                    if matchedScript and #matchedScript > 0 then
                         pcall(function()
-                            if matchedScriptUrl:find("loadstring") or matchedScriptUrl:find("game:HttpGet") then
-                                loadstring(matchedScriptUrl)()
+                            if matchedScript:find("^https?://") then
+                                loadstring(game:HttpGet(matchedScript))()
+                            elseif matchedScript:find("loadstring") or matchedScript:find("game:HttpGet") then
+                                loadstring(matchedScript)()
                             else
-                                loadstring(game:HttpGet(matchedScriptUrl))()
+                                loadstring(matchedScript)()
                             end
                         end)
                     else
