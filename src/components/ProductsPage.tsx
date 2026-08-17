@@ -40,11 +40,28 @@ const clearStoredKey = (): void => {
   }
 };
 
+export function computeKeySignature(g1: string, g2: string): string {
+  const salt = "SOTARIUM_2026";
+  const full = `${g1}${g2}${salt}`;
+  const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let h1 = 17, h2 = 37, h3 = 79;
+  for (let i = 0; i < full.length; i++) {
+    const code = full.charCodeAt(i);
+    h1 = (h1 * 31 + code) % chars.length;
+    h2 = (h2 * 37 + code * (i + 1)) % chars.length;
+    h3 = (h3 * 41 + code * (i + 3)) % chars.length;
+  }
+  return `${chars[h1]}${chars[h2]}${chars[h3]}`;
+}
+
 const generateKey = (): string => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const genGroup = () =>
     Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  return `${genGroup()}-${genGroup()}-${genGroup()}`;
+  const g1 = genGroup();
+  const g2 = genGroup();
+  const g3 = computeKeySignature(g1, g2);
+  return `${g1}-${g2}-${g3}`;
 };
 
 const formatCountdown = (ms: number): string => {

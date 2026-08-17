@@ -1321,14 +1321,41 @@ local function runSpinner()
 end
 
 -- ===========================================
--- Universal Provider Key Verification Engine (Vercel API + Supabase REST)
+-- Universal Cryptographic & Remote Key Verification Engine
 -- ===========================================
+local function computeKeySignature(g1, g2)
+    local salt = "SOTARIUM_2026"
+    local full = g1 .. g2 .. salt
+    local chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    local numChars = #chars
+    local h1, h2, h3 = 17, 37, 79
+    for i = 1, #full do
+        local code = string.byte(full, i)
+        h1 = (h1 * 31 + code) % numChars
+        h2 = (h2 * 37 + code * i) % numChars
+        h3 = (h3 * 41 + code * (i + 2)) % numChars
+    end
+    local c1 = string.sub(chars, h1 + 1, h1 + 1)
+    local c2 = string.sub(chars, h2 + 1, h2 + 1)
+    local c3 = string.sub(chars, h3 + 1, h3 + 1)
+    return c1 .. c2 .. c3
+end
+
 local function verifyKeyRemote(keyToVerify)
     local normalized = keyToVerify:gsub("%s+", ""):upper()
     
     -- Built-in Test Key Override
     if normalized == "TEST" then
         return true, "Access granted"
+    end
+
+    -- Primary: Cryptographic Key Signature Verification (Instant & 100% Reliable for all site-generated keys)
+    local parts = normalized:split("-")
+    if #parts == 3 and #parts[1] == 3 and #parts[2] == 3 and #parts[3] == 3 then
+        local expectedSig = computeKeySignature(parts[1], parts[2])
+        if parts[3] == expectedSig then
+            return true, "Access granted"
+        end
     end
     
     local lp = Players.LocalPlayer
