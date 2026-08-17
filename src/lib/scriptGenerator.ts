@@ -1408,6 +1408,25 @@ local SpinnerCorner = Instance.new("UICorner")
 SpinnerCorner.CornerRadius = UDim.new(1, 0)
 SpinnerCorner.Parent = SpinnerCircle
 
+local SpinnerHolder = Instance.new("Frame")
+SpinnerHolder.Name = "SpinnerHolder"
+SpinnerHolder.Size = UDim2.new(0, 40, 0, 40)
+SpinnerHolder.Position = UDim2.new(0.5, 0, 0.43, 0)
+SpinnerHolder.AnchorPoint = Vector2.new(0.5, 0.5)
+SpinnerHolder.BackgroundTransparency = 1
+SpinnerHolder.ZIndex = 21
+SpinnerHolder.Parent = Overlay
+
+local SpinnerCircle = Instance.new("Frame")
+SpinnerCircle.Size = UDim2.new(1, 0, 1, 0)
+SpinnerCircle.BackgroundTransparency = 1
+SpinnerCircle.ZIndex = 22
+SpinnerCircle.Parent = SpinnerHolder
+
+local SpinnerCorner = Instance.new("UICorner")
+SpinnerCorner.CornerRadius = UDim.new(1, 0)
+SpinnerCorner.Parent = SpinnerCircle
+
 local SpinnerStroke = Instance.new("UIStroke")
 SpinnerStroke.Color = Color3.fromRGB(255, 255, 255)
 SpinnerStroke.Thickness = 2.8
@@ -1423,8 +1442,9 @@ SpinnerNotch.Parent = SpinnerCircle
 
 local SuccessBadge = Instance.new("Frame")
 SuccessBadge.Name = "SuccessBadge"
-SuccessBadge.Size = UDim2.new(0, 40, 0, 40)
-SuccessBadge.Position = UDim2.new(0.5, -20, 0.43, -20)
+SuccessBadge.Size = UDim2.new(0, 44, 0, 44)
+SuccessBadge.Position = UDim2.new(0.5, 0, 0.43, 0)
+SuccessBadge.AnchorPoint = Vector2.new(0.5, 0.5)
 SuccessBadge.BackgroundColor3 = Color3.fromRGB(30, 220, 60)
 SuccessBadge.BorderSizePixel = 0
 SuccessBadge.BackgroundTransparency = 1
@@ -1438,8 +1458,8 @@ SuccessCorner.Parent = SuccessBadge
 
 local SuccessIcon = Instance.new("ImageLabel")
 SuccessIcon.Name = "SuccessIcon"
-SuccessIcon.Size = UDim2.new(0, 22, 0, 22)
-SuccessIcon.Position = UDim2.new(0.5, -11, 0.5, -11)
+SuccessIcon.Size = UDim2.new(0, 24, 0, 24)
+SuccessIcon.Position = UDim2.new(0.5, -12, 0.5, -12)
 SuccessIcon.BackgroundTransparency = 1
 SuccessIcon.Image = LucideIcons["check"]
 SuccessIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
@@ -1449,13 +1469,13 @@ SuccessIcon.Parent = SuccessBadge
 
 local OverlayStatus = Instance.new("TextLabel")
 OverlayStatus.Name = "OverlayStatus"
-OverlayStatus.Size = UDim2.new(1, 0, 0, 20)
-OverlayStatus.Position = UDim2.new(0.5, -160, 0.59, 0)
+OverlayStatus.Size = UDim2.new(1, 0, 0, 24)
+OverlayStatus.Position = UDim2.new(0, 0, 0.58, 0)
 OverlayStatus.BackgroundTransparency = 1
-OverlayStatus.Font = Enum.Font.GothamMedium
-OverlayStatus.Text = "Validating..."
-OverlayStatus.TextColor3 = Color3.fromRGB(180, 180, 180)
-OverlayStatus.TextSize = 13
+OverlayStatus.Font = Enum.Font.GothamBold
+OverlayStatus.Text = "Validating key..."
+OverlayStatus.TextColor3 = Color3.fromRGB(200, 200, 200)
+OverlayStatus.TextSize = 14
 OverlayStatus.TextXAlignment = Enum.TextXAlignment.Center
 OverlayStatus.ZIndex = 21
 OverlayStatus.Parent = Overlay
@@ -1488,47 +1508,56 @@ SubmitButton.MouseButton1Click:Connect(function()
     isVerifying = true
     Overlay.Visible = true
     SpinnerHolder.Visible = true
+    SpinnerCircle.BackgroundTransparency = 1
+    SpinnerStroke.Transparency = 0
     SuccessBadge.Visible = false
     OverlayStatus.Text = "Validating key..."
-    OverlayStatus.TextColor3 = Color3.fromRGB(180, 180, 180)
+    OverlayStatus.TextColor3 = Color3.fromRGB(200, 200, 200)
     Overlay.BackgroundTransparency = 1
     OverlayStatus.TextTransparency = 1
     
-    TweenService:Create(Overlay, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
-    TweenService:Create(OverlayStatus, TweenInfo.new(0.2), {TextTransparency = 0}):Play()
+    TweenService:Create(Overlay, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+    TweenService:Create(OverlayStatus, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
     runSpinner()
 
     -- Perform asynchronous key validation
     task.spawn(function()
         local isValidKey, statusMessage = verifyKeyRemote(enteredKey)
-        task.wait(0.6)
+        task.wait(1.5)
         
         if isValidKey then
             isSpinning = false
-            SpinnerHolder.Visible = false
             
+            -- Smooth fade out of spinner
+            local fadeOutSpinner = TweenService:Create(SpinnerStroke, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Transparency = 1
+            })
+            fadeOutSpinner:Play()
+            fadeOutSpinner.Completed:Connect(function()
+                SpinnerHolder.Visible = false
+            end)
+            
+            -- Smooth, satisfying spring scale up of success badge
             SuccessBadge.Visible = true
             SuccessBadge.BackgroundTransparency = 1
             SuccessIcon.ImageTransparency = 1
-            SuccessBadge.Size = UDim2.new(0, 24, 0, 24)
-            SuccessBadge.Position = UDim2.new(0.5, -12, 0.43, -12)
+            SuccessBadge.Size = UDim2.new(0, 18, 0, 18)
 
-            TweenService:Create(SuccessBadge, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            TweenService:Create(SuccessBadge, TweenInfo.new(0.55, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
                 BackgroundTransparency = 0,
-                Size = UDim2.new(0, 40, 0, 40),
-                Position = UDim2.new(0.5, -20, 0.43, -20)
+                Size = UDim2.new(0, 46, 0, 46)
             }):Play()
 
-            TweenService:Create(SuccessIcon, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            TweenService:Create(SuccessIcon, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
                 ImageTransparency = 0
             }):Play()
 
-            OverlayStatus.Text = "Success"
-            OverlayStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
-            showNotification(statusMessage or "Access granted", "success", 2.5)
+            OverlayStatus.Text = "Access granted"
+            OverlayStatus.TextColor3 = Color3.fromRGB(34, 215, 64)
+            showNotification(statusMessage or "Access granted", "success", 3)
             
-            task.wait(0.9)
-            local closeTween = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+            task.wait(1.4)
+            local closeTween = TweenService:Create(MainFrame, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
                 Size = UDim2.new(0, 0, 0, 0),
                 Position = UDim2.new(0.5, 0, 0.5, 0)
             })
