@@ -532,20 +532,59 @@ local function showNotification(text, notifType, duration)
 end
 
 -- ===========================================
--- Strict Provider Key Verification Engine (Supabase Database Query Only)
+-- ===========================================
+-- Universal Provider Key Verification Engine (Vercel API + Supabase REST)
 -- ===========================================
 local function verifyKeyRemote(keyToVerify)
     local normalized = keyToVerify:gsub("%s+", ""):upper()
     
-    -- Test Key Override
+    -- Built-in Test Key Override
     if normalized == "TEST" then
         return true, "Access granted"
     end
     
-    local isValid = false
-    local errorMsg = "Invalid key"
+    local lp = Players.LocalPlayer
+    local myUserId = lp and tostring(lp.UserId) or ""
+    local myUsername = lp and tostring(lp.Name) or ""
     
-    local success, response = pcall(function()
+    -- Method 1: Verify via Vercel Backend API (/api/verify-key)
+    local apiSuccess, apiResponse = pcall(function()
+        local verifyUrl = "https://sotarium.vercel.app/api/verify-key"
+        local payload = HttpService:JSONEncode({
+            key = normalized,
+            roblox_id = myUserId ~= "" and myUserId or "1",
+            roblox_username = myUsername ~= "" and myUsername or "Player"
+        })
+        local headers = {
+            ["Content-Type"] = "application/json"
+        }
+        
+        local body = nil
+        if syn and syn.request then
+            local r = syn.request({Url = verifyUrl, Method = "POST", Headers = headers, Body = payload})
+            if r and r.StatusCode == 200 then body = r.Body end
+        elseif request then
+            local r = request({Url = verifyUrl, Method = "POST", Headers = headers, Body = payload})
+            if r and r.StatusCode == 200 then body = r.Body end
+        elseif http_request then
+            local r = http_request({Url = verifyUrl, Method = "POST", Headers = headers, Body = payload})
+            if r and r.StatusCode == 200 then body = r.Body end
+        end
+        return body
+    end)
+    
+    if apiSuccess and apiResponse and #apiResponse > 2 then
+        local parsed = nil
+        pcall(function() parsed = HttpService:JSONDecode(apiResponse) end)
+        if parsed and parsed.valid == true then
+            return true, parsed.message or "Access granted"
+        elseif parsed and parsed.valid == false and parsed.message then
+            return false, parsed.message
+        end
+    end
+    
+    -- Method 2: Direct Supabase Database REST query
+    local supaSuccess, supaResponse = pcall(function()
         local supabaseUrl = "https://ihrrwrjsdqqpgmyanpgg.supabase.co/rest/v1/keys?key_string=eq." .. normalized .. "&select=id,key_string,claimed,owner_roblox_id,expires_at"
         local headers = {
             ["apikey"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlocnJ3cmpzZHFxcGdteWFucGdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MjczMzIsImV4cCI6MjEwMTMwMzMzMn0.d7z6EzA3652g8reDNQv6x83nVUlkOhEeZVktwZpX9e4",
@@ -567,24 +606,19 @@ local function verifyKeyRemote(keyToVerify)
         return body
     end)
     
-    if success and response and #response > 2 then
+    if supaSuccess and supaResponse and #supaResponse > 2 then
         local parsed = nil
-        pcall(function() parsed = HttpService:JSONDecode(response) end)
+        pcall(function() parsed = HttpService:JSONDecode(supaResponse) end)
         if parsed and type(parsed) == "table" and #parsed > 0 then
             local keyData = parsed[1]
-            local lp = Players.LocalPlayer
-            local myUserId = lp and tostring(lp.UserId) or ""
-            
-            -- Account binding validation
             if keyData.claimed and keyData.owner_roblox_id and keyData.owner_roblox_id ~= "" and keyData.owner_roblox_id ~= myUserId then
                 return false, "Key bound to another account"
             end
-            
             return true, "Access granted"
         end
     end
     
-    return false, errorMsg
+    return false, "Invalid key"
 end
 
 -- ===========================================

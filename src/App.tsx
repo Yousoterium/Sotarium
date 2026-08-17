@@ -86,23 +86,17 @@ function App() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#0e0e11] text-white">
-      <nav className="relative z-10 flex items-center justify-between px-8 py-5">
-        <div className="flex items-center gap-3">
-          <span className="font-extrabold text-lg tracking-wider text-white">Home</span>
-        </div>
-      </nav>
-
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6 text-center gap-10">
+    <div className="relative min-h-screen overflow-x-hidden bg-[#0e0e11] text-white flex flex-col justify-center">
+      <div className="relative z-10 flex flex-col items-center justify-center px-6 text-center gap-10 py-12">
         <div className="flex flex-col items-center gap-5">
           <img
             src="https://i.imgur.com/qye2L7M.png"
-            alt="Home"
+            alt="Sotarium"
             className="w-20 h-20 object-contain drop-shadow-lg"
           />
           <div className="space-y-3">
             <h1 className="text-6xl font-black tracking-tight leading-none text-white">
-              Home
+              Sotarium
             </h1>
           </div>
         </div>
