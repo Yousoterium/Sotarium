@@ -758,24 +758,44 @@ LoadingText.LayoutOrder = 2
 LoadingText.ZIndex = 34
 LoadingText.Parent = LoadingCenter
 
--- 2. Loaded Games Showcase Container
-local GamesShowcase = Instance.new("Frame")
+-- 2. Loaded Games Showcase Container (Horizontal Left-to-Right Carousel)
+local GamesShowcase = Instance.new("ScrollingFrame")
 GamesShowcase.Name = "GamesShowcase"
-GamesShowcase.Size = UDim2.new(0, 420, 0, 250)
-GamesShowcase.Position = UDim2.new(0.5, -210, 0.5, -115)
+GamesShowcase.Size = UDim2.new(1, -40, 0, 260)
+GamesShowcase.Position = UDim2.new(0, 20, 0.5, -120)
 GamesShowcase.BackgroundTransparency = 1
+GamesShowcase.BorderSizePixel = 0
+GamesShowcase.ScrollBarThickness = 0
+GamesShowcase.AutomaticCanvasSize = Enum.AutomaticSize.X
+GamesShowcase.CanvasSize = UDim2.new(0, 0, 0, 0)
+GamesShowcase.ElasticBehavior = Enum.ElasticBehavior.Always
+GamesShowcase.ScrollingDirection = Enum.ScrollingDirection.X
 GamesShowcase.Visible = false
 GamesShowcase.ZIndex = 38
 GamesShowcase.Parent = GamesOverlay
 
--- Attached Game Card Outer Container
+local ShowcaseLayout = Instance.new("UIListLayout")
+ShowcaseLayout.FillDirection = Enum.FillDirection.Horizontal
+ShowcaseLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ShowcaseLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+ShowcaseLayout.SortOrder = Enum.SortOrder.LayoutOrder
+ShowcaseLayout.Padding = UDim.new(0, 18)
+ShowcaseLayout.Parent = GamesShowcase
+
+local ShowcasePadding = Instance.new("UIPadding")
+ShowcasePadding.PaddingLeft = UDim.new(0, 10)
+ShowcasePadding.PaddingRight = UDim.new(0, 10)
+ShowcasePadding.Parent = GamesShowcase
+
+-- Attached Game Card Outer Container (Left-to-Right layout item)
 local GameCard = Instance.new("Frame")
 GameCard.Name = "GameCard"
-GameCard.Size = UDim2.new(1, 0, 1, 0)
+GameCard.Size = UDim2.new(0, 360, 0, 240)
 GameCard.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 GameCard.BackgroundTransparency = 1
 GameCard.BorderSizePixel = 0
 GameCard.ClipsDescendants = true
+GameCard.LayoutOrder = 1
 GameCard.ZIndex = 39
 GameCard.Parent = GamesShowcase
 
