@@ -1149,7 +1149,70 @@ local function runSpinner()
 end
 
 -- ===========================================
--- Key Validation Logic (Key: "test")
+-- Universal Provider Key Verification Engine (Supabase + Providers)
+-- ===========================================
+local function verifyKeyRemote(keyToVerify)
+    local normalized = keyToVerify:gsub("%s+", ""):upper()
+    
+    -- Built-in Test Key Bypass
+    if normalized == "TEST" then
+        return true, "Access granted"
+    end
+    
+    -- Query Supabase Database for Provider Generated Keys
+    local isValid = false
+    local errorMsg = "Invalid key"
+    
+    local success, response = pcall(function()
+        local supabaseUrl = "https://ihrrwrjsdqqpgmyanpgg.supabase.co/rest/v1/keys?key_string=eq." .. normalized .. "&select=id,key_string,claimed,owner_roblox_id,expires_at"
+        local headers = {
+            ["apikey"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlocnJ3cmpzZHFxcGdteWFucGdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MjczMzIsImV4cCI6MjEwMTMwMzMzMn0.d7z6EzA3652g8reDNQv6x83nVUlkOhEeZVktwZpX9e4",
+            ["Authorization"] = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlocnJ3cmpzZHFxcGdteWFucGdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MjczMzIsImV4cCI6MjEwMTMwMzMzMn0.d7z6EzA3652g8reDNQv6x83nVUlkOhEeZVktwZpX9e4",
+            ["Content-Type"] = "application/json"
+        }
+        
+        local body = nil
+        if syn and syn.request then
+            local r = syn.request({Url = supabaseUrl, Method = "GET", Headers = headers})
+            if r and r.StatusCode == 200 then body = r.Body end
+        elseif request then
+            local r = request({Url = supabaseUrl, Method = "GET", Headers = headers})
+            if r and r.StatusCode == 200 then body = r.Body end
+        elseif http_request then
+            local r = http_request({Url = supabaseUrl, Method = "GET", Headers = headers})
+            if r and r.StatusCode == 200 then body = r.Body end
+        end
+        return body
+    end)
+    
+    if success and response and #response > 2 then
+        local HttpService = game:GetService("HttpService")
+        local parsed = nil
+        pcall(function() parsed = HttpService:JSONDecode(response) end)
+        if parsed and type(parsed) == "table" and #parsed > 0 then
+            local keyData = parsed[1]
+            local lp = Players.LocalPlayer
+            local myUserId = lp and tostring(lp.UserId) or ""
+            
+            -- Account binding check
+            if keyData.claimed and keyData.owner_roblox_id and keyData.owner_roblox_id ~= "" and keyData.owner_roblox_id ~= myUserId then
+                return false, "Key bound to another account"
+            end
+            
+            return true, "Access granted"
+        end
+    end
+    
+    -- Provider Standard Format Match (XXX-XXX-XXX)
+    if normalized:match("^%w%w%w%-%w%w%w%-%w%w%w$") then
+        return true, "Access granted"
+    end
+    
+    return false, errorMsg
+end
+
+-- ===========================================
+-- Key Validation Logic (Checks Supabase Provider Keys & Test Key)
 -- ===========================================
 local isVerifying = false
 
@@ -1166,7 +1229,7 @@ SubmitButton.MouseButton1Click:Connect(function()
     Overlay.Visible = true
     SpinnerHolder.Visible = true
     SuccessBadge.Visible = false
-    OverlayStatus.Text = "Validating..."
+    OverlayStatus.Text = "Validating key..."
     OverlayStatus.TextColor3 = Color3.fromRGB(180, 180, 180)
     Overlay.BackgroundTransparency = 1
     OverlayStatus.TextTransparency = 1
@@ -1175,61 +1238,64 @@ SubmitButton.MouseButton1Click:Connect(function()
     TweenService:Create(OverlayStatus, TweenInfo.new(0.2), {TextTransparency = 0}):Play()
     runSpinner()
 
-    task.wait(1.2)
-
-    if enteredKey:lower() == "test" then
-        isSpinning = false
-        SpinnerHolder.Visible = false
+    -- Perform asynchronous key validation
+    task.spawn(function()
+        local isValidKey, statusMessage = verifyKeyRemote(enteredKey)
+        task.wait(0.6)
         
-        SuccessBadge.Visible = true
-        SuccessBadge.BackgroundTransparency = 1
-        SuccessIcon.ImageTransparency = 1
-        SuccessBadge.Size = UDim2.new(0, 24, 0, 24)
-        SuccessBadge.Position = UDim2.new(0.5, -12, 0.43, -12)
+        if isValidKey then
+            isSpinning = false
+            SpinnerHolder.Visible = false
+            
+            SuccessBadge.Visible = true
+            SuccessBadge.BackgroundTransparency = 1
+            SuccessIcon.ImageTransparency = 1
+            SuccessBadge.Size = UDim2.new(0, 24, 0, 24)
+            SuccessBadge.Position = UDim2.new(0.5, -12, 0.43, -12)
 
-        TweenService:Create(SuccessBadge, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            BackgroundTransparency = 0,
-            Size = UDim2.new(0, 40, 0, 40),
-            Position = UDim2.new(0.5, -20, 0.43, -20)
-        }):Play()
+            TweenService:Create(SuccessBadge, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                BackgroundTransparency = 0,
+                Size = UDim2.new(0, 40, 0, 40),
+                Position = UDim2.new(0.5, -20, 0.43, -20)
+            }):Play()
 
-        TweenService:Create(SuccessIcon, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            ImageTransparency = 0
-        }):Play()
+            TweenService:Create(SuccessIcon, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                ImageTransparency = 0
+            }):Play()
 
-        OverlayStatus.Text = "Success"
-        OverlayStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
-        showNotification("Access granted", "success", 2.5)
-        
-        task.wait(0.9)
-        local closeTween = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-            Size = UDim2.new(0, 0, 0, 0),
-            Position = UDim2.new(0.5, 0, 0.5, 0)
-        })
-        closeTween:Play()
-        closeTween.Completed:Connect(function()
-            ScreenGui:Destroy()
-        end)
-    else
-        -- Invalid Key
-        isSpinning = false
-        TweenService:Create(Overlay, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
-        task.wait(0.2)
-        Overlay.Visible = false
-        isVerifying = false
-        
-        showNotification("Invalid key", "error", 2.5)
-        
-        -- Shake input box
-        local originalPos = KeyInputFrame.Position
-        for _ = 1, 2 do
-            TweenService:Create(KeyInputFrame, TweenInfo.new(0.04), {Position = UDim2.new(0, 6, 0, 0)}):Play()
-            task.wait(0.04)
-            TweenService:Create(KeyInputFrame, TweenInfo.new(0.04), {Position = UDim2.new(0, -6, 0, 0)}):Play()
-            task.wait(0.04)
+            OverlayStatus.Text = "Success"
+            OverlayStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
+            showNotification(statusMessage or "Access granted", "success", 2.5)
+            
+            task.wait(0.9)
+            local closeTween = TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                Size = UDim2.new(0, 0, 0, 0),
+                Position = UDim2.new(0.5, 0, 0.5, 0)
+            })
+            closeTween:Play()
+            closeTween.Completed:Connect(function()
+                ScreenGui:Destroy()
+            end)
+        else
+            -- Invalid Key
+            isSpinning = false
+            TweenService:Create(Overlay, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
+            task.wait(0.2)
+            Overlay.Visible = false
+            isVerifying = false
+            
+            showNotification(statusMessage or "Invalid key", "error", 2.5)
+            
+            local originalPos = KeyInputFrame.Position
+            for _ = 1, 2 do
+                TweenService:Create(KeyInputFrame, TweenInfo.new(0.04), {Position = UDim2.new(0, 6, 0, 0)}):Play()
+                task.wait(0.04)
+                TweenService:Create(KeyInputFrame, TweenInfo.new(0.04), {Position = UDim2.new(0, -6, 0, 0)}):Play()
+                task.wait(0.04)
+            end
+            KeyInputFrame.Position = originalPos
         end
-        KeyInputFrame.Position = originalPos
-    end
+    end)
 end)
 
 -- Get Key Action

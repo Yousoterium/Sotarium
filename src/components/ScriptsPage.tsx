@@ -135,12 +135,27 @@ export const ScriptsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     } else {
       const matchedGame = games.find(g => g.id === selectedGameId);
       const name = matchedGame ? matchedGame.name : "Universal";
-      setCurrentPayload(`-- [Protected Payload for ${name}]
+      const scriptUrl = matchedGame?.scriptUrl?.trim() || "";
+
+      if (scriptUrl) {
+        setCurrentPayload(`-- [Protected Payload for ${name}]
+-- Loading script from /add:
+loadstring(game:HttpGet("${scriptUrl}"))()
+
+-- Features unlocked notification
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Sotarium",
+    Title = "Sotarium Hub",
+    Text = "${name} script loaded!",
+    Duration = 5
+})`);
+      } else {
+        setCurrentPayload(`-- [Protected Payload for ${name}]
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "Sotarium Hub",
     Text = "${name} features unlocked!",
     Duration = 5
 })`);
+      }
     }
   }, [selectedGameId, scripts, games]);
 
