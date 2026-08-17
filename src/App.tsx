@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { EarnpasteModal } from "./components/EarnpasteModal";
 import { ProductsPage } from "./components/ProductsPage";
 import { AddGamePage } from "./components/AddGamePage";
+import { ScriptsPage } from "./components/ScriptsPage";
 
 interface ProviderOption {
   name: string;
@@ -16,8 +17,9 @@ const PROVIDERS: ProviderOption[] = [
 ];
 
 function App() {
-  const [page, setPage] = useState<"home" | "products" | "add">(() => {
+  const [page, setPage] = useState<"home" | "products" | "add" | "scripts">(() => {
     const p = window.location.pathname;
+    if (p === "/scripts") return "scripts";
     if (p === "/add") return "add";
     if (p === "/products") return "products";
     return "home";
@@ -27,17 +29,18 @@ function App() {
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
   const [comebackStep, setComebackStep] = useState<number>(0);
 
-  const navigateTo = (newPage: "home" | "products" | "add") => {
+  const navigateTo = (newPage: "home" | "products" | "add" | "scripts") => {
     setPage(newPage);
     const targetUrl = newPage === "home" ? "/" : `/${newPage}`;
     window.history.pushState({ page: newPage }, "", targetUrl);
-    document.title = newPage === "add" ? "Add Game" : newPage === "products" ? "Products" : "Home";
+    document.title = newPage === "scripts" ? "Scripts Studio" : newPage === "add" ? "Add Game" : newPage === "products" ? "Products" : "Home";
   };
 
   useEffect(() => {
     const handlePopState = () => {
       const p = window.location.pathname;
-      if (p === "/add") setPage("add");
+      if (p === "/scripts") setPage("scripts");
+      else if (p === "/add") setPage("add");
       else if (p === "/products") setPage("products");
       else setPage("home");
     };
@@ -62,6 +65,10 @@ function App() {
 
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
+
+  if (page === "scripts") {
+    return <ScriptsPage onBack={() => navigateTo("home")} />;
+  }
 
   if (page === "add") {
     return <AddGamePage onBack={() => navigateTo("home")} />;
@@ -112,13 +119,14 @@ function App() {
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => { setPage("products"); window.history.pushState({}, "", "/products"); }}
+                onClick={() => navigateTo("products")}
                 className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
               >
                 Buy key
               </button>
               <button
                 type="button"
+                onClick={() => navigateTo("scripts")}
                 className="px-8 py-3 rounded-full bg-[#1c1c21] border border-zinc-700/60 hover:bg-[#26262d] hover:border-zinc-500/70 transition-all duration-200 shadow-lg cursor-pointer active:scale-95 text-white font-bold text-base"
               >
                 Scripts
