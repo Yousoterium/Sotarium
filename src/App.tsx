@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { EarnpasteModal } from "./components/EarnpasteModal";
 import { ProductsPage } from "./components/ProductsPage";
+import { AddGamePage } from "./components/AddGamePage";
 
 interface ProviderOption {
   name: string;
@@ -15,7 +16,7 @@ const PROVIDERS: ProviderOption[] = [
 ];
 
 function App() {
-  const [page, setPage] = useState<"home" | "products">("home");
+  const [page, setPage] = useState<"home" | "products" | "add">("home");
   const [showEarnpaste, setShowEarnpaste] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
@@ -27,6 +28,11 @@ function App() {
     const path = window.location.pathname;
     const search = window.location.search;
     const params = new URLSearchParams(search);
+    if (path === "/add") {
+      setPage("add");
+      document.title = "Add Game";
+      return;
+    }
     if (path === "/products") {
       setPage("products");
       return;
@@ -47,6 +53,10 @@ function App() {
       return;
     }
   }, []);
+
+  if (page === "add") {
+    return <AddGamePage onBack={() => { setPage("home"); window.history.replaceState({}, "", "/"); }} />;
+  }
 
   if (page === "products") {
     return <ProductsPage onBack={() => { setPage("home"); window.history.replaceState({}, "", "/"); }} />;
