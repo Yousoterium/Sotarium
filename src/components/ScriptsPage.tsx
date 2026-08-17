@@ -49,7 +49,6 @@ const DEFAULT_SCRIPTS: ScriptEntry[] = [
     gameName: "San Diego Border Roleplay",
     payloadCode: `-- [Protected Script Payload - Executed after Key Validation]
 local player = game.Players.LocalPlayer
-print("[Sotarium] Unlocked script for " .. player.Name)
 
 -- Notify player on screen
 game:GetService("StarterGui"):SetCore("SendNotification", {
@@ -137,8 +136,6 @@ export const ScriptsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       const matchedGame = games.find(g => g.id === selectedGameId);
       const name = matchedGame ? matchedGame.name : "Universal";
       setCurrentPayload(`-- [Protected Payload for ${name}]
-print("[Sotarium] Unlocked script for ${name}!")
-
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "Sotarium",
     Text = "${name} features unlocked!",

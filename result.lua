@@ -1209,7 +1209,6 @@ SubmitButton.MouseButton1Click:Connect(function()
         closeTween:Play()
         closeTween.Completed:Connect(function()
             ScreenGui:Destroy()
-            print("[Key System] Unlocked!")
         end)
     else
         -- Invalid Key
