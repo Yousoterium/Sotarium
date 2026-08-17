@@ -43,6 +43,174 @@ if syn and syn.protect_gui then
 end
 ScreenGui.Parent = parentGui
 
+-- ===========================================
+-- Anti-AFK Engine (Boot & Background Protection · by Sotarium)
+-- ===========================================
+task.spawn(function()
+    pcall(function()
+        if getgenv().AntiAfkExecuted and game.CoreGui:FindFirstChild("thisoneissocoldww") then
+            getgenv().AntiAfkExecuted = false
+            getgenv().timerRunning = false
+            game.CoreGui.thisoneissocoldww:Destroy()
+        end
+        getgenv().AntiAfkExecuted = true
+
+        local afkGui = Instance.new("ScreenGui")
+        afkGui.Name = "thisoneissocoldww"
+        afkGui.ResetOnSpawn = false
+        afkGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        if syn and syn.protect_gui then pcall(syn.protect_gui, afkGui) end
+        afkGui.Parent = parentGui
+
+        local afkFrame = Instance.new("Frame")
+        afkFrame.Name = "SotariumAntiAfk"
+        afkFrame.Parent = afkGui
+        afkFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+        afkFrame.BorderSizePixel = 0
+        afkFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
+        afkFrame.Size = UDim2.new(0, 240, 0, 92)
+
+        local afkCorner = Instance.new("UICorner", afkFrame)
+        afkCorner.CornerRadius = UDim.new(0, 8)
+
+        local afkStroke = Instance.new("UIStroke", afkFrame)
+        afkStroke.Color = Color3.fromRGB(55, 55, 60)
+        afkStroke.Thickness = 1
+
+        local function makeLabel(parent, text, xPos, yPos, xSize, ySize, fontSize, isBold, textColor)
+            local lbl = Instance.new("TextLabel", parent)
+            lbl.BackgroundTransparency = 1
+            lbl.BorderSizePixel = 0
+            lbl.Position = UDim2.new(0, xPos, 0, yPos)
+            lbl.Size = UDim2.new(0, xSize, 0, ySize)
+            lbl.Font = isBold and Enum.Font.GothamBold or Enum.Font.Gotham
+            lbl.Text = text
+            lbl.TextColor3 = textColor or Color3.fromRGB(255, 255, 255)
+            lbl.TextSize = fontSize
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextYAlignment = Enum.TextYAlignment.Center
+            return lbl
+        end
+
+        local statusDot = Instance.new("Frame", afkFrame)
+        statusDot.BackgroundColor3 = Color3.fromRGB(80, 220, 120)
+        statusDot.BorderSizePixel = 0
+        statusDot.Position = UDim2.new(0, 12, 0, 14)
+        statusDot.Size = UDim2.new(0, 6, 0, 6)
+        local dotCorner = Instance.new("UICorner", statusDot)
+        dotCorner.CornerRadius = UDim.new(1, 0)
+
+        makeLabel(afkFrame, "Anti-AFK · by Sotarium", 24, 8, 180, 18, 11, false, Color3.fromRGB(255, 255, 255))
+
+        local closeBtn = Instance.new("TextButton", afkFrame)
+        closeBtn.BackgroundTransparency = 1
+        closeBtn.BorderSizePixel = 0
+        closeBtn.Position = UDim2.new(1, -28, 0, 8)
+        closeBtn.Size = UDim2.new(0, 20, 0, 20)
+        closeBtn.Font = Enum.Font.GothamBold
+        closeBtn.Text = "x"
+        closeBtn.TextColor3 = Color3.fromRGB(150, 150, 160)
+        closeBtn.TextSize = 18
+
+        closeBtn.MouseEnter:Connect(function() closeBtn.TextColor3 = Color3.fromRGB(220, 65, 65) end)
+        closeBtn.MouseLeave:Connect(function() closeBtn.TextColor3 = Color3.fromRGB(150, 150, 160) end)
+        closeBtn.MouseButton1Click:Connect(function()
+            getgenv().AntiAfkExecuted = false
+            task.wait(0.05)
+            afkGui:Destroy()
+        end)
+
+        local divider = Instance.new("Frame", afkFrame)
+        divider.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        divider.BorderSizePixel = 0
+        divider.Position = UDim2.new(0, 12, 0, 30)
+        divider.Size = UDim2.new(1, -24, 0, 1)
+
+        makeLabel(afkFrame, "PING", 12, 38, 72, 14, 9, false, Color3.fromRGB(160, 160, 175))
+        makeLabel(afkFrame, "FPS", 92, 38, 72, 14, 9, false, Color3.fromRGB(160, 160, 175))
+        makeLabel(afkFrame, "TIME", 162, 38, 72, 14, 9, false, Color3.fromRGB(160, 160, 175))
+
+        local pingLbl = makeLabel(afkFrame, "--", 12, 52, 72, 28, 14, true, Color3.fromRGB(255, 255, 255))
+        local fpsLbl = makeLabel(afkFrame, "--", 92, 52, 72, 28, 14, true, Color3.fromRGB(255, 255, 255))
+        local timeLbl = makeLabel(afkFrame, "0:00:00", 162, 52, 72, 28, 12, true, Color3.fromRGB(255, 255, 255))
+
+        task.spawn(function()
+            while statusDot and statusDot.Parent do
+                TweenService:Create(statusDot, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { BackgroundColor3 = Color3.fromRGB(40, 160, 80) }):Play()
+                task.wait(0.9)
+                TweenService:Create(statusDot, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { BackgroundColor3 = Color3.fromRGB(80, 220, 120) }):Play()
+                task.wait(0.9)
+            end
+        end)
+
+        local draggingAfk = false
+        local dragStartPos, frameStartPos
+        afkFrame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                draggingAfk = true
+                dragStartPos = input.Position
+                frameStartPos = afkFrame.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then draggingAfk = false end
+                end)
+            end
+        end)
+        local UserInputService = game:GetService("UserInputService")
+        UserInputService.InputChanged:Connect(function(input)
+            if draggingAfk and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - dragStartPos
+                TweenService:Create(afkFrame, TweenInfo.new(0.05, Enum.EasingStyle.Sine), {
+                    Position = UDim2.new(frameStartPos.X.Scale, frameStartPos.X.Offset + delta.X, frameStartPos.Y.Scale, frameStartPos.Y.Offset + delta.Y)
+                }):Play()
+            end
+        end)
+
+        local lp = Players.LocalPlayer or Players.PlayerAdded:Wait()
+        local VirtualUser = game:GetService("VirtualUser")
+        lp.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+
+        local lastTick = tick()
+        local frameTimes = {}
+        RunService.RenderStepped:Connect(function()
+            local now = tick()
+            for i = #frameTimes, 1, -1 do
+                frameTimes[i + 1] = frameTimes[i] >= now - 1 and frameTimes[i] or nil
+            end
+            frameTimes[1] = now
+            if fpsLbl and fpsLbl.Parent then
+                fpsLbl.Text = tostring(math.floor(tick() - lastTick >= 1 and #frameTimes or #frameTimes / (tick() - lastTick)))
+            end
+        end)
+
+        task.spawn(function()
+            while pingLbl and pingLbl.Parent do
+                local ok, result = pcall(function()
+                    return game:GetService("Stats"):FindFirstChild("PerformanceStats").Ping:GetValue()
+                end)
+                if ok and result then
+                    pingLbl.Text = tostring(math.floor(result)) .. "ms"
+                end
+                task.wait(1)
+            end
+        end)
+
+        local secs, mins, hrs = 0, 0, 0
+        getgenv().timerRunning = true
+        task.spawn(function()
+            while getgenv().timerRunning and timeLbl and timeLbl.Parent do
+                task.wait(1)
+                secs = secs + 1
+                if secs >= 60 then secs = 0; mins = mins + 1 end
+                if mins >= 60 then mins = 0; hrs = hrs + 1 end
+                timeLbl.Text = string.format("%d:%02d:%02d", hrs, mins, secs)
+            end
+        end)
+    end)
+end)
+
 -- Main Container Window
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -1204,11 +1372,6 @@ local function verifyKeyRemote(keyToVerify)
             
             return true, "Access granted"
         end
-    end
-    
-    -- Provider Standard Format Match (XXX-XXX-XXX)
-    if normalized:match("^%w%w%w%-%w%w%w%-%w%w%w$") then
-        return true, "Access granted"
     end
     
     return false, errorMsg

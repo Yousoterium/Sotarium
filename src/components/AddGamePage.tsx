@@ -120,21 +120,27 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
     const finalImageUrl = newImageUrl.trim() || "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png";
 
+    // Auto extract Place ID from full Roblox URL (e.g. https://www.roblox.com/games/136020512003847/...)
+    let parsedPlaceId = newPlaceId.trim();
+    const urlMatch = parsedPlaceId.match(/\/games\/(\d+)/) || parsedPlaceId.match(/roblox\.com\/.*?(\d{5,})/) || parsedPlaceId.match(/(\d{5,})/);
+    if (urlMatch && urlMatch[1]) {
+      parsedPlaceId = urlMatch[1];
+    }
+
     const newItem: GameItem = {
       id: `game-${Date.now()}`,
       name: newGameName.trim(),
       imageUrl: finalImageUrl,
-      placeId: newPlaceId.trim(),
+      placeId: parsedPlaceId,
       scriptUrl: newScriptUrl.trim()
     };
 
-    const updated = [...games, newItem];
-    setGames(updated);
+    setGames([...games, newItem]);
     setNewGameName("");
     setNewImageUrl("");
     setNewPlaceId("");
     setNewScriptUrl("");
-    showToast(`Added "${newItem.name}" to horizontal list!`);
+    showToast(`Added "${newItem.name}" to 3-column showcase!`);
   };
 
   const handleDeleteGame = (id: string, name: string) => {
@@ -262,26 +268,29 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">
-                    Place ID (Optional)
+                    Roblox Game URL or Place ID
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 4924922222"
+                    placeholder="https://www.roblox.com/games/136020512003847/San-Diego-Border-Roleplay"
                     value={newPlaceId}
                     onChange={(e) => setNewPlaceId(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-[#18181c] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-all font-mono text-xs"
                   />
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    Auto-extracts Place ID so your script executes automatically when loaded in this game.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">
-                    Script URL (Optional)
+                    Script URL or Loadstring (Payload to run on valid key)
                   </label>
                   <input
                     type="text"
-                    placeholder="https://.../script.lua"
+                    placeholder="loadstring(game:HttpGet('https://pastebin.com/raw/...'))()"
                     value={newScriptUrl}
                     onChange={(e) => setNewScriptUrl(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-[#18181c] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-all font-mono text-xs"

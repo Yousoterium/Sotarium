@@ -9,7 +9,7 @@ export function generateFullKeySystemScript(
     id: "game-1",
     name: "San Diego Border Roleplay",
     imageUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png",
-    placeId: "",
+    placeId: "136020512003847",
     scriptUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/scripts/sandiego.lua"
   };
 
@@ -53,7 +53,7 @@ export function generateFullKeySystemScript(
     combinedPayloadLines.push(`})`);
   }
 
-  const formattedPayload = combinedPayloadLines.map(line => "                " + line).join("\n");
+  const formattedPayload = combinedPayloadLines.map(line => "                    " + line).join("\n");
 
   return `-- Standalone Key System GUI Script (Roblox Luau)
 local TweenService = game:GetService("TweenService")
@@ -62,6 +62,7 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local VirtualUser = game:GetService("VirtualUser")
 
 -- Universal Safe GUI Parent Resolver
 local function getSafeGuiParent()
@@ -101,6 +102,172 @@ if syn and syn.protect_gui then
 end
 ScreenGui.Parent = parentGui
 
+-- ===========================================
+-- Anti-AFK Engine (Boot & Background Protection · by Sotarium)
+-- ===========================================
+task.spawn(function()
+    pcall(function()
+        if getgenv().AntiAfkExecuted and game.CoreGui:FindFirstChild("thisoneissocoldww") then
+            getgenv().AntiAfkExecuted = false
+            getgenv().timerRunning = false
+            game.CoreGui.thisoneissocoldww:Destroy()
+        end
+        getgenv().AntiAfkExecuted = true
+
+        local afkGui = Instance.new("ScreenGui")
+        afkGui.Name = "thisoneissocoldww"
+        afkGui.ResetOnSpawn = false
+        afkGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        if syn and syn.protect_gui then pcall(syn.protect_gui, afkGui) end
+        afkGui.Parent = parentGui
+
+        local afkFrame = Instance.new("Frame")
+        afkFrame.Name = "SotariumAntiAfk"
+        afkFrame.Parent = afkGui
+        afkFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+        afkFrame.BorderSizePixel = 0
+        afkFrame.Position = UDim2.new(0.05, 0, 0.1, 0)
+        afkFrame.Size = UDim2.new(0, 240, 0, 92)
+
+        local afkCorner = Instance.new("UICorner", afkFrame)
+        afkCorner.CornerRadius = UDim.new(0, 8)
+
+        local afkStroke = Instance.new("UIStroke", afkFrame)
+        afkStroke.Color = Color3.fromRGB(55, 55, 60)
+        afkStroke.Thickness = 1
+
+        local function makeLabel(parent, text, xPos, yPos, xSize, ySize, fontSize, isBold, textColor)
+            local lbl = Instance.new("TextLabel", parent)
+            lbl.BackgroundTransparency = 1
+            lbl.BorderSizePixel = 0
+            lbl.Position = UDim2.new(0, xPos, 0, yPos)
+            lbl.Size = UDim2.new(0, xSize, 0, ySize)
+            lbl.Font = isBold and Enum.Font.GothamBold or Enum.Font.Gotham
+            lbl.Text = text
+            lbl.TextColor3 = textColor or Color3.fromRGB(255, 255, 255)
+            lbl.TextSize = fontSize
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextYAlignment = Enum.TextYAlignment.Center
+            return lbl
+        end
+
+        local statusDot = Instance.new("Frame", afkFrame)
+        statusDot.BackgroundColor3 = Color3.fromRGB(80, 220, 120)
+        statusDot.BorderSizePixel = 0
+        statusDot.Position = UDim2.new(0, 12, 0, 14)
+        statusDot.Size = UDim2.new(0, 6, 0, 6)
+        local dotCorner = Instance.new("UICorner", statusDot)
+        dotCorner.CornerRadius = UDim.new(1, 0)
+
+        makeLabel(afkFrame, "Anti-AFK · by Sotarium", 24, 8, 180, 18, 11, false, Color3.fromRGB(255, 255, 255))
+
+        local closeBtn = Instance.new("TextButton", afkFrame)
+        closeBtn.BackgroundTransparency = 1
+        closeBtn.BorderSizePixel = 0
+        closeBtn.Position = UDim2.new(1, -28, 0, 8)
+        closeBtn.Size = UDim2.new(0, 20, 0, 20)
+        closeBtn.Font = Enum.Font.GothamBold
+        closeBtn.Text = "x"
+        closeBtn.TextColor3 = Color3.fromRGB(150, 150, 160)
+        closeBtn.TextSize = 18
+
+        closeBtn.MouseEnter:Connect(function() closeBtn.TextColor3 = Color3.fromRGB(220, 65, 65) end)
+        closeBtn.MouseLeave:Connect(function() closeBtn.TextColor3 = Color3.fromRGB(150, 150, 160) end)
+        closeBtn.MouseButton1Click:Connect(function()
+            getgenv().AntiAfkExecuted = false
+            task.wait(0.05)
+            afkGui:Destroy()
+        end)
+
+        local divider = Instance.new("Frame", afkFrame)
+        divider.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        divider.BorderSizePixel = 0
+        divider.Position = UDim2.new(0, 12, 0, 30)
+        divider.Size = UDim2.new(1, -24, 0, 1)
+
+        makeLabel(afkFrame, "PING", 12, 38, 72, 14, 9, false, Color3.fromRGB(160, 160, 175))
+        makeLabel(afkFrame, "FPS", 92, 38, 72, 14, 9, false, Color3.fromRGB(160, 160, 175))
+        makeLabel(afkFrame, "TIME", 162, 38, 72, 14, 9, false, Color3.fromRGB(160, 160, 175))
+
+        local pingLbl = makeLabel(afkFrame, "--", 12, 52, 72, 28, 14, true, Color3.fromRGB(255, 255, 255))
+        local fpsLbl = makeLabel(afkFrame, "--", 92, 52, 72, 28, 14, true, Color3.fromRGB(255, 255, 255))
+        local timeLbl = makeLabel(afkFrame, "0:00:00", 162, 52, 72, 28, 12, true, Color3.fromRGB(255, 255, 255))
+
+        task.spawn(function()
+            while statusDot and statusDot.Parent do
+                TweenService:Create(statusDot, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { BackgroundColor3 = Color3.fromRGB(40, 160, 80) }):Play()
+                task.wait(0.9)
+                TweenService:Create(statusDot, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), { BackgroundColor3 = Color3.fromRGB(80, 220, 120) }):Play()
+                task.wait(0.9)
+            end
+        end)
+
+        local draggingAfk = false
+        local dragStartPos, frameStartPos
+        afkFrame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                draggingAfk = true
+                dragStartPos = input.Position
+                frameStartPos = afkFrame.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then draggingAfk = false end
+                end)
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if draggingAfk and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                local delta = input.Position - dragStartPos
+                TweenService:Create(afkFrame, TweenInfo.new(0.05, Enum.EasingStyle.Sine), {
+                    Position = UDim2.new(frameStartPos.X.Scale, frameStartPos.X.Offset + delta.X, frameStartPos.Y.Scale, frameStartPos.Y.Offset + delta.Y)
+                }):Play()
+            end
+        end)
+
+        local lp = Players.LocalPlayer or Players.PlayerAdded:Wait()
+        lp.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+
+        local lastTick = tick()
+        local frameTimes = {}
+        RunService.RenderStepped:Connect(function()
+            local now = tick()
+            for i = #frameTimes, 1, -1 do
+                frameTimes[i + 1] = frameTimes[i] >= now - 1 and frameTimes[i] or nil
+            end
+            frameTimes[1] = now
+            if fpsLbl and fpsLbl.Parent then
+                fpsLbl.Text = tostring(math.floor(tick() - lastTick >= 1 and #frameTimes or #frameTimes / (tick() - lastTick)))
+            end
+        end)
+
+        task.spawn(function()
+            while pingLbl and pingLbl.Parent do
+                local ok, result = pcall(function()
+                    return game:GetService("Stats"):FindFirstChild("PerformanceStats").Ping:GetValue()
+                end)
+                if ok and result then
+                    pingLbl.Text = tostring(math.floor(result)) .. "ms"
+                end
+                task.wait(1)
+            end
+        end)
+
+        local secs, mins, hrs = 0, 0, 0
+        getgenv().timerRunning = true
+        task.spawn(function()
+            while getgenv().timerRunning and timeLbl and timeLbl.Parent do
+                task.wait(1)
+                secs = secs + 1
+                if secs >= 60 then secs = 0; mins = mins + 1 end
+                if mins >= 60 then mins = 0; hrs = hrs + 1 end
+                timeLbl.Text = string.format("%d:%02d:%02d", hrs, mins, secs)
+            end
+        end)
+    end)
+end)
+
 -- Main Container Window (14px Corner Radius)
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -121,7 +288,7 @@ MainStroke.Thickness = 1
 MainStroke.Parent = MainFrame
 
 -- ===========================================
--- Supported Games Database from /add (${games.length} Games)
+-- Supported Games Database (${games.length} Configured Games)
 -- ===========================================
 local SupportedGamesList = {
 ${gamesArrayString}
@@ -353,17 +520,16 @@ local function showNotification(text, notifType, duration)
 end
 
 -- ===========================================
--- Universal Provider Key Verification Engine (Supabase + Providers)
+-- Strict Provider Key Verification Engine (Supabase Database Query Only)
 -- ===========================================
 local function verifyKeyRemote(keyToVerify)
     local normalized = keyToVerify:gsub("%s+", ""):upper()
     
-    -- Built-in Test Key Bypass
+    -- Test Key Override
     if normalized == "TEST" then
         return true, "Access granted"
     end
     
-    -- Query Supabase Database for Provider Generated Keys
     local isValid = false
     local errorMsg = "Invalid key"
     
@@ -397,18 +563,13 @@ local function verifyKeyRemote(keyToVerify)
             local lp = Players.LocalPlayer
             local myUserId = lp and tostring(lp.UserId) or ""
             
-            -- Account binding check
+            -- Account binding validation
             if keyData.claimed and keyData.owner_roblox_id and keyData.owner_roblox_id ~= "" and keyData.owner_roblox_id ~= myUserId then
                 return false, "Key bound to another account"
             end
             
             return true, "Access granted"
         end
-    end
-    
-    -- Provider Standard Format Match (XXX-XXX-XXX)
-    if normalized:match("^%w%w%w%-%w%w%w%-%w%w%w$") then
-        return true, "Access granted"
     end
     
     return false, errorMsg
@@ -729,7 +890,7 @@ local function setMenuControlsEnabled(enabled)
 end
 
 -- ===========================================
--- Supported Games Animated Diagonal Screen (3 Columns Grid Layout)
+-- Supported Games Animated Diagonal Screen (3-Column Grid Layout)
 -- ===========================================
 local GamesOverlay = Instance.new("Frame")
 GamesOverlay.Name = "GamesOverlay"
@@ -880,7 +1041,7 @@ LoadingText.LayoutOrder = 2
 LoadingText.ZIndex = 34
 LoadingText.Parent = LoadingCenter
 
--- 2. Loaded Games Showcase Container (3 Columns Grid, Vertical/Horizontal Scroll)
+-- 2. Loaded Games Showcase Container (3 Columns Grid Layout)
 local GamesShowcase = Instance.new("ScrollingFrame")
 GamesShowcase.Name = "GamesShowcase"
 GamesShowcase.Size = UDim2.new(1, -40, 1, -70)
@@ -1265,68 +1426,6 @@ local function runSpinner()
 end
 
 -- ===========================================
--- Universal Provider Key Verification Engine (Supabase + Providers)
--- ===========================================
-local function verifyKeyRemote(keyToVerify)
-    local normalized = keyToVerify:gsub("%s+", ""):upper()
-    
-    -- Built-in Test Key Bypass
-    if normalized == "TEST" then
-        return true, "Access granted"
-    end
-    
-    -- Query Supabase Database for Provider Generated Keys
-    local isValid = false
-    local errorMsg = "Invalid key"
-    
-    local success, response = pcall(function()
-        local supabaseUrl = "https://ihrrwrjsdqqpgmyanpgg.supabase.co/rest/v1/keys?key_string=eq." .. normalized .. "&select=id,key_string,claimed,owner_roblox_id,expires_at"
-        local headers = {
-            ["apikey"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlocnJ3cmpzZHFxcGdteWFucGdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MjczMzIsImV4cCI6MjEwMTMwMzMzMn0.d7z6EzA3652g8reDNQv6x83nVUlkOhEeZVktwZpX9e4",
-            ["Authorization"] = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlocnJ3cmpzZHFxcGdteWFucGdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MjczMzIsImV4cCI6MjEwMTMwMzMzMn0.d7z6EzA3652g8reDNQv6x83nVUlkOhEeZVktwZpX9e4",
-            ["Content-Type"] = "application/json"
-        }
-        
-        local body = nil
-        if syn and syn.request then
-            local r = syn.request({Url = supabaseUrl, Method = "GET", Headers = headers})
-            if r and r.StatusCode == 200 then body = r.Body end
-        elseif request then
-            local r = request({Url = supabaseUrl, Method = "GET", Headers = headers})
-            if r and r.StatusCode == 200 then body = r.Body end
-        elseif http_request then
-            local r = http_request({Url = supabaseUrl, Method = "GET", Headers = headers})
-            if r and r.StatusCode == 200 then body = r.Body end
-        end
-        return body
-    end)
-    
-    if success and response and #response > 2 then
-        local parsed = nil
-        pcall(function() parsed = HttpService:JSONDecode(response) end)
-        if parsed and type(parsed) == "table" and #parsed > 0 then
-            local keyData = parsed[1]
-            local lp = Players.LocalPlayer
-            local myUserId = lp and tostring(lp.UserId) or ""
-            
-            -- Account binding check
-            if keyData.claimed and keyData.owner_roblox_id and keyData.owner_roblox_id ~= "" and keyData.owner_roblox_id ~= myUserId then
-                return false, "Key bound to another account"
-            end
-            
-            return true, "Access granted"
-        end
-    end
-    
-    -- Provider Standard Format Match (XXX-XXX-XXX)
-    if normalized:match("^%w%w%w%-%w%w%w%-%w%w%w$") then
-        return true, "Access granted"
-    end
-    
-    return false, errorMsg
-end
-
--- ===========================================
 -- Key Validation Logic (Checks Supabase Provider Keys & Test Key)
 -- ===========================================
 local isVerifying = false
@@ -1392,9 +1491,31 @@ SubmitButton.MouseButton1Click:Connect(function()
                 ScreenGui:Destroy()
                 task.spawn(function()
                     -- ===========================================
-                    -- UNLOCKED GAME PAYLOAD (Executed on Key Success)
+                    -- AUTO GAME RESOLUTION BY PLACE ID / SCRIPT URL
                     -- ===========================================
+                    local currentPlaceId = tostring(game.PlaceId)
+                    local matchedScriptUrl = nil
+                    local matchedName = nil
+
+                    for _, g in ipairs(SupportedGamesList) do
+                        if g.PlaceId and #g.PlaceId > 0 and (tostring(g.PlaceId) == currentPlaceId or currentPlaceId:find(tostring(g.PlaceId))) then
+                            matchedScriptUrl = g.ScriptUrl
+                            matchedName = g.Name
+                            break
+                        end
+                    end
+
+                    if matchedScriptUrl and #matchedScriptUrl > 0 then
+                        pcall(function()
+                            if matchedScriptUrl:find("loadstring") or matchedScriptUrl:find("game:HttpGet") then
+                                loadstring(matchedScriptUrl)()
+                            else
+                                loadstring(game:HttpGet(matchedScriptUrl))()
+                            end
+                        end)
+                    else
 ${formattedPayload}
+                    end
                 end)
             end)
         else
