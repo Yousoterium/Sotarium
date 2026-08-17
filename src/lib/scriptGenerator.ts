@@ -729,7 +729,7 @@ local function setMenuControlsEnabled(enabled)
 end
 
 -- ===========================================
--- Supported Games Animated Diagonal Screen
+-- Supported Games Animated Diagonal Screen (3 Columns Grid Layout)
 -- ===========================================
 local GamesOverlay = Instance.new("Frame")
 GamesOverlay.Name = "GamesOverlay"
@@ -880,41 +880,42 @@ LoadingText.LayoutOrder = 2
 LoadingText.ZIndex = 34
 LoadingText.Parent = LoadingCenter
 
--- 2. Loaded Games Showcase Container (Horizontal Left-to-Right Carousel)
+-- 2. Loaded Games Showcase Container (3 Columns Grid, Vertical/Horizontal Scroll)
 local GamesShowcase = Instance.new("ScrollingFrame")
 GamesShowcase.Name = "GamesShowcase"
-GamesShowcase.Size = UDim2.new(1, -40, 0, 260)
-GamesShowcase.Position = UDim2.new(0, 20, 0.5, -120)
+GamesShowcase.Size = UDim2.new(1, -40, 1, -70)
+GamesShowcase.Position = UDim2.new(0, 20, 0, 56)
 GamesShowcase.BackgroundTransparency = 1
 GamesShowcase.BorderSizePixel = 0
 GamesShowcase.ScrollBarThickness = 4
 GamesShowcase.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
-GamesShowcase.AutomaticCanvasSize = Enum.AutomaticSize.X
+GamesShowcase.AutomaticCanvasSize = Enum.AutomaticSize.Y
 GamesShowcase.CanvasSize = UDim2.new(0, 0, 0, 0)
 GamesShowcase.ElasticBehavior = Enum.ElasticBehavior.Always
-GamesShowcase.ScrollingDirection = Enum.ScrollingDirection.X
+GamesShowcase.ScrollingDirection = Enum.ScrollingDirection.Y
 GamesShowcase.Visible = false
 GamesShowcase.ZIndex = 38
 GamesShowcase.Parent = GamesOverlay
 
-local ShowcaseLayout = Instance.new("UIListLayout")
-ShowcaseLayout.FillDirection = Enum.FillDirection.Horizontal
-ShowcaseLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-ShowcaseLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+local ShowcaseLayout = Instance.new("UIGridLayout")
+ShowcaseLayout.CellSize = UDim2.new(0, 208, 0, 150)
+ShowcaseLayout.CellPadding = UDim2.new(0, 16, 0, 16)
+ShowcaseLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ShowcaseLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 ShowcaseLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ShowcaseLayout.Padding = UDim.new(0, 18)
 ShowcaseLayout.Parent = GamesShowcase
 
 local ShowcasePadding = Instance.new("UIPadding")
-ShowcasePadding.PaddingLeft = UDim.new(0, 16)
-ShowcasePadding.PaddingRight = UDim.new(0, 16)
+ShowcasePadding.PaddingLeft = UDim.new(0, 8)
+ShowcasePadding.PaddingRight = UDim.new(0, 8)
+ShowcasePadding.PaddingTop = UDim.new(0, 6)
+ShowcasePadding.PaddingBottom = UDim.new(0, 16)
 ShowcasePadding.Parent = GamesShowcase
 
--- Dynamically build all Game Cards from SupportedGamesList
+-- Dynamically build 3-Column Game Cards for all items in SupportedGamesList
 for idx, gameData in ipairs(SupportedGamesList) do
     local card = Instance.new("Frame")
     card.Name = "GameCard_" .. tostring(idx)
-    card.Size = UDim2.new(0, 340, 0, 230)
     card.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
     card.BackgroundTransparency = 1
     card.BorderSizePixel = 0
@@ -924,7 +925,7 @@ for idx, gameData in ipairs(SupportedGamesList) do
     card.Parent = GamesShowcase
 
     local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 12)
+    cardCorner.CornerRadius = UDim.new(0, 10)
     cardCorner.Parent = card
 
     local cardStroke = Instance.new("UIStroke")
@@ -935,7 +936,7 @@ for idx, gameData in ipairs(SupportedGamesList) do
 
     local thumb = Instance.new("ImageLabel")
     thumb.Name = "GameThumbImage"
-    thumb.Size = UDim2.new(1, 0, 1, -42)
+    thumb.Size = UDim2.new(1, 0, 1, -34)
     thumb.Position = UDim2.new(0, 0, 0, 0)
     thumb.BackgroundTransparency = 1
     thumb.Image = loadRemoteAsset("thumb_" .. tostring(idx) .. ".png", gameData.Image, "https://tr.rbxcdn.com/180DAY-a8e7148123010ced8bdce8c0542cc662/768/432/Image/Webp/noFilter")
@@ -947,13 +948,13 @@ for idx, gameData in ipairs(SupportedGamesList) do
     thumb.Parent = card
 
     local thumbCorner = Instance.new("UICorner")
-    thumbCorner.CornerRadius = UDim.new(0, 12)
+    thumbCorner.CornerRadius = UDim.new(0, 10)
     thumbCorner.Parent = thumb
 
     local thumbBottomFiller = Instance.new("Frame")
     thumbBottomFiller.Name = "ThumbBottomSquareFiller"
-    thumbBottomFiller.Size = UDim2.new(1, 0, 0, 12)
-    thumbBottomFiller.Position = UDim2.new(0, 0, 1, -12)
+    thumbBottomFiller.Size = UDim2.new(1, 0, 0, 10)
+    thumbBottomFiller.Position = UDim2.new(0, 0, 1, -10)
     thumbBottomFiller.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
     thumbBottomFiller.BackgroundTransparency = 1
     thumbBottomFiller.BorderSizePixel = 0
@@ -962,8 +963,8 @@ for idx, gameData in ipairs(SupportedGamesList) do
 
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 42)
-    titleBar.Position = UDim2.new(0, 0, 1, -42)
+    titleBar.Size = UDim2.new(1, 0, 0, 34)
+    titleBar.Position = UDim2.new(0, 0, 1, -34)
     titleBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     titleBar.BackgroundTransparency = 1
     titleBar.BorderSizePixel = 0
@@ -972,12 +973,12 @@ for idx, gameData in ipairs(SupportedGamesList) do
     titleBar.Parent = card
 
     local titleBarCorner = Instance.new("UICorner")
-    titleBarCorner.CornerRadius = UDim.new(0, 12)
+    titleBarCorner.CornerRadius = UDim.new(0, 10)
     titleBarCorner.Parent = titleBar
 
     local titleBarTopFiller = Instance.new("Frame")
     titleBarTopFiller.Name = "TitleBarTopSquareFiller"
-    titleBarTopFiller.Size = UDim2.new(1, 0, 0, 12)
+    titleBarTopFiller.Size = UDim2.new(1, 0, 0, 10)
     titleBarTopFiller.Position = UDim2.new(0, 0, 0, 0)
     titleBarTopFiller.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     titleBarTopFiller.BackgroundTransparency = 1
@@ -997,13 +998,14 @@ for idx, gameData in ipairs(SupportedGamesList) do
 
     local gameTitle = Instance.new("TextLabel")
     gameTitle.Name = "GameTitleLabel"
-    gameTitle.Size = UDim2.new(1, -24, 1, 0)
-    gameTitle.Position = UDim2.new(0, 12, 0, 0)
+    gameTitle.Size = UDim2.new(1, -16, 1, 0)
+    gameTitle.Position = UDim2.new(0, 8, 0, 0)
     gameTitle.BackgroundTransparency = 1
-    gameTitle.Font = Enum.Font.GothamBlack
+    gameTitle.Font = Enum.Font.GothamBold
     gameTitle.Text = gameData.Name
     gameTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    gameTitle.TextSize = 14
+    gameTitle.TextSize = 12
+    gameTitle.TextTruncate = Enum.TextTruncate.AtEnd
     gameTitle.TextXAlignment = Enum.TextXAlignment.Center
     gameTitle.TextTransparency = 1
     gameTitle.ZIndex = 43

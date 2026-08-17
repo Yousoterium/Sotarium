@@ -761,39 +761,41 @@ LoadingText.LayoutOrder = 2
 LoadingText.ZIndex = 34
 LoadingText.Parent = LoadingCenter
 
--- 2. Loaded Games Showcase Container (Horizontal Left-to-Right Carousel)
+-- 2. Loaded Games Showcase Container (3 Columns Grid, Vertical/Horizontal Scroll)
 local GamesShowcase = Instance.new("ScrollingFrame")
 GamesShowcase.Name = "GamesShowcase"
-GamesShowcase.Size = UDim2.new(1, -40, 0, 260)
-GamesShowcase.Position = UDim2.new(0, 20, 0.5, -120)
+GamesShowcase.Size = UDim2.new(1, -40, 1, -70)
+GamesShowcase.Position = UDim2.new(0, 20, 0, 56)
 GamesShowcase.BackgroundTransparency = 1
 GamesShowcase.BorderSizePixel = 0
-GamesShowcase.ScrollBarThickness = 0
-GamesShowcase.AutomaticCanvasSize = Enum.AutomaticSize.X
+GamesShowcase.ScrollBarThickness = 4
+GamesShowcase.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
+GamesShowcase.AutomaticCanvasSize = Enum.AutomaticSize.Y
 GamesShowcase.CanvasSize = UDim2.new(0, 0, 0, 0)
 GamesShowcase.ElasticBehavior = Enum.ElasticBehavior.Always
-GamesShowcase.ScrollingDirection = Enum.ScrollingDirection.X
+GamesShowcase.ScrollingDirection = Enum.ScrollingDirection.Y
 GamesShowcase.Visible = false
 GamesShowcase.ZIndex = 38
 GamesShowcase.Parent = GamesOverlay
 
-local ShowcaseLayout = Instance.new("UIListLayout")
-ShowcaseLayout.FillDirection = Enum.FillDirection.Horizontal
+local ShowcaseLayout = Instance.new("UIGridLayout")
+ShowcaseLayout.CellSize = UDim2.new(0, 208, 0, 150)
+ShowcaseLayout.CellPadding = UDim2.new(0, 16, 0, 16)
 ShowcaseLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-ShowcaseLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+ShowcaseLayout.VerticalAlignment = Enum.VerticalAlignment.Top
 ShowcaseLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ShowcaseLayout.Padding = UDim.new(0, 18)
 ShowcaseLayout.Parent = GamesShowcase
 
 local ShowcasePadding = Instance.new("UIPadding")
-ShowcasePadding.PaddingLeft = UDim.new(0, 10)
-ShowcasePadding.PaddingRight = UDim.new(0, 10)
+ShowcasePadding.PaddingLeft = UDim.new(0, 8)
+ShowcasePadding.PaddingRight = UDim.new(0, 8)
+ShowcasePadding.PaddingTop = UDim.new(0, 6)
+ShowcasePadding.PaddingBottom = UDim.new(0, 16)
 ShowcasePadding.Parent = GamesShowcase
 
--- Attached Game Card Outer Container (Left-to-Right layout item)
+-- Attached Game Card Outer Container (Left-to-Right 3-column item)
 local GameCard = Instance.new("Frame")
 GameCard.Name = "GameCard"
-GameCard.Size = UDim2.new(0, 360, 0, 240)
 GameCard.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 GameCard.BackgroundTransparency = 1
 GameCard.BorderSizePixel = 0
@@ -803,7 +805,7 @@ GameCard.ZIndex = 39
 GameCard.Parent = GamesShowcase
 
 local CardCorner = Instance.new("UICorner")
-CardCorner.CornerRadius = UDim.new(0, 12)
+CardCorner.CornerRadius = UDim.new(0, 10)
 CardCorner.Parent = GameCard
 
 local CardStroke = Instance.new("UIStroke")
@@ -815,7 +817,7 @@ CardStroke.Parent = GameCard
 -- San Diego Border Roleplay Image Thumbnail (Top 2 corners rounded, bottom 2 corners square)
 local GameThumbImage = Instance.new("ImageLabel")
 GameThumbImage.Name = "GameThumbImage"
-GameThumbImage.Size = UDim2.new(1, 0, 1, -42)
+GameThumbImage.Size = UDim2.new(1, 0, 1, -34)
 GameThumbImage.Position = UDim2.new(0, 0, 0, 0)
 GameThumbImage.BackgroundTransparency = 1
 GameThumbImage.Image = SanDiegoAssetId
@@ -827,14 +829,14 @@ GameThumbImage.ZIndex = 40
 GameThumbImage.Parent = GameCard
 
 local ThumbCorner = Instance.new("UICorner")
-ThumbCorner.CornerRadius = UDim.new(0, 12)
+ThumbCorner.CornerRadius = UDim.new(0, 10)
 ThumbCorner.Parent = GameThumbImage
 
 -- Square filler at the bottom of the thumbnail so only the top 2 corners stay rounded
 local ThumbBottomSquareFiller = Instance.new("Frame")
 ThumbBottomSquareFiller.Name = "ThumbBottomSquareFiller"
-ThumbBottomSquareFiller.Size = UDim2.new(1, 0, 0, 12)
-ThumbBottomSquareFiller.Position = UDim2.new(0, 0, 1, -12)
+ThumbBottomSquareFiller.Size = UDim2.new(1, 0, 0, 10)
+ThumbBottomSquareFiller.Position = UDim2.new(0, 0, 1, -10)
 ThumbBottomSquareFiller.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
 ThumbBottomSquareFiller.BackgroundTransparency = 1
 ThumbBottomSquareFiller.BorderSizePixel = 0
@@ -844,8 +846,8 @@ ThumbBottomSquareFiller.Parent = GameThumbImage
 -- Attached Bottom Title Bar (Top 2 corners square, bottom 2 corners rounded)
 local TitleBar = Instance.new("Frame")
 TitleBar.Name = "TitleBar"
-TitleBar.Size = UDim2.new(1, 0, 0, 42)
-TitleBar.Position = UDim2.new(0, 0, 1, -42)
+TitleBar.Size = UDim2.new(1, 0, 0, 34)
+TitleBar.Position = UDim2.new(0, 0, 1, -34)
 TitleBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
 TitleBar.BackgroundTransparency = 1
 TitleBar.BorderSizePixel = 0
@@ -854,13 +856,13 @@ TitleBar.ZIndex = 41
 TitleBar.Parent = GameCard
 
 local TitleBarCorner = Instance.new("UICorner")
-TitleBarCorner.CornerRadius = UDim.new(0, 12)
+TitleBarCorner.CornerRadius = UDim.new(0, 10)
 TitleBarCorner.Parent = TitleBar
 
 -- Square filler at the top of the title bar so its top 2 corners stay square
 local TitleBarTopSquareFiller = Instance.new("Frame")
 TitleBarTopSquareFiller.Name = "TitleBarTopSquareFiller"
-TitleBarTopSquareFiller.Size = UDim2.new(1, 0, 0, 12)
+TitleBarTopSquareFiller.Size = UDim2.new(1, 0, 0, 10)
 TitleBarTopSquareFiller.Position = UDim2.new(0, 0, 0, 0)
 TitleBarTopSquareFiller.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
 TitleBarTopSquareFiller.BackgroundTransparency = 1
@@ -880,13 +882,14 @@ TitleBarDivider.Parent = TitleBar
 
 local GameTitleLabel = Instance.new("TextLabel")
 GameTitleLabel.Name = "GameTitleLabel"
-GameTitleLabel.Size = UDim2.new(1, -24, 1, 0)
-GameTitleLabel.Position = UDim2.new(0, 12, 0, 0)
+GameTitleLabel.Size = UDim2.new(1, -16, 1, 0)
+GameTitleLabel.Position = UDim2.new(0, 8, 0, 0)
 GameTitleLabel.BackgroundTransparency = 1
-GameTitleLabel.Font = Enum.Font.GothamBlack
+GameTitleLabel.Font = Enum.Font.GothamBold
 GameTitleLabel.Text = "San Diego Border Roleplay"
 GameTitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-GameTitleLabel.TextSize = 14
+GameTitleLabel.TextSize = 12
+GameTitleLabel.TextTruncate = Enum.TextTruncate.AtEnd
 GameTitleLabel.TextXAlignment = Enum.TextXAlignment.Center
 GameTitleLabel.TextTransparency = 1
 GameTitleLabel.ZIndex = 43

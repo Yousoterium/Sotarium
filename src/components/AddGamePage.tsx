@@ -359,7 +359,7 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <ImageIcon className="w-4 h-4 text-zinc-400" />
                 <h3 className="font-bold text-sm text-white">Roblox Lua GUI Live Preview</h3>
               </div>
-              <span className="text-xs text-emerald-400 font-mono font-bold">Left to Right Carousel ({games.length} Games)</span>
+              <span className="text-xs text-emerald-400 font-mono font-bold">3-Column Grid ({games.length} Games)</span>
             </div>
 
             {/* GUI Window Container (720x440 aspect ratio with matching rounded corners) */}
@@ -380,34 +380,34 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
               </div>
 
-              {/* Centered Showcase: Left-to-Right Horizontal Scrolling Carousel */}
-              <div className="flex-1 flex items-center overflow-x-auto overflow-y-hidden px-8 gap-5 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+              {/* Centered Showcase: 3 Columns Grid Layout */}
+              <div className="flex-1 grid grid-cols-3 gap-3 px-5 py-2 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                 {games.map((g) => (
                   <div
                     key={g.id}
-                    className="w-[280px] sm:w-[320px] shrink-0 bg-[#101010] border border-[#262626] rounded-[12px] shadow-2xl flex flex-col overflow-hidden transition-transform hover:scale-[1.02]"
+                    className="w-full h-[140px] bg-[#101010] border border-[#262626] rounded-[10px] shadow-xl flex flex-col overflow-hidden transition-transform hover:scale-[1.02]"
                   >
-                    {/* Top Game Thumbnail: Top 2 Rounded (12px), Bottom 2 Square (0px) */}
-                    <div className="w-full h-40 bg-zinc-900 overflow-hidden relative rounded-t-[12px] rounded-b-none flex items-center justify-center">
+                    {/* Top Game Thumbnail: Top 2 Rounded (10px), Bottom 2 Square (0px) */}
+                    <div className="w-full flex-1 bg-zinc-900 overflow-hidden relative rounded-t-[10px] rounded-b-none flex items-center justify-center">
                       <img
                         src={resolvePreviewImageUrl(g.imageUrl)}
                         alt={g.name}
-                        className="w-full h-full object-cover rounded-t-[12px] rounded-b-none z-10"
+                        className="w-full h-full object-cover rounded-t-[10px] rounded-b-none z-10"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = "none";
                         }}
                       />
                       {/* Fallback Icon if image cannot be fetched directly */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 text-zinc-500 gap-2">
-                        <Gamepad2 className="w-8 h-8 text-zinc-600" />
-                        <span className="text-[11px] font-bold text-zinc-500">Game Thumbnail</span>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 text-zinc-500 gap-1.5">
+                        <Gamepad2 className="w-6 h-6 text-zinc-600" />
+                        <span className="text-[10px] font-bold text-zinc-500">Game Thumbnail</span>
                       </div>
                     </div>
 
-                    {/* Attached Bottom Title Bar: Top 2 Square (0px), Bottom 2 Rounded (12px) */}
-                    <div className="w-full h-11 bg-[#0c0c0c] border-t border-[#222222] flex items-center justify-center px-3 rounded-b-[12px] rounded-t-none">
-                      <span className="font-black text-xs text-white tracking-wide truncate text-center">
+                    {/* Attached Bottom Title Bar: Top 2 Square (0px), Bottom 2 Rounded (10px) */}
+                    <div className="w-full h-8 bg-[#0c0c0c] border-t border-[#222222] flex items-center justify-center px-2 rounded-b-[10px] rounded-t-none">
+                      <span className="font-bold text-[11px] text-white tracking-wide truncate text-center">
                         {g.name}
                       </span>
                     </div>
