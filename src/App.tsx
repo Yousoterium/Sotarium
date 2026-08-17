@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { EarnpasteModal } from "./components/EarnpasteModal";
 import { ProductsPage } from "./components/ProductsPage";
-import { LogsPage, type LogEntry } from "./components/LogsPage";
 
 interface ProviderOption {
   name: string;
@@ -16,51 +15,18 @@ const PROVIDERS: ProviderOption[] = [
 ];
 
 function App() {
-  const [page, setPage] = useState<"home" | "products" | "logs">("home");
+  const [page, setPage] = useState<"home" | "products">("home");
   const [showEarnpaste, setShowEarnpaste] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
   const [comebackStep, setComebackStep] = useState<number>(0);
-  const [logs, setLogs] = useState<LogEntry[]>(() => {
-    try {
-      const saved = localStorage.getItem("sotarium_logs");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const appendLog = (entry: Omit<LogEntry, "id" | "time">) => {
-    const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const time = new Date().toLocaleTimeString();
-    setLogs((prev) => {
-      const updated = [{ id, time, ...entry }, ...prev].slice(0, 200);
-      try {
-        localStorage.setItem("sotarium_logs", JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
-  };
-
-  const clearLogs = () => {
-    setLogs([]);
-    try {
-      localStorage.removeItem("sotarium_logs");
-    } catch {}
-  };
 
   useEffect(() => {
-    document.title = "Sotarium";
+    document.title = "Home";
 
     const path = window.location.pathname;
     const search = window.location.search;
     const params = new URLSearchParams(search);
-    if (path === "/logs") {
-      setPage("logs");
-      return;
-    }
     if (path === "/products") {
       setPage("products");
       return;
@@ -86,10 +52,6 @@ function App() {
     return <ProductsPage onBack={() => { setPage("home"); window.history.replaceState({}, "", "/"); }} />;
   }
 
-  if (page === "logs") {
-    return <LogsPage logs={logs} onBack={() => { setPage("home"); window.history.replaceState({}, "", "/"); }} onClear={clearLogs} />;
-  }
-
   const handleGetKeyClick = () => {
     setSelectedProvider(PROVIDERS[0]);
     setShowEarnpaste(true);
@@ -97,23 +59,26 @@ function App() {
     setComebackStep(0);
   };
 
-  const openLogs = () => {
-    setPage("logs");
-    window.history.pushState({}, "", "/logs");
-  };
-
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#0e0e11] text-white">
-
+      <nav className="relative z-10 flex items-center justify-between px-8 py-5">
+        <div className="flex items-center gap-3">
+          <span className="font-extrabold text-lg tracking-wider text-white">Home</span>
+        </div>
+      </nav>
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6 text-center gap-10">
         <div className="flex flex-col items-center gap-5">
           <img
             src="https://i.imgur.com/qye2L7M.png"
-            alt="Sotarium"
+            alt="Home"
             className="w-20 h-20 object-contain drop-shadow-lg"
           />
-
+          <div className="space-y-3">
+            <h1 className="text-6xl font-black tracking-tight leading-none text-white">
+              Home
+            </h1>
+          </div>
         </div>
 
         <div className="flex flex-col items-center gap-6">
@@ -152,7 +117,6 @@ function App() {
           setShowEarnpaste(false);
         }}
         onCaught={() => {}}
-        onLog={appendLog}
         providerName={selectedProvider.name}
         providerIcon={selectedProvider.icon}
         initialStep={1}
