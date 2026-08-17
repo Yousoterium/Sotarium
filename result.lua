@@ -768,7 +768,7 @@ GamesShowcase.Visible = false
 GamesShowcase.ZIndex = 38
 GamesShowcase.Parent = GamesOverlay
 
--- Attached Game Card with Rounded Corners
+-- Attached Game Card Outer Container
 local GameCard = Instance.new("Frame")
 GameCard.Name = "GameCard"
 GameCard.Size = UDim2.new(1, 0, 1, 0)
@@ -789,20 +789,36 @@ CardStroke.Thickness = 1
 CardStroke.Transparency = 1
 CardStroke.Parent = GameCard
 
--- San Diego Border Roleplay Image Thumbnail (Top rounded by GameCard, bottom square)
+-- San Diego Border Roleplay Image Thumbnail (Top 2 corners rounded, bottom 2 corners square)
 local GameThumbImage = Instance.new("ImageLabel")
 GameThumbImage.Name = "GameThumbImage"
-GameThumbImage.Size = UDim2.new(1, 0, 1, -40)
+GameThumbImage.Size = UDim2.new(1, 0, 1, -42)
 GameThumbImage.Position = UDim2.new(0, 0, 0, 0)
 GameThumbImage.BackgroundTransparency = 1
 GameThumbImage.Image = SanDiegoAssetId
 GameThumbImage.ScaleType = Enum.ScaleType.Crop
 GameThumbImage.ImageTransparency = 1
 GameThumbImage.BorderSizePixel = 0
+GameThumbImage.ClipsDescendants = true
 GameThumbImage.ZIndex = 40
 GameThumbImage.Parent = GameCard
 
--- Attached Bottom Title Bar
+local ThumbCorner = Instance.new("UICorner")
+ThumbCorner.CornerRadius = UDim.new(0, 12)
+ThumbCorner.Parent = GameThumbImage
+
+-- Square filler at the bottom of the thumbnail so only the top 2 corners stay rounded
+local ThumbBottomSquareFiller = Instance.new("Frame")
+ThumbBottomSquareFiller.Name = "ThumbBottomSquareFiller"
+ThumbBottomSquareFiller.Size = UDim2.new(1, 0, 0, 12)
+ThumbBottomSquareFiller.Position = UDim2.new(0, 0, 1, -12)
+ThumbBottomSquareFiller.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
+ThumbBottomSquareFiller.BackgroundTransparency = 1
+ThumbBottomSquareFiller.BorderSizePixel = 0
+ThumbBottomSquareFiller.ZIndex = 40
+ThumbBottomSquareFiller.Parent = GameThumbImage
+
+-- Attached Bottom Title Bar (Top 2 corners square, bottom 2 corners rounded)
 local TitleBar = Instance.new("Frame")
 TitleBar.Name = "TitleBar"
 TitleBar.Size = UDim2.new(1, 0, 0, 42)
@@ -810,8 +826,24 @@ TitleBar.Position = UDim2.new(0, 0, 1, -42)
 TitleBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
 TitleBar.BackgroundTransparency = 1
 TitleBar.BorderSizePixel = 0
+TitleBar.ClipsDescendants = true
 TitleBar.ZIndex = 41
 TitleBar.Parent = GameCard
+
+local TitleBarCorner = Instance.new("UICorner")
+TitleBarCorner.CornerRadius = UDim.new(0, 12)
+TitleBarCorner.Parent = TitleBar
+
+-- Square filler at the top of the title bar so its top 2 corners stay square
+local TitleBarTopSquareFiller = Instance.new("Frame")
+TitleBarTopSquareFiller.Name = "TitleBarTopSquareFiller"
+TitleBarTopSquareFiller.Size = UDim2.new(1, 0, 0, 12)
+TitleBarTopSquareFiller.Position = UDim2.new(0, 0, 0, 0)
+TitleBarTopSquareFiller.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+TitleBarTopSquareFiller.BackgroundTransparency = 1
+TitleBarTopSquareFiller.BorderSizePixel = 0
+TitleBarTopSquareFiller.ZIndex = 41
+TitleBarTopSquareFiller.Parent = TitleBar
 
 local TitleBarDivider = Instance.new("Frame")
 TitleBarDivider.Name = "TitleBarDivider"
