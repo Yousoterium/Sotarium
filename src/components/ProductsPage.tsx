@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Copy, Loader2, Clock, Sparkles, Trophy, ShieldCheck, Zap, ArrowLeft, Key } from "lucide-react";
+import { Copy, Loader2, Clock } from "lucide-react";
 import { saveKeyToDatabase } from "../lib/supabase";
 
 const POLAR_PRODUCT_ID = "1b890555-420e-4ca2-9d00-c59f3b38d67a";
@@ -166,9 +166,9 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
   const hasActiveKey = storedKey !== null && !keyExpired;
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center px-4 py-12 font-sans select-none antialiased">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased">
       
-      {/* Clean Subtle Dot Grid Background */}
+      {/* Clean Subtle Dot Grid Background (Identical to Homepage) */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -177,87 +177,43 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
         }}
       />
 
-      {/* Main Centered Content */}
-      <main className="relative z-10 flex flex-col items-center justify-center text-center gap-7 w-full max-w-lg">
+      {/* Main Centered Content (Identical to Homepage) */}
+      <main className="relative z-10 flex flex-col items-center justify-center px-6 text-center gap-9 py-12">
         
-        {/* Mascot Logo with Back Navigation */}
-        <div className="flex flex-col items-center gap-3">
+        {/* Mascot & Title */}
+        <div className="flex flex-col items-center gap-4">
           <img
             src="https://i.imgur.com/qye2L7M.png"
             alt="Sotarium"
-            className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-md cursor-pointer hover:scale-105 transition-transform"
+            className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-md cursor-pointer hover:scale-105 transition-transform"
             onClick={onBack}
           />
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-            Sotarium VIP
-          </h1>
+
+          <div className="flex flex-col items-center gap-1.5">
+            <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-white">
+              Lifetime Key
+            </h1>
+            <p className="text-sm font-semibold text-zinc-400">
+              $1.50 · Permanent Access (Never Expires)
+            </p>
+          </div>
         </div>
 
         {error && (
-          <div className="w-full max-w-md flex items-center justify-center px-4 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 text-xs font-bold">
+          <div className="w-full max-w-xs flex items-center justify-center px-4 py-2 rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-400 text-xs">
             {error}
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* RoStake-Inspired Hero Promo Card (Wager LB style) */}
-        {/* ========================================================================= */}
-        <div className="group relative w-full rounded-3xl bg-gradient-to-br from-[#2a2214] via-[#1c1810] to-[#12141c] border border-amber-500/30 p-7 shadow-[0_20px_60px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.12)] overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:border-amber-400/60 text-left flex flex-col justify-between min-h-[220px]">
-          
-          {/* Top Pill Tag */}
-          <div className="relative z-10 flex items-center justify-between">
-            <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-[10px] font-black text-amber-400 uppercase tracking-wider">
-              SOTARIUM.COM/PRODUCTS
-            </span>
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 border border-white/10 text-xs font-black text-white">
-              <span className="text-amber-400 font-bold">$1.50</span>
-              <span className="text-[10px] text-zinc-400 uppercase">USD</span>
-            </div>
-          </div>
-
-          {/* Card Headline & Subtitle */}
-          <div className="relative z-10 flex flex-col gap-1.5 my-3 max-w-[300px]">
-            <h3 className="text-2xl sm:text-3xl font-black text-white uppercase italic tracking-tight leading-none drop-shadow-md">
-              PERMANENT ACCESS KEY
-            </h3>
-            <p className="text-xs text-zinc-300 font-medium leading-relaxed">
-              Skip all linkvertise & checkpoint steps forever with instant lifetime activation on all current and future games.
-            </p>
-          </div>
-
-          {/* 3D Trophy / Graphic in Card Background on the Right */}
-          <div className="absolute right-4 bottom-3 sm:right-6 sm:bottom-4 pointer-events-none select-none">
-            <div className="relative flex items-center justify-center">
-              <div className="absolute w-24 h-24 bg-amber-500/20 rounded-full blur-2xl group-hover:scale-125 transition-transform" />
-              <span className="text-7xl sm:text-8xl drop-shadow-[0_12px_24px_rgba(0,0,0,0.8)] transform group-hover:scale-105 group-hover:rotate-6 transition-transform duration-300 inline-block">
-                🏆
-              </span>
-            </div>
-          </div>
-
-          {/* Key Feature Chips */}
-          <div className="relative z-10 flex items-center gap-3 pt-2 border-t border-amber-500/20 text-[11px] font-bold text-amber-300">
-            <div className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Zero Expiry</span>
-            </div>
-            <span>·</span>
-            <div className="flex items-center gap-1">
-              <Zap className="w-3.5 h-3.5" />
-              <span>Instant Delivery</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons Matrix */}
+        {/* Action Buttons: Back and Buy key Side-by-Side */}
         {hasActiveKey ? (
-          <div className="flex flex-col items-center gap-3.5 w-full">
-            <div className="w-full flex items-center justify-between rounded-2xl border border-[#22c55e]/40 bg-[#12151e] px-5 py-3.5 font-mono text-base tracking-widest text-[#22c55e] shadow-md">
-              <span className="truncate mr-2 font-black select-all">{storedKey!.key}</span>
+          <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+            <div className="w-full flex items-center justify-between rounded-full border border-white/[0.12] bg-[#141417] px-5 py-3 font-mono text-sm tracking-widest text-[#1AF513] shadow-md">
+              <span className="truncate mr-2 font-bold select-all">{storedKey!.key}</span>
               <button
                 type="button"
                 onClick={handleCopyKey}
-                className="px-4 py-1.5 rounded-xl bg-[#22c55e]/20 hover:bg-[#22c55e]/30 text-[#22c55e] text-xs font-black uppercase transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                className="px-3 py-1 rounded-full bg-[#1AF513]/20 hover:bg-[#1AF513]/30 text-[#1AF513] text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shrink-0"
               >
                 <Copy className="w-3.5 h-3.5" />
                 {copied ? "Copied!" : "Copy"}
@@ -267,13 +223,13 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
             <button
               type="button"
               onClick={onBack}
-              className="w-full py-3.5 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white"
+              className="w-full py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white"
             >
               Back to Home
             </button>
           </div>
         ) : keyExpired ? (
-          <div className="flex flex-col items-center gap-3.5 w-full">
+          <div className="flex flex-col items-center gap-3 w-full max-w-xs">
             <div className="flex items-center gap-2 text-rose-500 font-bold text-sm">
               <Clock className="w-4 h-4" />
               <span>Key Expired</span>
@@ -282,18 +238,18 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
             <button
               type="button"
               onClick={handleGetNewKey}
-              className="w-full py-3.5 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white"
+              className="w-full py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white"
             >
               Buy New Key ($1.50)
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3.5 w-full">
+          <div className="flex items-center gap-3 w-full max-w-xs">
             {/* Back Button */}
             <button
               type="button"
               onClick={onBack}
-              className="flex-1 py-3.5 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white text-center"
+              className="flex-1 py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white text-center"
             >
               Back
             </button>
@@ -303,16 +259,9 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
               type="button"
               onClick={handleBuy}
               disabled={loading}
-              className="flex-1 py-3.5 px-6 rounded-full border border-white/[0.12] bg-gradient-to-b from-[#222228] to-[#141417] hover:from-[#2e2e36] hover:to-[#1c1c22] hover:border-amber-400/40 transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-amber-300 hover:text-amber-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-center"
             >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin text-amber-300" />
-              ) : (
-                <>
-                  <Key className="w-4 h-4 text-amber-400" />
-                  <span>Buy key ($1.50)</span>
-                </>
-              )}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin text-zinc-300" /> : "Buy key ($1.50)"}
             </button>
           </div>
         )}
