@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Copy, Loader2, Clock } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { saveKeyToDatabase } from "../lib/supabase";
 
 const POLAR_PRODUCT_ID = "1b890555-420e-4ca2-9d00-c59f3b38d67a";
@@ -33,7 +32,7 @@ const clearStoredKey = (): void => {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
-    // Ignore
+    // Ignore storage errors
   }
 };
 
@@ -53,32 +52,30 @@ export function computeKeySignature(g1: string, g2: string): string {
 
 const generateKey = (): string => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const genGroup = () =>
+  const generateGroup = () =>
     Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  const g1 = genGroup();
-  const g2 = genGroup();
-  const g3 = computeKeySignature(g1, g2);
-  return `${g1}-${g2}-${g3}`;
+  const firstGroup = generateGroup();
+  const secondGroup = generateGroup();
+  const signature = computeKeySignature(firstGroup, secondGroup);
+  return `${firstGroup}-${secondGroup}-${signature}`;
 };
 
 async function createCheckoutSession(productId: string): Promise<string> {
-  const res = await fetch(`/api/polar-checkout`, {
+  const response = await fetch("/api/polar-checkout", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       productId,
       successUrl: `${window.location.origin}/products?checkout_success=1`,
     }),
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: "Request failed" }));
-    throw new Error((err as { error?: string }).error ?? "Checkout failed");
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Request failed" }));
+    throw new Error((error as { error?: string }).error ?? "Checkout failed");
   }
 
-  const data = await res.json() as { url?: string; error?: string };
+  const data = await response.json() as { url?: string; error?: string };
   if (data.error) throw new Error(data.error);
   if (!data.url) throw new Error("No checkout URL returned");
   return data.url;
@@ -92,9 +89,10 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [storedKey, setStoredKey] = useState<StoredKey | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
   const [keyExpired, setKeyExpired] = useState(false);
-  const [copied, setCopied] = useState<boolean>(false);
+  const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -103,36 +101,30 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
       const expiry = Date.now() + KEY_DURATION_MS;
       saveStoredKey(key, expiry);
       setStoredKey({ key, expiry });
-      setTimeLeft(KEY_DURATION_MS);
       void saveKeyToDatabase(key, "polar");
       window.history.replaceState({}, "", "/products");
-    } else {
-      const existing = loadStoredKey();
-      if (existing) {
-        const remaining = existing.expiry - Date.now();
-        if (remaining <= 0) {
-          setKeyExpired(true);
-          setStoredKey(existing);
-        } else {
-          setStoredKey(existing);
-          setTimeLeft(remaining);
-        }
-      }
+      return;
     }
+
+    const existing = loadStoredKey();
+    if (!existing) return;
+
+    if (existing.expiry <= Date.now()) {
+      setKeyExpired(true);
+    }
+    setStoredKey(existing);
   }, []);
 
   useEffect(() => {
     if (!storedKey || keyExpired) return;
+
     const interval = setInterval(() => {
-      const remaining = storedKey.expiry - Date.now();
-      if (remaining <= 0) {
-        setTimeLeft(0);
+      if (storedKey.expiry <= Date.now()) {
         setKeyExpired(true);
         clearInterval(interval);
-      } else {
-        setTimeLeft(remaining);
       }
     }, 1000);
+
     return () => clearInterval(interval);
   }, [storedKey, keyExpired]);
 
@@ -142,132 +134,145 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
     try {
       const url = await createCheckoutSession(POLAR_PRODUCT_ID);
       window.location.href = url;
-    } catch (err) {
-      setError((err as Error).message ?? "Something went wrong. Please try again.");
+    } catch (checkoutError) {
+      setError((checkoutError as Error).message ?? "Something went wrong. Please try again.");
       setLoading(false);
     }
   };
 
   const handleCopyKey = () => {
-    if (storedKey) {
-      navigator.clipboard.writeText(storedKey.key).catch(() => {});
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    if (!storedKey) return;
+    navigator.clipboard.writeText(storedKey.key).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleGetNewKey = () => {
     clearStoredKey();
     setStoredKey(null);
     setKeyExpired(false);
-    setTimeLeft(0);
   };
 
-  const hasActiveKey = storedKey !== null && !keyExpired;
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width;
+    const y = (event.clientY - bounds.top) / bounds.height;
+    setTilt({
+      rotateX: (0.5 - y) * 4,
+      rotateY: (x - 0.5) * 5,
+    });
+  };
+
+  const resetHover = () => {
+    setHovered(false);
+    setTilt({ rotateX: 0, rotateY: 0 });
+  };
+
+  const activeKey = storedKey !== null && !keyExpired;
+  const transform = `perspective(1000px) rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg) translateY(${hovered ? -6 : 0}px)`;
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased">
-      
-      {/* Clean Subtle Dot Grid Background (Identical to Homepage) */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.28]"
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#0c0c0e] px-5 py-10 font-sans text-white antialiased sm:px-8">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 opacity-[0.16]"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
-          backgroundSize: "28px 28px"
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
         }}
       />
 
-      {/* Main Centered Content (Identical to Homepage) */}
-      <main className="relative z-10 flex flex-col items-center justify-center px-6 text-center gap-9 py-12">
-        
-        {/* Mascot & Title */}
-        <div className="flex flex-col items-center gap-4">
-          <img
-            src="https://i.imgur.com/qye2L7M.png"
-            alt="Sotarium"
-            className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-md cursor-pointer hover:scale-105 transition-transform"
-            onClick={onBack}
-          />
+      <main className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center justify-center">
+        <div
+          className="group w-full [transform-style:preserve-3d]"
+          onMouseEnter={() => setHovered(true)}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={resetHover}
+          style={{
+            transform,
+            transition: hovered ? "transform 100ms ease-out" : "transform 450ms cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
+          <section className="relative overflow-hidden rounded-3xl border border-white/[0.14] bg-[#121215] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.42)] transition-shadow duration-500 group-hover:shadow-[0_34px_80px_rgba(0,0,0,0.66)] sm:p-8">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/20" />
 
-          <div className="flex flex-col items-center gap-1.5">
-            <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-white">
-              Lifetime Key
-            </h1>
-            <p className="text-sm font-semibold text-zinc-400">
-              $1.50 · Permanent Access (Never Expires)
-            </p>
-          </div>
+            <header className="flex items-center justify-between text-[11px] font-bold tracking-[0.18em] text-zinc-500">
+              <span>SOTARIUM</span>
+              <span>01</span>
+            </header>
+
+            <div className="my-8 h-px bg-white/[0.11]" />
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Permanent access</p>
+              <h1 className="mt-3 text-4xl font-black tracking-[-0.055em] text-white sm:text-5xl">Lifetime Key</h1>
+              <p className="mt-3 text-base font-medium text-zinc-400">$1.50 · One payment</p>
+              <p className="mt-6 max-w-xs text-sm leading-6 text-zinc-500">A single key for uninterrupted access. No subscriptions or renewals.</p>
+            </div>
+
+            <div className="my-8 h-px bg-white/[0.11]" />
+
+            {error && (
+              <p className="mb-4 border border-white/[0.14] bg-white/[0.04] px-4 py-3 text-center text-xs text-zinc-300">
+                {error}
+              </p>
+            )}
+
+            {activeKey ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3 border border-white/[0.12] bg-black/20 px-4 py-3 font-mono text-sm tracking-widest text-zinc-100">
+                  <span className="truncate font-bold select-all">{storedKey!.key}</span>
+                  <button
+                    type="button"
+                    onClick={handleCopyKey}
+                    className="shrink-0 text-xs font-bold text-zinc-400 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  >
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="w-full border border-white/[0.16] bg-white/[0.04] px-5 py-3.5 text-sm font-bold text-zinc-200 transition-colors hover:bg-white/[0.09] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  Back to Home
+                </button>
+              </div>
+            ) : keyExpired ? (
+              <div className="space-y-3">
+                <p className="border border-white/[0.12] bg-white/[0.04] px-4 py-3 text-center text-sm font-bold text-zinc-300">Key Expired</p>
+                <button
+                  type="button"
+                  onClick={handleGetNewKey}
+                  className="w-full border border-white bg-white px-5 py-3.5 text-sm font-extrabold text-black transition-colors hover:bg-zinc-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  Buy New Key · $1.50
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-[0.82fr_1.18fr] gap-3">
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="border border-white/[0.16] bg-white/[0.04] px-4 py-3.5 text-sm font-bold text-zinc-200 transition-colors hover:bg-white/[0.09] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBuy}
+                  disabled={loading}
+                  className="border border-white bg-white px-4 py-3.5 text-sm font-extrabold text-black transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  {loading ? "Opening checkout" : "Buy key · $1.50"}
+                </button>
+              </div>
+            )}
+          </section>
         </div>
-
-        {error && (
-          <div className="w-full max-w-xs flex items-center justify-center px-4 py-2 rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-400 text-xs">
-            {error}
-          </div>
-        )}
-
-        {/* Action Buttons: Back and Buy key Side-by-Side */}
-        {hasActiveKey ? (
-          <div className="flex flex-col items-center gap-3 w-full max-w-xs">
-            <div className="w-full flex items-center justify-between rounded-full border border-white/[0.12] bg-[#141417] px-5 py-3 font-mono text-sm tracking-widest text-[#1AF513] shadow-md">
-              <span className="truncate mr-2 font-bold select-all">{storedKey!.key}</span>
-              <button
-                type="button"
-                onClick={handleCopyKey}
-                className="px-3 py-1 rounded-full bg-[#1AF513]/20 hover:bg-[#1AF513]/30 text-[#1AF513] text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shrink-0"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                {copied ? "Copied!" : "Copy"}
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={onBack}
-              className="w-full py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white"
-            >
-              Back to Home
-            </button>
-          </div>
-        ) : keyExpired ? (
-          <div className="flex flex-col items-center gap-3 w-full max-w-xs">
-            <div className="flex items-center gap-2 text-rose-500 font-bold text-sm">
-              <Clock className="w-4 h-4" />
-              <span>Key Expired</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleGetNewKey}
-              className="w-full py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white"
-            >
-              Buy New Key ($1.50)
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 w-full max-w-xs">
-            {/* Back Button */}
-            <button
-              type="button"
-              onClick={onBack}
-              className="flex-1 py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white text-center"
-            >
-              Back
-            </button>
-
-            {/* Buy key Button */}
-            <button
-              type="button"
-              onClick={handleBuy}
-              disabled={loading}
-              className="flex-1 py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-center"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin text-zinc-300" /> : "Buy key ($1.50)"}
-            </button>
-          </div>
-        )}
-
       </main>
-
     </div>
   );
 };
