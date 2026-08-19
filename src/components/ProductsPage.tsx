@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Check, ArrowLeft, Loader2, Star, Clock, Copy } from "lucide-react";
+import { Check, ArrowLeft, Loader2, Star, Clock, Copy, ShieldCheck, Zap, ShoppingCart, Sparkles } from "lucide-react";
 import { saveKeyToDatabase } from "../lib/supabase";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 const POLAR_PRODUCT_ID = "1b890555-420e-4ca2-9d00-c59f3b38d67a";
 const KEY_DURATION_MS = 24 * 60 * 60 * 1000;
@@ -62,15 +59,6 @@ const generateKey = (): string => {
   const g2 = genGroup();
   const g3 = computeKeySignature(g1, g2);
   return `${g1}-${g2}-${g3}`;
-};
-
-const formatCountdown = (ms: number): string => {
-  if (ms <= 0) return "00:00:00";
-  const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
 async function createCheckoutSession(productId: string): Promise<string> {
@@ -175,129 +163,159 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
     setTimeLeft(0);
   };
 
-  const features = ["Lifetime access", "Never expires"];
+  const features = [
+    "Lifetime permanent access (Zero expiry)",
+    "Instant automatic key delivery",
+    "Bypasses all linkvertise & checkpoint steps",
+    "Auto-injects on all supported games"
+  ];
   const hasActiveKey = storedKey !== null && !keyExpired;
 
   return (
-    <div className="min-h-screen bg-[#0e0e11] text-white flex flex-col items-center justify-center px-6 py-16">
-      <div className="w-full max-w-sm flex flex-col items-center">
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#0a0b0e] text-white flex flex-col items-center justify-center px-4 py-12 font-sans select-none antialiased">
+      
+      {/* Kept Background: Dark Slate with Crisp Dot Grid */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-[0.22]"
+        style={{
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px)",
+          backgroundSize: "28px 28px"
+        }}
+      />
+
+      {/* Main Centered RoStake-style Card */}
+      <main className="relative z-10 flex flex-col items-center justify-center text-center gap-6 w-full max-w-sm">
+        
+        {/* Gaming Tier Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#12141c] border border-[#222533] shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+          <span className="text-[11px] font-black tracking-widest text-zinc-300 uppercase">PERMANENT VIP ACCESS</span>
+        </div>
+
+        {/* Mascot & Title */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative group cursor-pointer active:scale-95 transition-transform duration-200">
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-b from-[#181a24] to-[#10121a] border border-[#262938] shadow-[0_16px_36px_rgba(0,0,0,0.8),inset_0_1px_0_rgba(255,255,255,0.08)] flex items-center justify-center p-2.5">
+              <img
+                src="https://i.imgur.com/qye2L7M.png"
+                alt="Sotarium"
+                className="w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] group-hover:scale-105 transition-transform"
+                onClick={onBack}
+              />
+            </div>
+          </div>
+          
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white uppercase italic drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+            Lifetime Key
+          </h1>
+          <p className="text-xs font-semibold text-zinc-400 max-w-xs leading-relaxed">
+            One-time purchase for permanent unrestricted access to all current and future script hubs.
+          </p>
+        </div>
+
         {error && (
-          <div className="mb-4 w-full flex items-center gap-2 px-4 py-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 text-sm">
+          <div className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 text-xs font-bold">
             {error}
           </div>
         )}
 
-        <div className="flex flex-col items-center gap-3 mb-6">
-          <img
-            src="https://i.imgur.com/qye2L7M.png"
-            alt="Sotarium"
-            className="w-20 h-20 object-contain rounded-lg drop-shadow-lg"
-          />
-          <h1 className="text-2xl font-extrabold tracking-tight text-white">
-            Sotarium
-          </h1>
-        </div>
-
-        <div className="relative w-full flex flex-col gap-6 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#131317] p-7 shadow-2xl text-white">
-          <div className="relative flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#181820]">
-                <Star className="w-5 h-5 text-[#f2f1f4]" />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <h2 className="text-[19px] font-bold tracking-tight text-[#f2f1f4]">
-                  {hasActiveKey ? "Your Key" : "Lifetime"}
-                </h2>
-                <p className="text-zinc-500 text-xs">
-                  {hasActiveKey ? "Never expires" : "Pay once, own forever"}
-                </p>
-              </div>
+        {/* Pricing or Active Key Showcase */}
+        {hasActiveKey ? (
+          <div className="w-full flex flex-col gap-3.5 items-center">
+            <div className="w-full flex items-center justify-between rounded-xl border border-[#10b981]/40 bg-[#12151e] px-4 py-3 font-mono text-base tracking-widest text-[#10b981] shadow-inner">
+              <span className="truncate mr-2 font-black select-all">{storedKey!.key}</span>
+              <button
+                type="button"
+                onClick={handleCopyKey}
+                className="px-3 py-1.5 rounded-lg bg-[#10b981]/20 hover:bg-[#10b981]/30 text-[#10b981] text-xs font-black uppercase transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                {copied ? "COPIED" : "COPY"}
+              </button>
             </div>
+
             <button
               type="button"
               onClick={onBack}
-              aria-label="Back"
-              className="p-1.5 rounded-lg hover:bg-white/5 transition-colors text-zinc-500 hover:text-white"
+              className="w-full py-3.5 px-6 rounded-xl font-black text-sm uppercase tracking-wider text-zinc-100 bg-gradient-to-b from-[#202330] to-[#151722] hover:from-[#262a3a] hover:to-[#1a1d2b] border border-[#2d3244] shadow-[0_4px_0_#0e1017,0_8px_16px_rgba(0,0,0,0.6)] active:translate-y-1 active:shadow-none transition-all duration-150 cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4" />
+              Back to Home
             </button>
           </div>
+        ) : keyExpired ? (
+          <div className="w-full flex flex-col gap-3.5 items-center">
+            <div className="flex items-center gap-2 text-rose-500 font-black text-sm uppercase">
+              <Clock className="w-4 h-4" />
+              <span>Key Expired</span>
+            </div>
 
-          {hasActiveKey ? (
-            <>
-              <div className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#1a1a1e] p-3.5 font-mono text-base tracking-widest text-[#1AF513] shadow-inner">
-                <span className="truncate mr-2 font-bold select-all">{storedKey!.key}</span>
-                <button
-                  type="button"
-                  onClick={handleCopyKey}
-                  className="px-3 py-1.5 rounded-lg bg-[#1AF513]/20 hover:bg-[#1AF513]/30 text-[#1AF513] text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shrink-0"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  {copied ? "Copied!" : "Copy"}
-                </button>
+            <button
+              type="button"
+              onClick={handleGetNewKey}
+              className="w-full py-3.5 px-6 rounded-xl font-black text-sm uppercase tracking-wider text-[#022c22] bg-gradient-to-b from-[#34d399] to-[#10b981] hover:from-[#4ade80] hover:to-[#059669] shadow-[0_4px_0_#047857,0_10px_20px_rgba(16,185,129,0.35)] active:translate-y-1 active:shadow-none transition-all duration-150 cursor-pointer"
+            >
+              Buy New Key
+            </button>
+          </div>
+        ) : (
+          <div className="w-full flex flex-col gap-4 items-center">
+            
+            {/* Price Box with Gaming Styling */}
+            <div className="w-full p-4 rounded-2xl bg-[#12141c] border border-[#222533] flex items-center justify-between shadow-md">
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Total Price</span>
+                <span className="text-xs font-bold text-[#10b981]">One-Time Payment</span>
               </div>
-
-              <div className="w-full flex items-center justify-center gap-2 py-1">
-                <span className="text-sm font-bold tracking-wide text-[#1AF513]">
-                  Lifetime key
-                </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl sm:text-4xl font-black tracking-tight text-white">$1.50</span>
+                <span className="text-xs font-bold text-zinc-400 uppercase">USD</span>
               </div>
+            </div>
 
+            {/* Features List */}
+            <div className="flex flex-col gap-2 w-full text-left px-1">
+              {features.map((f) => (
+                <div key={f} className="flex items-center gap-2 text-xs font-semibold text-zinc-300">
+                  <div className="w-4 h-4 rounded-md bg-[#10b981]/20 flex items-center justify-center shrink-0">
+                    <Check className="w-2.5 h-2.5 text-[#10b981]" strokeWidth={3.5} />
+                  </div>
+                  <span>{f}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Action Buttons Matrix */}
+            <div className="flex items-center gap-3 w-full pt-2">
+              {/* Back Button */}
               <button
                 type="button"
                 onClick={onBack}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-[9px] rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-[26px] py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)] hover:-translate-y-px hover:bg-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_28px_rgba(0,0,0,0.5)] active:translate-y-0"
+                className="flex-1 py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-wider text-zinc-300 bg-gradient-to-b from-[#202330] to-[#151722] hover:from-[#262a3a] hover:to-[#1a1d2b] border border-[#2d3244] shadow-[0_4px_0_#0e1017] active:translate-y-1 active:shadow-none transition-all duration-150 cursor-pointer"
               >
-                Go to homepage
+                Back
               </button>
-            </>
-          ) : keyExpired ? (
-            <>
-              <div className="w-full flex items-center justify-center gap-2 py-2">
-                <Clock className="w-4 h-4 text-rose-500" />
-                <span className="font-mono text-sm font-bold tracking-wider text-rose-500">
-                  Key Expired
-                </span>
-              </div>
 
-              <button
-                type="button"
-                onClick={handleGetNewKey}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-[9px] rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-[26px] py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)] hover:-translate-y-px hover:bg-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_28px_rgba(0,0,0,0.5)] active:translate-y-0"
-              >
-                Buy New Key
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="flex items-end gap-1">
-                <span className="text-5xl font-extrabold tracking-tight text-white">$1.50</span>
-                <span className="text-zinc-500 text-sm mb-2">one-time</span>
-              </div>
-
-              <div className="h-px bg-white/[0.07]" />
-
-              <ul className="flex flex-col gap-2.5">
-                {features.map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm">
-                    <Check className="w-3.5 h-3.5 text-[#1AF513] shrink-0" strokeWidth={3} />
-                    <span className="text-zinc-300">{f}</span>
-                  </li>
-                ))}
-              </ul>
-
+              {/* Buy Button */}
               <button
                 type="button"
                 onClick={handleBuy}
                 disabled={loading}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-[9px] rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-[26px] py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)] hover:-translate-y-px hover:bg-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_28px_rgba(0,0,0,0.5)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-2 py-3.5 px-5 rounded-xl font-black text-xs uppercase tracking-wider text-[#022c22] bg-gradient-to-b from-[#34d399] to-[#10b981] hover:from-[#4ade80] hover:to-[#059669] shadow-[0_4px_0_#047857,0_10px_20px_rgba(16,185,129,0.35)] active:translate-y-1 active:shadow-none transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Buy"}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin text-[#022c22]" /> : (
+                  <>
+                    <ShoppingCart className="w-4 h-4 text-[#022c22]" strokeWidth={2.5} />
+                    <span>Purchase ($1.50)</span>
+                  </>
+                )}
               </button>
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+
+          </div>
+        )}
+
+      </main>
+
     </div>
   );
 };

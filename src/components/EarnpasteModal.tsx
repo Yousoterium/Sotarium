@@ -504,15 +504,23 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const isFullyUnlocked = completedSteps.length >= TOTAL_STEPS || generatedKey !== null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b] pointer-events-auto animate-fadeIn">
+      {/* Full-screen Dot Grid Background */}
+      <div 
+        className="fixed inset-0 pointer-events-none opacity-[0.28]"
+        style={{
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
+          backgroundSize: "28px 28px"
+        }}
+      />
       {!isFullyUnlocked ? (
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="key-modal-title"
-          className="pointer-events-auto animate-modal-in relative flex w-[440px] max-w-full flex-col gap-6 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#131317] p-7 shadow-2xl text-white"
+          className="pointer-events-auto animate-modal-in relative z-10 flex w-[440px] max-w-full flex-col gap-6 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 shadow-2xl text-white"
         >
-          <div className="relative flex items-start justify-between gap-3">
+          <div className="relative z-10 flex items-start justify-between gap-3">
             <div className="flex items-center gap-3.5">
               <ProviderIcon name={providerName} iconUrl={providerIcon} />
               <div className="flex flex-col gap-0.5">
@@ -666,8 +674,8 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
           </div>
         </div>
       ) : (
-        <div className="pointer-events-auto animate-modal-in relative flex w-[440px] max-w-full flex-col gap-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#131317] p-7 shadow-2xl text-white">
-          <header className="relative flex items-center justify-between">
+        <div className="pointer-events-auto animate-modal-in relative z-10 flex w-[440px] max-w-full flex-col gap-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 shadow-2xl text-white">
+          <header className="relative z-10 flex items-center justify-between">
             <div className="flex flex-col gap-0.5">
               <h3 className="text-[19px] font-bold tracking-tight text-[#f2f1f4]">
                 {t.freeKeyReady}

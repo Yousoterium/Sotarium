@@ -1,9 +1,34 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { 
+  Key, 
+  ShoppingCart, 
+  Gamepad2, 
+  ShieldCheck, 
+  Zap, 
+  Flame, 
+  Trophy, 
+  Sparkles, 
+  CheckCircle2, 
+  Clock, 
+  Terminal, 
+  ExternalLink,
+  Code2,
+  Lock,
+  Search,
+  Settings,
+  Bell,
+  ChevronRight,
+  Radio,
+  Copy,
+  Plus,
+  ArrowRight,
+  Monitor,
+  Cpu
+} from "lucide-react";
 import { EarnpasteModal } from "./components/EarnpasteModal";
 import { ProductsPage } from "./components/ProductsPage";
 import { AddGamePage, GameItem } from "./components/AddGamePage";
 import { ScriptsPage } from "./components/ScriptsPage";
-import { computeKeySignature } from "./components/EarnpasteModal";
 
 interface ProviderOption {
   name: string;
@@ -36,25 +61,17 @@ function App() {
     return "home";
   });
 
+  const [showEarnpaste, setShowEarnpaste] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
   const [comebackStep, setComebackStep] = useState<number>(0);
 
-  // Key system simulator state
-  const [enteredKey, setEnteredKey] = useState<string>("");
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [verificationSuccess, setVerificationSuccess] = useState<boolean>(false);
-  const [verificationError, setVerificationError] = useState<string | null>(null);
-  const [isShowingGames, setIsShowingGames] = useState<boolean>(false);
-  const [gamesLoading, setGamesLoading] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" | "key" | "rocket" } | null>(null);
+  // Quick Key Verification
+  const [inputKey, setInputKey] = useState<string>("");
+  const [keyStatusMsg, setKeyStatusMsg] = useState<{ text: string; success: boolean } | null>(null);
+  const [isValidating, setIsValidating] = useState<boolean>(false);
 
-  // Window states
-  const [isMinimized, setIsMinimized] = useState<boolean>(false);
-  const [isMaximized, setIsMaximized] = useState<boolean>(false);
-  const [isClosed, setIsClosed] = useState<boolean>(false);
-
-  // Games state
+  // Games
   const [games, setGames] = useState<GameItem[]>(() => {
     try {
       const saved = localStorage.getItem("sotarium_supported_games");
@@ -63,13 +80,6 @@ function App() {
       return DEFAULT_GAMES;
     }
   });
-
-  const showToast = (text: string, type: "success" | "error" | "key" | "rocket" = "success") => {
-    setToastMessage({ text, type });
-    setTimeout(() => {
-      setToastMessage((prev) => (prev?.text === text ? null : prev));
-    }, 2800);
-  };
 
   const navigateTo = (newPage: "home" | "products" | "add" | "scripts") => {
     setPage(newPage);
@@ -100,12 +110,37 @@ function App() {
 
       window.history.replaceState({}, "", "/lootlabs?verify");
       setSelectedProvider(PROVIDERS[0]);
+      setShowEarnpaste(true);
       setIsModalOpen(true);
       setComebackStep(step);
     }
 
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
+
+  const handleValidateQuickKey = () => {
+    const trimmed = inputKey.trim().toUpperCase();
+    if (!trimmed) return;
+    setIsValidating(true);
+    setKeyStatusMsg(null);
+
+    setTimeout(() => {
+      setIsValidating(false);
+      let isValid = false;
+      if (trimmed === "TEST") isValid = true;
+      else {
+        const parts = trimmed.split("-");
+        if (parts.length === 3 && parts[0].length >= 2 && parts[1].length >= 2 && parts[2].length >= 2) isValid = true;
+        else if (trimmed.length >= 8 && trimmed.length <= 20) isValid = true;
+      }
+
+      if (isValid) {
+        setKeyStatusMsg({ text: "Key Verified · Access Granted", success: true });
+      } else {
+        setKeyStatusMsg({ text: "Invalid Key Format", success: false });
+      }
+    }, 1500);
+  };
 
   if (page === "scripts") {
     return <ScriptsPage onBack={() => navigateTo("home")} />;
@@ -119,297 +154,413 @@ function App() {
     return <ProductsPage onBack={() => navigateTo("home")} />;
   }
 
-  const handleOpenSupportedGames = () => {
-    setIsShowingGames(true);
-    setGamesLoading(true);
-    setTimeout(() => {
-      setGamesLoading(false);
-    }, 1800);
-  };
-
-  const handleCloseSupportedGames = () => {
-    setIsShowingGames(false);
-    setGamesLoading(false);
-  };
-
-  const handleSubmitKey = () => {
-    const trimmed = enteredKey.trim().toUpperCase();
-    if (trimmed.length === 0) {
-      showToast("Please enter a key", "error");
-      return;
-    }
-
-    setIsVerifying(true);
-    setVerificationSuccess(false);
-    setVerificationError(null);
-
-    // Validate key
-    setTimeout(() => {
-      let isValid = false;
-      if (trimmed === "TEST") {
-        isValid = true;
-      } else {
-        const parts = trimmed.split("-");
-        if (parts.length === 3 && parts[0].length >= 2 && parts[1].length >= 2 && parts[2].length >= 2) {
-          isValid = true;
-        } else if (trimmed.length >= 8 && trimmed.length <= 20) {
-          isValid = true;
-        }
-      }
-
-      if (isValid) {
-        setVerificationSuccess(true);
-        showToast("Access granted", "success");
-        setTimeout(() => {
-          setIsVerifying(false);
-          setVerificationSuccess(false);
-          showToast("Roblox Hub Loaded!", "rocket");
-        }, 1800);
-      } else {
-        setIsVerifying(false);
-        showToast("Invalid key", "error");
-      }
-    }, 2200);
+  const handleGetKeyClick = () => {
+    setSelectedProvider(PROVIDERS[0]);
+    setShowEarnpaste(true);
+    setIsModalOpen(true);
+    setComebackStep(0);
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0a0a0c] text-white flex flex-col items-center justify-center font-sans select-none">
+    <div className="min-h-screen bg-[#0e1015] text-[#dcdfe6] font-sans flex flex-col antialiased selection:bg-[#22c55e]/30 selection:text-white">
       
-      {/* Toast Notification Container matching Roblox UI */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 flex flex-col gap-2 pointer-events-none animate-slide-in">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#141416] border border-zinc-800 shadow-2xl text-sm font-semibold">
-            {toastMessage.type === "success" ? (
-              <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-black">✓</div>
-            ) : toastMessage.type === "error" ? (
-              <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-black">✕</div>
-            ) : (
-              <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center text-white text-xs font-black">🔑</div>
-            )}
-            <span className="text-zinc-200">{toastMessage.text}</span>
+      {/* ========================================================================= */}
+      {/* TOPBAR (RoStake Style) */}
+      {/* ========================================================================= */}
+      <header className="h-16 bg-[#141720] border-b border-[#1f2330] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 shrink-0">
+        
+        {/* Left Branding */}
+        <div className="flex items-center gap-6">
+          <div 
+            onClick={() => navigateTo("home")}
+            className="flex items-center gap-3 cursor-pointer select-none group"
+          >
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#161922] to-[#222736] border border-[#2b3144] p-1.5 flex items-center justify-center shadow-md group-hover:border-[#22c55e]/50 transition-colors">
+              <img src="https://i.imgur.com/qye2L7M.png" alt="Sotarium" className="w-full h-full object-contain" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-black italic tracking-wider text-lg text-white group-hover:text-[#22c55e] transition-colors leading-none">
+                SOTARIUM
+              </span>
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest leading-tight">
+                EXECUTION HUB
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Telemetry Ticker */}
+          <div className="hidden lg:flex items-center gap-2.5 text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1a1d28] border border-[#232736]">
+              <div className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+              <span className="text-[11px] font-black text-emerald-400">UNDETECTED</span>
+            </div>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1a1d28] border border-[#232736]">
+              <span className="text-xs">🛡️</span>
+              <span className="text-[11px] font-black text-cyan-400">ANTI-AFK ACTIVE</span>
+            </div>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1a1d28] border border-[#232736]">
+              <span className="text-xs">🎮</span>
+              <span className="text-[11px] font-black text-amber-400">{games.length} GAMES SUPPORTED</span>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Main Exact Replica Window (720px by 440px) */}
-      {!isClosed ? (
-        <div 
-          className={`relative w-[720px] max-w-[94vw] bg-[#0f0f11] border border-zinc-800/90 rounded-[14px] shadow-[0_30px_90px_rgba(0,0,0,0.9)] overflow-hidden transition-all duration-300 ${
-            isMaximized ? "w-[96vw] h-[92vh] max-w-none rounded-2xl" : isMinimized ? "h-[42px]" : "h-[440px]"
-          }`}
-        >
-          {/* Top Control Bar */}
-          <div className="relative z-40 w-full h-[42px] px-4 flex items-center justify-between border-b border-transparent">
-            {/* Title / Status */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold tracking-wider text-zinc-500 uppercase">Sotarium</span>
+        {/* Right Top Actions */}
+        <div className="flex items-center gap-3">
+          
+          {/* Primary Action Button: GET FREE KEY */}
+          <button
+            type="button"
+            onClick={handleGetKeyClick}
+            className="px-5 py-2 rounded-xl font-black text-xs uppercase tracking-wider text-[#022c22] bg-gradient-to-b from-[#4ade80] to-[#22c55e] hover:from-[#86efac] hover:to-[#16a34a] shadow-[0_3px_0_#15803d,0_8px_16px_rgba(34,197,94,0.35)] active:translate-y-0.5 active:shadow-none transition-all duration-150 cursor-pointer flex items-center gap-1.5"
+          >
+            <Key className="w-3.5 h-3.5 text-[#022c22]" strokeWidth={3} />
+            <span>Get Free Key</span>
+          </button>
+
+          {/* Secondary Buy Key Action */}
+          <button
+            type="button"
+            onClick={() => navigateTo("products")}
+            className="px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider text-zinc-100 bg-gradient-to-b from-[#252a3a] to-[#1a1d28] hover:from-[#2e3448] hover:to-[#202432] border border-[#32394e] shadow-[0_3px_0_#12141c] active:translate-y-0.5 active:shadow-none transition-all duration-150 cursor-pointer flex items-center gap-1.5"
+          >
+            <ShoppingCart className="w-3.5 h-3.5 text-zinc-300" />
+            <span className="hidden sm:inline">Buy Lifetime ($1.50)</span>
+            <span className="sm:hidden">Buy ($1.50)</span>
+          </button>
+        </div>
+
+      </header>
+
+      {/* ========================================================================= */}
+      {/* 2-COLUMN ROSTAKE DASHBOARD LAYOUT */}
+      {/* ========================================================================= */}
+      <div className="flex-1 flex overflow-hidden">
+        
+        {/* ========================================================================= */}
+        {/* LEFT SIDEBAR (RoStake Style) */}
+        {/* ========================================================================= */}
+        <aside className="w-64 bg-[#12141c] border-r border-[#1f2330] p-4 hidden md:flex flex-col justify-between shrink-0 overflow-y-auto">
+          
+          <div className="flex flex-col gap-6">
+            
+            {/* Nav Group 1: HUBS & SCRIPTS */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 px-3">
+                HUB DIRECTORY
+              </span>
+              
+              <button
+                type="button"
+                onClick={() => navigateTo("home")}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1a1d28] border border-[#262b3a] shadow-sm cursor-pointer"
+              >
+                <Gamepad2 className="w-4 h-4 text-[#22c55e]" />
+                <span>Supported Games</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigateTo("scripts")}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-[#181b24] transition-colors cursor-pointer"
+              >
+                <Code2 className="w-4 h-4 text-cyan-400" />
+                <span>Scripts Studio</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigateTo("add")}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-[#181b24] transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4 text-amber-400" />
+                <span>Add Custom Game</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigateTo("products")}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-[#181b24] transition-colors cursor-pointer"
+              >
+                <ShoppingCart className="w-4 h-4 text-purple-400" />
+                <span>Lifetime VIP Store</span>
+              </button>
             </div>
 
-            {/* Window Controls */}
-            <div className="flex items-center gap-4 text-zinc-400">
-              <button
-                type="button"
-                onClick={() => setIsMinimized(!isMinimized)}
-                className="w-4 h-4 flex items-center justify-center hover:text-white transition-colors cursor-pointer"
-                title="Minimize"
-              >
-                <div className="w-3 h-[2px] bg-current rounded-full" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsMaximized(!isMaximized)}
-                className="w-4 h-4 flex items-center justify-center hover:text-white transition-colors cursor-pointer"
-                title="Fullscreen"
-              >
-                <div className="w-3 h-3 border-[1.5px] border-current rounded-[2px]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsClosed(true)}
-                className="w-4 h-4 flex items-center justify-center hover:text-red-400 text-sm font-bold transition-colors cursor-pointer leading-none"
-                title="Close"
-              >
-                ✕
-              </button>
+            {/* RoStake-style Promo Card */}
+            <div 
+              onClick={() => navigateTo("products")}
+              className="relative p-4 rounded-2xl bg-gradient-to-br from-[#1e1b12] via-[#161510] to-[#12141c] border border-amber-500/30 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors group shadow-lg"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/30 text-[9px] font-black text-amber-400 uppercase tracking-wide">
+                  VIP LIFETIME
+                </span>
+                <span className="text-xs font-black text-white">$1.50</span>
+              </div>
+              <h4 className="text-xs font-black text-white group-hover:text-amber-300 transition-colors leading-tight">
+                Skip All Checkpoints Forever
+              </h4>
+              <p className="text-[10px] text-zinc-400 mt-1">Instant automatic activation key.</p>
             </div>
+
+            {/* Nav Group 2: COMMUNITY */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 px-3">
+                COMMUNITY & INTEGRITY
+              </span>
+              
+              <a
+                href="https://discord.gg"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-[#181b24] transition-colors"
+              >
+                <Terminal className="w-4 h-4 text-[#5865F2]" />
+                <span>Discord Community</span>
+              </a>
+
+              <div className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white hover:bg-[#181b24] transition-colors cursor-pointer">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>Anti-Ban Protection</span>
+              </div>
+            </div>
+
           </div>
 
-          {/* Center Content (Identical to in-game screenshot) */}
-          {!isMinimized && (
-            <div className="relative w-full h-[calc(100%-42px)] flex flex-col items-center justify-center p-6">
-              
-              <div className="w-[320px] max-w-full flex flex-col items-center text-center gap-3.5">
-                
-                {/* Title */}
-                <h1 className="text-[22px] font-black tracking-tight text-white mb-1">
-                  Get your access key
-                </h1>
+          {/* Bottom Version */}
+          <div className="pt-4 border-t border-[#1f2330] flex items-center justify-between text-xs font-bold text-zinc-500">
+            <span>© 2026 Sotarium</span>
+            <span className="text-emerald-400 font-mono">v2.4</span>
+          </div>
 
-                {/* Key Input Box */}
-                <div className="w-full h-11 bg-[#141416] border border-[#222225] rounded-[10px] flex items-center px-3.5 focus-within:border-zinc-500 transition-colors">
-                  <input
-                    type="text"
-                    placeholder="Key"
-                    value={enteredKey}
-                    onChange={(e) => setEnteredKey(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSubmitKey()}
-                    className="w-full bg-transparent text-sm font-medium text-zinc-100 placeholder-zinc-500 outline-none"
-                  />
-                </div>
+        </aside>
 
-                {/* Side-by-side Buttons: Submit + Get Key */}
-                <div className="w-full flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={handleSubmitKey}
-                    className={`flex-1 h-11 rounded-[10px] font-black text-sm transition-all duration-200 cursor-pointer ${
-                      enteredKey.trim().length > 0
-                        ? "bg-white text-black hover:bg-zinc-100 shadow-md"
-                        : "bg-[#4a4a50] text-[#141416] hover:bg-[#585860]"
-                    }`}
-                  >
-                    Submit
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedProvider(PROVIDERS[0]);
-                      setIsModalOpen(true);
-                      setComebackStep(0);
-                    }}
-                    className="flex-1 h-11 rounded-[10px] font-black text-sm bg-[#141416] hover:bg-[#1c1c20] border border-[#26262a] text-zinc-200 transition-all cursor-pointer shadow-sm"
-                  >
-                    Get Key
-                  </button>
-                </div>
-
-                {/* Full Width Button: Supported Games */}
-                <button
-                  type="button"
-                  onClick={handleOpenSupportedGames}
-                  className="w-full h-11 rounded-[10px] font-black text-sm bg-[#141416] hover:bg-[#1c1c20] border border-[#26262a] text-zinc-300 hover:text-white transition-all cursor-pointer shadow-sm"
-                >
-                  Supported Games
-                </button>
+        {/* ========================================================================= */}
+        {/* MAIN DASHBOARD CONTENT */}
+        {/* ========================================================================= */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-6 max-w-6xl">
+          
+          {/* Welcome User Hero Bar */}
+          <div className="p-5 rounded-2xl bg-[#141720] border border-[#202534] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#1a1d28] to-[#12141c] border border-[#282d3e] p-2 flex items-center justify-center shadow-inner">
+                <img src="https://i.imgur.com/qye2L7M.png" alt="Sotarium" className="w-full h-full object-contain" />
               </div>
-
-              {/* Validation Animation Overlay (100% Identical to in-game) */}
-              {isVerifying && (
-                <div className="absolute inset-0 z-30 bg-[#0f0f11] flex flex-col items-center justify-center animate-fade-in select-none">
-                  
-                  {/* Spinner or Success Checkmark */}
-                  {!verificationSuccess ? (
-                    <div className="relative w-12 h-12 flex items-center justify-center mb-5">
-                      <div className="w-10 h-10 border-[3px] border-white/20 border-t-white rounded-full animate-spin" />
-                    </div>
-                  ) : (
-                    <div className="relative w-13 h-13 rounded-full bg-[#22d740] flex items-center justify-center mb-5 shadow-[0_0_20px_rgba(34,215,64,0.5)] animate-spring-pop">
-                      <span className="text-white font-black text-2xl">✓</span>
-                    </div>
-                  )}
-
-                  {/* Centered Bold Gotham Black Status Text */}
-                  <span className={`text-[15px] font-black tracking-wide transition-colors ${
-                    verificationSuccess ? "text-[#2ee660]" : "text-zinc-200"
-                  }`}>
-                    {verificationSuccess ? "Key Verified!" : "Validating key..."}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-black text-white">Sotarium Universal Hub</h2>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-[#22c55e] text-[10px] font-black uppercase">
+                    ONLINE
                   </span>
                 </div>
-              )}
+                <p className="text-xs text-zinc-400 font-medium">Automatic Place ID game resolution with built-in Anti-AFK engine</p>
+              </div>
+            </div>
 
-              {/* Supported Games Screen Overlay */}
-              {isShowingGames && (
-                <div className="absolute inset-0 z-30 bg-[#0c0c0e] flex flex-col p-4 animate-fade-in">
-                  
-                  {/* Top-Left Back Button */}
-                  <div className="flex items-center justify-between pb-3 border-b border-zinc-800/60">
-                    <button
-                      type="button"
-                      onClick={handleCloseSupportedGames}
-                      className="px-4 py-1.5 rounded-lg bg-[#16161a] hover:bg-[#222228] border border-zinc-800 text-xs font-bold text-zinc-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
-                    >
-                      <span>←</span> Back
-                    </button>
-                    <span className="text-xs font-bold text-zinc-400">Supported Games</span>
+            {/* Quick Actions */}
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleGetKeyClick}
+                className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-[#22c55e] hover:bg-[#4ade80] text-[#022c22] font-black text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-md"
+              >
+                Get Free Key
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTo("products")}
+                className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-[#1a1d28] hover:bg-[#222736] border border-[#2b3144] text-zinc-200 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                Buy Lifetime ($1.50)
+              </button>
+            </div>
+          </div>
+
+          {/* 3 RoStake-style 3D Feature Banners */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Banner 1: FREE KEY CHECKPOINT */}
+            <div 
+              onClick={handleGetKeyClick}
+              className="relative p-5 rounded-2xl bg-gradient-to-br from-[#122822] via-[#0e1c18] to-[#12141c] border border-[#22c55e]/30 overflow-hidden shadow-lg cursor-pointer hover:border-[#22c55e] transition-all group flex flex-col justify-between min-h-[140px]"
+            >
+              <div className="relative z-10 flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">FREE ACCESS</span>
+                <h3 className="text-lg font-black text-white group-hover:text-emerald-300 transition-colors uppercase leading-tight">
+                  GET FREE ACCESS KEY
+                </h3>
+                <p className="text-[11px] text-zinc-400">Complete quick checkpoint & unlock all games.</p>
+              </div>
+              <div className="relative z-10 pt-2 flex items-center text-xs font-black text-emerald-400 group-hover:translate-x-1 transition-transform">
+                <span>UNLOCK KEY NOW</span>
+                <ChevronRight className="w-4 h-4 ml-0.5" />
+              </div>
+              <div className="absolute -right-4 -bottom-4 text-6xl opacity-20 pointer-events-none group-hover:scale-110 transition-transform">
+                🔑
+              </div>
+            </div>
+
+            {/* Banner 2: LIFETIME STORE */}
+            <div 
+              onClick={() => navigateTo("products")}
+              className="relative p-5 rounded-2xl bg-gradient-to-br from-[#2a2416] via-[#1a1710] to-[#12141c] border border-amber-500/30 overflow-hidden shadow-lg cursor-pointer hover:border-amber-400 transition-all group flex flex-col justify-between min-h-[140px]"
+            >
+              <div className="relative z-10 flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">PERMANENT VIP ACCESS</span>
+                <h3 className="text-lg font-black text-white group-hover:text-amber-300 transition-colors uppercase leading-tight">
+                  GET LIFETIME KEY
+                </h3>
+                <p className="text-[11px] text-zinc-400">Never do another checkpoint step forever ($1.50).</p>
+              </div>
+              <div className="relative z-10 pt-2 flex items-center text-xs font-black text-amber-400 group-hover:translate-x-1 transition-transform">
+                <span>BUY VIP ACCESS</span>
+                <ChevronRight className="w-4 h-4 ml-0.5" />
+              </div>
+              <div className="absolute -right-4 -bottom-4 text-6xl opacity-20 pointer-events-none group-hover:scale-110 transition-transform">
+                ⭐
+              </div>
+            </div>
+
+            {/* Banner 3: SCRIPTS STUDIO */}
+            <div 
+              onClick={() => navigateTo("scripts")}
+              className="relative p-5 rounded-2xl bg-gradient-to-br from-[#181c2e] via-[#121524] to-[#12141c] border border-indigo-500/30 overflow-hidden shadow-lg cursor-pointer hover:border-indigo-400 transition-all group flex flex-col justify-between min-h-[140px]"
+            >
+              <div className="relative z-10 flex flex-col gap-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400">SCRIPT CREATOR</span>
+                <h3 className="text-lg font-black text-white group-hover:text-indigo-300 transition-colors uppercase leading-tight">
+                  SCRIPTS STUDIO
+                </h3>
+                <p className="text-[11px] text-zinc-400">Generate clean Luau payloads with instant copy.</p>
+              </div>
+              <div className="relative z-10 pt-2 flex items-center text-xs font-black text-indigo-400 group-hover:translate-x-1 transition-transform">
+                <span>OPEN STUDIO</span>
+                <ChevronRight className="w-4 h-4 ml-0.5" />
+              </div>
+              <div className="absolute -right-4 -bottom-4 text-6xl opacity-20 pointer-events-none group-hover:scale-110 transition-transform">
+                ⚡
+              </div>
+            </div>
+
+          </div>
+
+          {/* ========================================================================= */}
+          {/* SUPPORTED GAMES SHOWCASE GRID */}
+          {/* ========================================================================= */}
+          <div className="flex flex-col gap-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-[#22c55e]" />
+                <h3 className="text-sm font-black text-white uppercase tracking-wide">
+                  Supported Games Directory
+                </h3>
+              </div>
+              <span className="text-xs font-bold text-zinc-500">Auto-Detects Game by Place ID</span>
+            </div>
+
+            {/* Game Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {games.map((g) => (
+                <div
+                  key={g.id}
+                  onClick={handleGetKeyClick}
+                  className="group relative rounded-2xl bg-[#141720] border border-[#202534] hover:border-[#22c55e]/60 overflow-hidden flex flex-col shadow-md transition-all duration-200 cursor-pointer hover:-translate-y-1"
+                >
+                  <div className="w-full h-36 bg-[#0c0d12] overflow-hidden relative">
+                    <img
+                      src={g.imageUrl}
+                      alt={g.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                    <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-black text-[#22c55e] uppercase">
+                      ACTIVE & WORKING
+                    </div>
                   </div>
 
-                  {/* Loading Phase */}
-                  {gamesLoading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                      <div className="w-8 h-8 border-[2.5px] border-white/20 border-t-white rounded-full animate-spin" />
-                      <span className="text-sm font-bold text-zinc-300">Loading supported games...</span>
+                  <div className="p-3.5 flex flex-col gap-1.5 bg-[#161922]">
+                    <span className="font-extrabold text-sm text-white truncate group-hover:text-[#22c55e] transition-colors">
+                      {g.name}
+                    </span>
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                      <span>Place ID: {g.placeId || "136020512003847"}</span>
+                      <span className="text-[#22c55e] font-bold">Auto-Inject</span>
                     </div>
-                  ) : (
-                    /* 3-Column Games Showcase Grid matching in-game script */
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-2 overflow-y-auto mt-2">
-                      {games.map((g) => (
-                        <div
-                          key={g.id}
-                          className="rounded-xl bg-[#141418] border border-zinc-800 overflow-hidden flex flex-col shadow-md"
-                        >
-                          <div className="w-full h-24 bg-[#0a0a0c] overflow-hidden">
-                            <img
-                              src={g.imageUrl}
-                              alt={g.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = "none";
-                              }}
-                            />
-                          </div>
-                          <div className="p-2.5 flex flex-col bg-[#101014] border-t border-zinc-800">
-                            <span className="text-xs font-bold text-white truncate text-center">
-                              {g.name}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
+                  </div>
                 </div>
-              )}
+              ))}
 
+              {/* Add Custom Game Card */}
+              <div
+                onClick={() => navigateTo("add")}
+                className="group rounded-2xl bg-[#141720]/60 border border-dashed border-[#282e40] hover:border-[#22c55e] p-6 flex flex-col items-center justify-center text-center gap-2.5 cursor-pointer transition-all min-h-[180px]"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-[#1a1d28] border border-[#262b3a] flex items-center justify-center text-zinc-400 group-hover:text-[#22c55e] group-hover:border-[#22c55e] transition-colors">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-black text-zinc-300 group-hover:text-white uppercase tracking-wider">
+                    Add Custom Game
+                  </span>
+                  <span className="text-[11px] text-zinc-500">Configure Place ID & script payload</span>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
 
-        </div>
-      ) : (
-        /* Reopen Window Button */
-        <button
-          type="button"
-          onClick={() => setIsClosed(false)}
-          className="px-6 py-3 rounded-xl bg-[#141418] hover:bg-[#1e1e24] border border-zinc-800 font-bold text-sm text-zinc-300 hover:text-white transition-all shadow-xl cursor-pointer"
-        >
-          Open Sotarium Hub UI
-        </button>
-      )}
+          {/* ========================================================================= */}
+          {/* SYSTEM ARCHITECTURE & INTEGRITY CARDS */}
+          {/* ========================================================================= */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
+            <div className="p-4 rounded-2xl bg-[#141720] border border-[#202534] flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#22c55e]" />
+                <h4 className="text-xs font-black text-white uppercase">Cryptographic Signature</h4>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Zero external database dependencies. Instant dual-channel token validation directly inside Roblox Luau.
+              </p>
+            </div>
 
-      {/* Navigation Quick Links (Buy Key & Scripts) */}
-      <div className="fixed bottom-6 flex items-center gap-3 text-xs font-bold text-zinc-500">
-        <button
-          type="button"
-          onClick={() => navigateTo("products")}
-          className="px-4 py-2 rounded-full bg-[#121215] hover:bg-[#1a1a20] border border-zinc-800 text-zinc-400 hover:text-white transition-all cursor-pointer"
-        >
-          Buy Permanent Key
-        </button>
-        <button
-          type="button"
-          onClick={() => navigateTo("scripts")}
-          className="px-4 py-2 rounded-full bg-[#121215] hover:bg-[#1a1a20] border border-zinc-800 text-zinc-400 hover:text-white transition-all cursor-pointer"
-        >
-          Scripts Studio
-        </button>
+            <div className="p-4 rounded-2xl bg-[#141720] border border-[#202534] flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <Radio className="w-4 h-4 text-cyan-400" />
+                <h4 className="text-xs font-black text-white uppercase">Anti-AFK & Telemetry</h4>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Automated idle movement prevents the 20-minute Roblox kick with live telemetry tracking.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#141720] border border-[#202534] flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-amber-400" />
+                <h4 className="text-xs font-black text-white uppercase">Multi-Place Injection</h4>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed">
+                Resolves the executing game's Place ID in real-time and loads the exact target script payload seamlessly.
+              </p>
+            </div>
+          </div>
+
+        </main>
+
       </div>
 
-      {/* Earnpaste / Lootlabs Checkpoint Modal */}
+      {/* ========================================================================= */}
+      {/* EARNPASTE / LOOTLABS MODAL */}
+      {/* ========================================================================= */}
       <EarnpasteModal
         key={selectedProvider.name}
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
+          setShowEarnpaste(false);
         }}
         onCaught={() => {}}
         providerName={selectedProvider.name}
@@ -418,30 +569,6 @@ function App() {
         comebackStep={comebackStep}
       />
 
-      <style>{`
-        @keyframes springPop {
-          0% { transform: scale(0) rotate(-45deg); opacity: 0; }
-          70% { transform: scale(1.15) rotate(5deg); opacity: 1; }
-          100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-        @keyframes fadeIn {
-          0% { opacity: 0; }
-          100% { opacity: 1; }
-        }
-        @keyframes slideIn {
-          0% { transform: translateY(-10px); opacity: 0; }
-          100% { transform: translateY(0); opacity: 1; }
-        }
-        .animate-spring-pop {
-          animation: springPop 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.25s ease-out both;
-        }
-        .animate-slide-in {
-          animation: slideIn 0.25s ease-out both;
-        }
-      `}</style>
     </div>
   );
 }
