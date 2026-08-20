@@ -424,52 +424,43 @@ local function showLifetime()
 end
 
 local function validateKey(key, onResult)
-    if key == "test" then onResult(true, "Test key accepted.", 86400); return end
     local norm = normalizeKey(key)
-    if not norm:match("^[A-Z0-9][A-Z0-9][A-Z0-9]%-[A-Z0-9][A-Z0-9][A-Z0-9]%-[A-Z0-9][A-Z0-9][A-Z0-9]$") then onResult(false, "Key Invalid", 0); return end
-    if not hasHttp() then onResult(false, "Key Invalid", 0); return end
-    setStatus("Validating...")
+    if not norm:match("^[A-Z0-9][A-Z0-9][A-Z0-9]%-[A-Z0-9][A-Z0-9][A-Z0-9]%-[A-Z0-9][A-Z0-9][A-Z0-9]$") then
+        onResult(false, "Key Invalid", 0)
+        return
+    end
+    if not hasHttp() then
+        onResult(false, "Could not verify key. Please try again.", 0)
+        return
+    end
+
+    setStatus("Verifying...")
     local accountId = tostring(LocalPlayer and LocalPlayer.UserId or "0")
     local accountName = tostring(LocalPlayer and LocalPlayer.Name or "unknown")
-    local ok, body = safePost(VALIDATE_URL, { key = norm, roblox_id = accountId, roblox_username = accountName })
+    local ok, body = safePost(VALIDATE_URL, {
+        key = norm,
+        roblox_id = accountId,
+        roblox_username = accountName,
+    })
+
     if ok and type(body) == "string" then
         local decOk, data = pcall(function() return HttpService:JSONDecode(body) end)
-        if decOk and type(data) == "table" and (data.valid == true or data.status == "success") then
-            local rem = data.remaining_seconds
-            local isLifetime = data.lifetime == true or rem == nil or tostring(rem) == "null"
-            if isLifetime then onResult(true, "Access granted.", nil) else onResult(true, "Access granted.", tonumber(rem) or 86400) end
+        if decOk and type(data) == "table" then
+            if data.valid == true then
+                local remaining = data.remaining_seconds
+                if remaining == nil or tostring(remaining) == "null" then
+                    onResult(true, data.message or "Access granted.", nil)
+                else
+                    onResult(true, data.message or "Access granted.", tonumber(remaining) or 0)
+                end
+                return
+            end
+            onResult(false, data.message or "Key Invalid", 0)
             return
         end
     end
-    local queryUrl = SUPABASE_PROJECT_URL .. "/rest/v1/keys?key_string=eq." .. norm .. "&select=id,key_string,expires_at,is_products_key"
-    local reqFn = request or (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request)
-    local headers = { ["apikey"] = SUPABASE_ANON_KEY, ["Authorization"] = "Bearer " .. SUPABASE_ANON_KEY, ["Accept"] = "application/json" }
-    if reqFn then
-        local s, res = pcall(reqFn, { Url = queryUrl, Method = "GET", Headers = headers })
-        if s and res then
-            local respBody = type(res) == "table" and res.Body or res
-            if type(respBody) == "string" then
-                local decOk, data = pcall(function() return HttpService:JSONDecode(respBody) end)
-                if decOk and type(data) == "table" and #data > 0 then
-                    local rec = data[1]
-                    local expiresAtIso = rec.expires_at
-                    local isLifetime = rec.is_products_key == true or not expiresAtIso or expiresAtIso == ""
-                    if isLifetime then onResult(true, "Access granted.", nil); return end
-                    local y, m, d, h, min, sec = tostring(expiresAtIso):match("(%d+)-(%d+)-(%d+)T(%d+):(%d+):(%d+)")
-                    if y and m and d and h and min and sec then
-                        local expireTime = os.time({ year = tonumber(y), month = tonumber(m), day = tonumber(d), hour = tonumber(h), min = tonumber(min), sec = tonumber(sec) })
-                        local remainingSec = expireTime - os.time()
-                        if remainingSec <= 0 then onResult(false, "Key Expired", 0); return end
-                        onResult(true, "Access granted.", remainingSec)
-                        return
-                    end
-                    onResult(true, "Access granted.", 86400)
-                    return
-                end
-            end
-        end
-    end
-    onResult(false, "Key Invalid", 0)
+
+    onResult(false, "Could not verify key. Please try again.", 0)
 end
 
 CloseBtn.MouseButton1Click:Connect(function() task.wait(0.1); ScreenGui:Destroy() end)

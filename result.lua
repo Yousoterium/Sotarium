@@ -1238,25 +1238,60 @@ local function computeKeySignature(g1, g2)
     return c1 .. c2 .. c3
 end
 
+local KEY_VERIFY_URL = "https://sotarium.vercel.app/api/verify-key"
+
 local function verifyKeyRemote(keyToVerify)
     local normalized = keyToVerify:gsub("%s+", ""):upper()
-    
-    -- Built-in Developer Test Key
-    if normalized == "TEST" then
-        return true, "Access granted"
+    if normalized == "" then
+        return false, "Please enter a key"
     end
 
-    -- Universal Website-Generated Key Validator (Supports all formats & cryptographic signatures)
-    local parts = normalized:split("-")
-    if #parts == 3 and #parts[1] >= 2 and #parts[2] >= 2 and #parts[3] >= 2 then
-        return true, "Access granted"
+    local player = Players.LocalPlayer
+    if not player then
+        return false, "Roblox account unavailable"
     end
 
-    if #normalized >= 8 and #normalized <= 20 then
-        return true, "Access granted"
+    local requestOptions = {
+        Url = KEY_VERIFY_URL,
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = HttpService:JSONEncode({
+            key = normalized,
+            roblox_id = tostring(player.UserId),
+            roblox_username = tostring(player.Name)
+        })
+    }
+
+    local ok, response = pcall(function()
+        if syn and syn.request then
+            return syn.request(requestOptions)
+        elseif http and http.request then
+            return http.request(requestOptions)
+        elseif http_request then
+            return http_request(requestOptions)
+        elseif request then
+            return request(requestOptions)
+        end
+        return nil
+    end)
+
+    if not ok or not response or response.StatusCode ~= 200 or type(response.Body) ~= "string" then
+        return false, "Could not verify key. Please try again."
     end
-    
-    return false, "Invalid key"
+
+    local decodedOk, result = pcall(function()
+        return HttpService:JSONDecode(response.Body)
+    end)
+
+    if not decodedOk or type(result) ~= "table" then
+        return false, "Could not verify key. Please try again."
+    end
+
+    if result.valid == true then
+        return true, result.message or "Access granted"
+    end
+
+    return false, result.message or "Key Invalid"
 end
 
 -- ===========================================
@@ -1343,14 +1378,16 @@ SuccessIcon.Parent = SuccessBadge
 
 local OverlayStatus = Instance.new("TextLabel")
 OverlayStatus.Name = "OverlayStatus"
-OverlayStatus.Size = UDim2.new(1, 0, 0, 28)
-OverlayStatus.Position = UDim2.new(0.5, 0, 0.58, 0)
+OverlayStatus.Size = UDim2.new(1, -40, 0, 32)
+OverlayStatus.Position = UDim2.new(0.5, 0, 0.53, 0)
 OverlayStatus.AnchorPoint = Vector2.new(0.5, 0.5)
 OverlayStatus.BackgroundTransparency = 1
 OverlayStatus.Font = Enum.Font.GothamBlack
-OverlayStatus.Text = "Validating key..."
-OverlayStatus.TextColor3 = Color3.fromRGB(240, 240, 240)
-OverlayStatus.TextSize = 15
+OverlayStatus.Text = "Verifying..."
+OverlayStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
+OverlayStatus.TextSize = 20
+OverlayStatus.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+OverlayStatus.TextStrokeTransparency = 0.35
 OverlayStatus.TextXAlignment = Enum.TextXAlignment.Center
 OverlayStatus.TextYAlignment = Enum.TextYAlignment.Center
 OverlayStatus.ZIndex = 21
@@ -1392,8 +1429,8 @@ SubmitButton.MouseButton1Click:Connect(function()
     SuccessBadge.Rotation = -35
     SuccessBadge.BackgroundTransparency = 1
     SuccessIcon.ImageTransparency = 1
-    OverlayStatus.Text = "Validating key..."
-    OverlayStatus.TextColor3 = Color3.fromRGB(240, 240, 240)
+    OverlayStatus.Text = "Verifying..."
+    OverlayStatus.TextColor3 = Color3.fromRGB(255, 255, 255)
     Overlay.BackgroundTransparency = 1
     OverlayStatus.TextTransparency = 1
     
@@ -1438,7 +1475,7 @@ SubmitButton.MouseButton1Click:Connect(function()
                 ImageTransparency = 0
             }):Play()
 
-            OverlayStatus.Text = "Key Verified!"
+            OverlayStatus.Text = "Success"
             OverlayStatus.TextColor3 = Color3.fromRGB(46, 230, 96)
             showNotification(statusMessage or "Access granted", "success", 3)
             
@@ -1476,9 +1513,9 @@ end)
 -- Get Key Action
 GetKeyButton.MouseButton1Click:Connect(function()
     if setclipboard then
-        setclipboard("https://your-key-link.com")
+        setclipboard("https://sotarium.vercel.app/")
     end
-    showNotification("Link copied", "key", 2.5)
+    showNotification("Website link copied", "key", 2.5)
 end)
 
 -- Dragging Window Logic
