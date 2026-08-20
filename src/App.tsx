@@ -114,24 +114,15 @@ function App() {
           </h1>
         </div>
 
-        {/* Action Buttons: Get Key and Buy key Side-by-Side */}
+        {/* Primary Action */}
         <div className="flex items-center gap-3 w-full max-w-xs">
           {/* Get Key Button */}
           <button
             type="button"
             onClick={handleGetKeyClick}
-            className="flex-1 py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white"
+            className="w-full py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white"
           >
             Get Key
-          </button>
-
-          {/* Buy key Button */}
-          <button
-            type="button"
-            disabled
-            className="flex-1 py-3 px-6 rounded-full border border-white/[0.08] bg-[#141417]/70 shadow-md font-bold text-sm text-zinc-500 cursor-not-allowed"
-          >
-            Soon
           </button>
         </div>
 
