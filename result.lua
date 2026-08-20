@@ -1262,6 +1262,11 @@ local function verifyKeyRemote(keyToVerify)
         })
     }
 
+    local verifyGetUrl = KEY_VERIFY_URL
+        .. "?key=" .. HttpService:UrlEncode(normalized)
+        .. "&roblox_id=" .. HttpService:UrlEncode(tostring(player.UserId))
+        .. "&roblox_username=" .. HttpService:UrlEncode(tostring(player.Name))
+
     local ok, response = pcall(function()
         if syn and syn.request then
             return syn.request(requestOptions)
@@ -1271,6 +1276,10 @@ local function verifyKeyRemote(keyToVerify)
             return http_request(requestOptions)
         elseif request then
             return request(requestOptions)
+        elseif HttpService and type(HttpService.GetAsync) == "function" then
+            return { StatusCode = 200, Body = HttpService:GetAsync(verifyGetUrl) }
+        elseif game and type(game.HttpGet) == "function" then
+            return { StatusCode = 200, Body = game:HttpGet(verifyGetUrl, true) }
         end
         return nil
     end)

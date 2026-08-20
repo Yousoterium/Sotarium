@@ -265,7 +265,7 @@ local function loadIconAsset()
 end
 
 local function hasHttp()
-    return type(request) == "function" or (type(syn) == "table" and type(syn.request) == "function") or (type(http) == "table" and type(http.request) == "function") or type(http_request) == "function" or (type(fluxus) == "table" and type(fluxus.request) == "function") or (HttpService and type(HttpService.PostAsync) == "function")
+    return type(request) == "function" or (type(syn) == "table" and type(syn.request) == "function") or (type(http) == "table" and type(http.request) == "function") or type(http_request) == "function" or (type(fluxus) == "table" and type(fluxus.request) == "function") or (HttpService and type(HttpService.PostAsync) == "function") or (HttpService and type(HttpService.GetAsync) == "function") or (game and type(game.HttpGet) == "function")
 end
 
 local function safePost(url, bodyTable)
@@ -289,6 +289,22 @@ local function safePost(url, bodyTable)
             end
         end
     end
+
+    local query = {}
+    for key, value in pairs(bodyTable or {}) do
+        table.insert(query, HttpService:UrlEncode(tostring(key)) .. "=" .. HttpService:UrlEncode(tostring(value)))
+    end
+    table.sort(query)
+    local getUrl = url .. "?" .. table.concat(query, "&")
+    local getAttempts = {
+        function() return HttpService and HttpService.GetAsync and HttpService:GetAsync(getUrl) end,
+        function() return game and game.HttpGet and game:HttpGet(getUrl, true) end,
+    }
+    for _, fn in ipairs(getAttempts) do
+        local s, res = pcall(fn)
+        if s and type(res) == "string" then return true, res end
+    end
+
     return false, "no HTTP method available"
 end
 
