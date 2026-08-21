@@ -17,3 +17,9 @@ The browser session was restored and the environment-variable form opened with `
 **Completed:** `WORKINK_BASE_LINK` was then successfully added as a sensitive environment variable for both **Production** and **Preview**. Vercel reports that a new deployment is required for the setting to take effect; the upcoming GitHub push will create that deployment.
 
 The authenticated Supabase SQL editor for project `easqbdadxctsixvtttax` was available. A new table is not required: the final provider implementation reuses the already deployed, server-only `earnpaste_sessions` table and distinguishes Work.ink sessions through the generated Work.ink checkpoint URL. The attempted optional-table query did not execute, and no further database migration is required.
+
+## Live interface check
+
+The deployment at `https://sotarium.vercel.app/` is live. The provider picker shows **Download Opera Browser** with the Opera and Work.ink icons and the description “Complete two Work.ink checkpoints.” Selecting the provider opens the **Universal Ad Blocker** overlay before any Work.ink offer can be started. The overlay explains that users can temporarily disable their ad blocker for Work.ink, makes no browser changes itself, and offers explicit continue and cancel controls. A second live-path check confirmed that no provider request occurs before the user explicitly acknowledges this gate.
+
+A live first-checkpoint creation test was initiated after the notice was acknowledged. Production runtime logs confirm that `POST /api/workink` returned **200** at 06:38, which verifies that the server created the first Work.ink checkpoint redirect URL successfully. The connected browser ended its automation session while handing off to Work.ink, so the external offer page and a completed return token were not exercised; the application correctly requires a provider-issued token before it can advance either step.
