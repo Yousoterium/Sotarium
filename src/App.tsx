@@ -90,15 +90,14 @@ function App() {
             <button
               type="button"
               onClick={() => setIsProviderPickerOpen(false)}
-              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-white"
+              className="rounded-full border border-white/[0.10] bg-white/[0.04] px-4 py-2 text-sm font-semibold text-zinc-300 shadow-sm transition-all hover:border-white/[0.20] hover:bg-white/[0.08] hover:text-white active:scale-95"
             >
-              <span aria-hidden="true">←</span>
-              Back
+              Back to home
             </button>
           </div>
           <div className="flex flex-col items-center gap-3">
-            <h2 className="text-4xl font-black tracking-tight sm:text-5xl">Choose a key method</h2>
-            <p className="max-w-sm text-sm text-zinc-400">Each method uses two verification steps before your Sotarium key is issued.</p>
+            <h2 className="text-4xl font-black tracking-tight sm:text-5xl">Choose a provider to obtain a key</h2>
+            <p className="max-w-sm text-sm text-zinc-400">Each method uses two steps.</p>
           </div>
           <div className="w-full space-y-3">
             {PROVIDERS.map((provider) => (
