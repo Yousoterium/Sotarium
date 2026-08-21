@@ -122,7 +122,6 @@ function App() {
           <div className="flex flex-col items-center gap-4">
             <img src="https://i.imgur.com/qye2L7M.png" alt="Sotarium" className="h-24 w-24 object-contain drop-shadow-md sm:h-28 sm:w-28" />
             <h1 className="text-5xl font-black tracking-tight sm:text-6xl">Sotarium</h1>
-            <p className="max-w-sm text-sm text-zinc-400">Choose a key method, complete two steps, and receive a key verified by Sotarium.</p>
           </div>
           <button type="button" onClick={() => setIsProviderPickerOpen(true)} className="w-full max-w-xs rounded-full border border-white/[0.12] bg-[#141417] px-6 py-3 text-sm font-bold text-zinc-100 shadow-md transition-all hover:border-white/[0.24] hover:bg-[#1c1c20] hover:text-white active:scale-95">Get Key</button>
         </main>
