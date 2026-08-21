@@ -135,7 +135,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const totalSteps = isOpera ? 1 : 2;
   const hasWorkinkReturn = Boolean(workinkSession && workinkToken && (workinkStep === 1 || workinkStep === 2));
   const [currentStep, setCurrentStep] = useState(initialStep);
-  const [adBlockerStatus, setAdBlockerStatus] = useState<AdBlockerStatus>(() => (isWorkink && !hasWorkinkReturn ? "checking" : "clear"));
+  const [adBlockerStatus, setAdBlockerStatus] = useState<AdBlockerStatus>(() => (isOpera ? "checking" : "clear"));
   const [adBlockerCheckVersion, setAdBlockerCheckVersion] = useState(0);
   const handledWorkinkReturn = useRef<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -240,12 +240,11 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     const returnKey = `${workinkSession}:${workinkStep}:${workinkToken}`;
     if (handledWorkinkReturn.current === returnKey) return;
     handledWorkinkReturn.current = returnKey;
-    setAdBlockerStatus("clear");
     void handleWorkinkReturn(workinkSession, workinkStep, workinkToken);
   }, [isOpen, isWorkink, workinkSession, workinkStep, workinkToken]);
 
   useEffect(() => {
-    if (!isOpen || !isWorkink || hasWorkinkReturn) {
+    if (!isOpen || !isOpera) {
       setAdBlockerStatus("clear");
       return;
     }
@@ -277,7 +276,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       cancelled = true;
       bait.remove();
     };
-  }, [isOpen, isWorkink, hasWorkinkReturn, adBlockerCheckVersion]);
+  }, [isOpen, isOpera, adBlockerCheckVersion]);
 
   useEffect(() => {
     if (!isOpen || isEarnpaste || isWorkink || isOpera || comebackStep < 1) return;
@@ -320,10 +319,6 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       }
 
       if (isWorkink) {
-        if (adBlockerStatus !== "clear") {
-          setIsRedirecting(false);
-          return;
-        }
         const result = await callWorkinkApi("start");
         if (!result.url || !result.session) throw new Error("Work.ink did not return a step 1 link.");
         sessionStorage.setItem("sotarium_workink_session", result.session);
@@ -332,6 +327,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       }
 
       if (isOpera) {
+        if (adBlockerStatus !== "clear") {
+          setIsRedirecting(false);
+          return;
+        }
         const downloadWindow = window.open(OPERA_DOWNLOAD_URL, "_blank", "noopener,noreferrer");
         if (!downloadWindow) {
           throw new Error("Your browser blocked the Opera download window. Please allow pop-ups and try again.");
@@ -363,7 +362,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     handledWorkinkReturn.current = null;
     sessionStorage.removeItem("sotarium_earnpaste_session");
     sessionStorage.removeItem("sotarium_workink_session");
-    if (isWorkink && !hasWorkinkReturn) {
+    if (isOpera) {
       setAdBlockerStatus("checking");
       setAdBlockerCheckVersion((version) => version + 1);
     }
@@ -378,8 +377,8 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   };
 
   const isUnlocked = generatedKey !== null;
-  const isCheckingAdBlocker = isWorkink && adBlockerStatus === "checking" && !hasWorkinkReturn && !isUnlocked;
-  const showAdBlockerNotice = isWorkink && adBlockerStatus === "detected" && !hasWorkinkReturn && !isUnlocked;
+  const isCheckingAdBlocker = isOpera && adBlockerStatus === "checking" && !isUnlocked;
+  const showAdBlockerNotice = isOpera && adBlockerStatus === "detected" && !isUnlocked;
   const checkpointDescription = isOpera
     ? "Open the official Opera download and receive your 24-hour key."
     : `Complete two ${providerName} checkpoints to receive your 24-hour key.`;
@@ -453,7 +452,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                   <AlertCircle className="h-7 w-7" strokeWidth={2.5} />
                 </div>
                 <h3 id="adblocker-title" className="text-xl font-black tracking-tight">Ad blocker detected</h3>
-                <p className="mt-3 text-sm leading-6 text-zinc-300">A real browser check found that an ad resource or ad placeholder is being blocked. Work.ink cannot load until the blocker is disabled for Work.ink.</p>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">A real browser check found that an ad resource or ad placeholder is being blocked. The Opera Browser download cannot start until the blocker is disabled for the official Opera site.</p>
                 <p className="mt-3 text-xs leading-5 text-zinc-500">This detector does not install anything or change browser settings. Disable the blocker if you choose, then run the check again.</p>
                 <button type="button" onClick={() => setAdBlockerCheckVersion((version) => version + 1)} className="mt-6 w-full rounded-full bg-white px-5 py-3 text-sm font-bold text-[#141417] hover:bg-zinc-100">Check again</button>
                 <button type="button" onClick={onClose} className="mt-3 w-full rounded-full border border-white/[0.10] px-5 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/[0.05] hover:text-white">Cancel</button>
