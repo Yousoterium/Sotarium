@@ -31,3 +31,9 @@ The live provider selector now has separate **Work.ink** and **Download Opera Br
 A live Work.ink flow test triggered the new detector. In the connected browser, it detected a blocked ad resource or placeholder and displayed the **Ad blocker detected** gate with a **Check again** action. No Work.ink checkpoint was initiated while that condition was present.
 
 The live Opera Browser flow displays a single progress step and the action **“Download Opera Browser & unlock key.”** The button opens Opera’s official download page and then unlocks the key; it was not activated during browser verification to avoid creating an unsolicited download in the user’s browser.
+
+## Opera-only blocker correction
+
+The deployed Work.ink provider now opens directly to its two-step checkpoint screen with no ad-blocker overlay.
+
+The live Opera Browser provider now runs the real detector and displayed the **Ad blocker detected** gate in the connected browser. The gate is therefore correctly scoped to Opera Browser rather than Work.ink.
