@@ -105,13 +105,23 @@ function App() {
       setEarnpasteAction(action);
       setEarnpasteSession(session);
       setIsKeyModalOpen(true);
-    } else if ((path === "/workink" || path === "/opera") && params.has("verify")) {
+    } else if (path === "/workink" && (params.has("ok") || params.has("done"))) {
+      const session = params.get("session");
+      const token = params.get("token");
+      const step = params.has("done") ? 2 : 1;
+      if (session && token) {
+        setSelectedProvider(PROVIDERS.find((provider) => provider.id === "workink") || PROVIDERS[0]);
+        setWorkinkSession(session);
+        setWorkinkStep(step);
+        setWorkinkToken(token);
+        setIsKeyModalOpen(true);
+      }
+    } else if (path === "/opera" && params.has("verify")) {
       const session = params.get("session");
       const token = params.get("token");
       const step = Number(params.get("step"));
-      const providerId = path === "/opera" ? "opera" : "workink";
-      if (session && token && (step === 1 || step === 2)) {
-        setSelectedProvider(PROVIDERS.find((provider) => provider.id === providerId) || PROVIDERS[0]);
+      if (session && token && step === 1) {
+        setSelectedProvider(PROVIDERS.find((provider) => provider.id === "opera") || PROVIDERS[0]);
         setWorkinkSession(session);
         setWorkinkStep(step);
         setWorkinkToken(token);

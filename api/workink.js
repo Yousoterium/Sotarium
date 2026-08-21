@@ -76,10 +76,10 @@ async function validateWorkinkToken(token) {
 }
 
 function getReturnUrl(req, sessionId, step, flow = "workink") {
-  const url = new URL(`${getOrigin(req)}/${flow === "opera" ? "opera" : "workink"}`);
-  url.searchParams.set("verify", "");
+  const isOpera = flow === "opera";
+  const url = new URL(`${getOrigin(req)}/${isOpera ? "opera" : "workink"}`);
+  url.searchParams.set(isOpera ? "verify" : step === 1 ? "ok" : "done", "");
   url.searchParams.set("session", sessionId);
-  url.searchParams.set("step", String(step));
   url.searchParams.set("token", "{TOKEN}");
   return url.toString();
 }
@@ -206,7 +206,7 @@ export default async function handler(req, res) {
     }
 
     if (step === 1) {
-      const nextUrl = await createOverrideUrl(getReturnUrl(req, sessionId, 2, "workink"));
+      const nextUrl = await createOverrideUrl(getReturnUrl(req, sessionId, 2));
       const { error: updateError } = await supabase
         .from("earnpaste_sessions")
         .update({
