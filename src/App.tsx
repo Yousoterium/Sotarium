@@ -4,7 +4,7 @@ import { ProductsPage } from "./components/ProductsPage";
 import { AddGamePage } from "./components/AddGamePage";
 import { ScriptsPage } from "./components/ScriptsPage";
 
-type ProviderId = "lootlabs" | "earnpaste" | "workink";
+type ProviderId = "lootlabs" | "earnpaste" | "workink" | "opera";
 
 interface ProviderOption {
   id: ProviderId;
@@ -25,10 +25,15 @@ const PROVIDERS: ProviderOption[] = [
   { id: "earnpaste", name: "Earnpaste", icon: EARNPASTE_ICON, description: "Complete two Earnpaste checkpoints" },
   {
     id: "workink",
+    name: "Work.ink",
+    icon: WORKINK_ICON,
+    description: "Complete two Work.ink checkpoints",
+  },
+  {
+    id: "opera",
     name: "Download Opera Browser",
     icon: OPERA_ICON,
-    secondaryIcon: WORKINK_ICON,
-    description: "Complete two Work.ink checkpoints",
+    description: "One download step to unlock your key",
   },
 ];
 
@@ -96,7 +101,7 @@ function App() {
       const token = params.get("token");
       const step = Number(params.get("step"));
       if (session && token && (step === 1 || step === 2)) {
-        setSelectedProvider(PROVIDERS[2]);
+        setSelectedProvider(PROVIDERS.find((provider) => provider.id === "workink") || PROVIDERS[0]);
         setWorkinkSession(session);
         setWorkinkStep(step);
         setWorkinkToken(token);
@@ -131,7 +136,7 @@ function App() {
           </div>
           <div className="flex flex-col items-center gap-3">
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl">Choose a provider to obtain a key</h2>
-            <p className="max-w-sm text-sm text-zinc-400">Each method uses two steps.</p>
+            <p className="max-w-sm text-sm text-zinc-400">Choose a one-step or two-step method.</p>
           </div>
           <div className="w-full space-y-3">
             {PROVIDERS.map((provider) => (

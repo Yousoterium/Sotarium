@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check, Clock, Copy, Loader2 } from "lucide-react";
 import { saveKeyToDatabase } from "../lib/supabase";
-import type { LogEntry } from "./LogsPage";
 
-type ProviderKind = "lootlabs" | "earnpaste" | "workink";
+type ProviderKind = "lootlabs" | "earnpaste" | "workink" | "opera";
+type AdBlockerStatus = "checking" | "clear" | "detected";
 
 interface EarnpasteModalProps {
   isOpen: boolean;
@@ -29,9 +29,10 @@ interface ProviderApiResponse {
   retry_after?: number;
 }
 
-const TOTAL_STEPS = 2;
 const EARNPASTE_ICON =
   "https://images.socialblade.com/128x,q75/https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s192-c-k-c0x00ffffff-no-rj";
+const OPERA_DOWNLOAD_URL = "https://www.opera.com/download";
+const AD_BLOCKER_TEST_URL = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
 
 const formatCountdown = (ms: number): string => {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -130,9 +131,12 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 }) => {
   const isEarnpaste = providerKind === "earnpaste";
   const isWorkink = providerKind === "workink";
+  const isOpera = providerKind === "opera";
+  const totalSteps = isOpera ? 1 : 2;
   const hasWorkinkReturn = Boolean(workinkSession && workinkToken && (workinkStep === 1 || workinkStep === 2));
   const [currentStep, setCurrentStep] = useState(initialStep);
-  const [adBlockerAcknowledged, setAdBlockerAcknowledged] = useState(!isWorkink || hasWorkinkReturn);
+  const [adBlockerStatus, setAdBlockerStatus] = useState<AdBlockerStatus>(() => (isWorkink && !hasWorkinkReturn ? "checking" : "clear"));
+  const [adBlockerCheckVersion, setAdBlockerCheckVersion] = useState(0);
   const handledWorkinkReturn = useRef<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -159,7 +163,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const finishStep = async (step: number) => {
     setCompletedSteps((previous) => Array.from(new Set([...previous, step])));
     setStatusMessage(`Step ${step} verified.`);
-    if (step >= TOTAL_STEPS) {
+    if (step >= totalSteps) {
       await generateFinalKey();
       return;
     }
@@ -236,12 +240,47 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     const returnKey = `${workinkSession}:${workinkStep}:${workinkToken}`;
     if (handledWorkinkReturn.current === returnKey) return;
     handledWorkinkReturn.current = returnKey;
-    setAdBlockerAcknowledged(true);
+    setAdBlockerStatus("clear");
     void handleWorkinkReturn(workinkSession, workinkStep, workinkToken);
   }, [isOpen, isWorkink, workinkSession, workinkStep, workinkToken]);
 
   useEffect(() => {
-    if (!isOpen || isEarnpaste || isWorkink || comebackStep < 1) return;
+    if (!isOpen || !isWorkink || hasWorkinkReturn) {
+      setAdBlockerStatus("clear");
+      return;
+    }
+
+    let cancelled = false;
+    const bait = document.createElement("div");
+    bait.className = "adsbox ad-banner ad-unit ad-slot adsbygoogle";
+    bait.setAttribute("aria-hidden", "true");
+    bait.style.cssText = "position:absolute!important;left:-10000px!important;top:-10000px!important;width:1px!important;height:1px!important;pointer-events:none!important;";
+    document.body.appendChild(bait);
+
+    const check = async () => {
+      setAdBlockerStatus("checking");
+      let networkBlocked = false;
+      try {
+        await fetch(`${AD_BLOCKER_TEST_URL}?sotarium=${Date.now()}`, { mode: "no-cors", cache: "no-store" });
+      } catch {
+        networkBlocked = true;
+      }
+
+      const baitStyle = window.getComputedStyle(bait);
+      const baitBlocked = baitStyle.display === "none" || baitStyle.visibility === "hidden" || bait.offsetHeight === 0 || bait.offsetWidth === 0;
+      bait.remove();
+      if (!cancelled) setAdBlockerStatus(networkBlocked || baitBlocked ? "detected" : "clear");
+    };
+
+    void check();
+    return () => {
+      cancelled = true;
+      bait.remove();
+    };
+  }, [isOpen, isWorkink, hasWorkinkReturn, adBlockerCheckVersion]);
+
+  useEffect(() => {
+    if (!isOpen || isEarnpaste || isWorkink || isOpera || comebackStep < 1) return;
     setIsVerifying(true);
     setErrorMessage(null);
     resetUrl();
@@ -250,7 +289,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       setIsVerifying(false);
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [isOpen, isEarnpaste, isWorkink, comebackStep]);
+  }, [isOpen, isEarnpaste, isWorkink, isOpera, comebackStep]);
 
   useEffect(() => {
     if (!keyExpiry) return;
@@ -281,7 +320,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       }
 
       if (isWorkink) {
-        if (!adBlockerAcknowledged) {
+        if (adBlockerStatus !== "clear") {
           setIsRedirecting(false);
           return;
         }
@@ -289,6 +328,15 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
         if (!result.url || !result.session) throw new Error("Work.ink did not return a step 1 link.");
         sessionStorage.setItem("sotarium_workink_session", result.session);
         window.location.assign(result.url);
+        return;
+      }
+
+      if (isOpera) {
+        const downloadWindow = window.open(OPERA_DOWNLOAD_URL, "_blank", "noopener,noreferrer");
+        if (!downloadWindow) {
+          throw new Error("Your browser blocked the Opera download window. Please allow pop-ups and try again.");
+        }
+        await finishStep(1);
         return;
       }
 
@@ -315,7 +363,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     handledWorkinkReturn.current = null;
     sessionStorage.removeItem("sotarium_earnpaste_session");
     sessionStorage.removeItem("sotarium_workink_session");
-    if (isWorkink && !hasWorkinkReturn) setAdBlockerAcknowledged(false);
+    if (isWorkink && !hasWorkinkReturn) {
+      setAdBlockerStatus("checking");
+      setAdBlockerCheckVersion((version) => version + 1);
+    }
     resetUrl();
   };
 
@@ -327,7 +378,14 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   };
 
   const isUnlocked = generatedKey !== null;
-  const showAdBlockerNotice = isWorkink && !adBlockerAcknowledged && !hasWorkinkReturn && !isUnlocked;
+  const isCheckingAdBlocker = isWorkink && adBlockerStatus === "checking" && !hasWorkinkReturn && !isUnlocked;
+  const showAdBlockerNotice = isWorkink && adBlockerStatus === "detected" && !hasWorkinkReturn && !isUnlocked;
+  const checkpointDescription = isOpera
+    ? "Open the official Opera download and receive your 24-hour key."
+    : `Complete two ${providerName} checkpoints to receive your 24-hour key.`;
+  const checkpointButtonText = isOpera
+    ? "Download Opera Browser & unlock key"
+    : `Start checkpoint (Step ${currentStep}/${totalSteps})`;
   if (!isOpen) return null;
 
   return (
@@ -347,7 +405,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2.5 px-0.5">
-            {[1, 2].map((step) => {
+            {Array.from({ length: totalSteps }, (_, index) => index + 1).map((step) => {
               const complete = completedSteps.includes(step);
               const active = currentStep === step && !complete;
               return (
@@ -355,7 +413,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                   <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${complete ? "bg-[#1AF513] text-white" : active ? "bg-white text-[#141417]" : "border border-white/[0.08] bg-[#1a1a1e] text-zinc-500"}`}>
                     {complete ? <Check className="h-4 w-4" strokeWidth={3} /> : step}
                   </div>
-                  {step < TOTAL_STEPS && <div className={`h-[2px] flex-1 rounded-full ${complete ? "bg-[#1AF513]" : "bg-white/[0.08]"}`} />}
+                  {step < totalSteps && <div className={`h-[2px] flex-1 rounded-full ${complete ? "bg-[#1AF513]" : "bg-white/[0.08]"}`} />}
                 </React.Fragment>
               );
             })}
@@ -377,12 +435,12 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
               <div className="flex flex-col items-center gap-3 text-[#1AF513]">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1AF513]"><Check className="h-6 w-6 text-white" strokeWidth={3} /></div>
                 <p className="text-sm font-bold">{statusMessage}</p>
-                <button type="button" onClick={startCheckpoint} className="w-full rounded-full border border-white bg-white px-5 py-3 text-sm font-semibold text-[#141417] hover:bg-zinc-100">Start step {currentStep} of {TOTAL_STEPS}</button>
+                <button type="button" onClick={startCheckpoint} className="w-full rounded-full border border-white bg-white px-5 py-3 text-sm font-semibold text-[#141417] hover:bg-zinc-100">Start step {currentStep} of {totalSteps}</button>
               </div>
             ) : (
               <div className="w-full">
-                <p className="mb-4 text-sm text-zinc-300">Complete two {providerName} checkpoints to receive your 24-hour key.</p>
-                <button type="button" onClick={startCheckpoint} className="w-full rounded-full border border-white bg-white px-5 py-3.5 text-sm font-semibold text-[#141417] shadow-lg hover:bg-zinc-100">Start checkpoint (Step {currentStep}/{TOTAL_STEPS})</button>
+                <p className="mb-4 text-sm text-zinc-300">{checkpointDescription}</p>
+                <button type="button" onClick={startCheckpoint} disabled={isCheckingAdBlocker} className="w-full rounded-full border border-white bg-white px-5 py-3.5 text-sm font-semibold text-[#141417] shadow-lg hover:bg-zinc-100 disabled:cursor-wait disabled:opacity-60">{isCheckingAdBlocker ? "Checking for ad blocker..." : checkpointButtonText}</button>
               </div>
             )}
           </div>
@@ -394,10 +452,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-amber-300/30 bg-amber-300/10 text-amber-200">
                   <AlertCircle className="h-7 w-7" strokeWidth={2.5} />
                 </div>
-                <h3 id="adblocker-title" className="text-xl font-black tracking-tight">Universal Ad Blocker</h3>
-                <p className="mt-3 text-sm leading-6 text-zinc-300">To load the Work.ink Opera Browser offer, please temporarily disable any ad blocker for Work.ink. Then return here and confirm before you start the checkpoint.</p>
-                <p className="mt-3 text-xs leading-5 text-zinc-500">This notice does not install anything or change your browser settings. You choose whether to continue.</p>
-                <button type="button" onClick={() => setAdBlockerAcknowledged(true)} className="mt-6 w-full rounded-full bg-white px-5 py-3 text-sm font-bold text-[#141417] hover:bg-zinc-100">I’ve disabled my ad blocker</button>
+                <h3 id="adblocker-title" className="text-xl font-black tracking-tight">Ad blocker detected</h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">A real browser check found that an ad resource or ad placeholder is being blocked. Work.ink cannot load until the blocker is disabled for Work.ink.</p>
+                <p className="mt-3 text-xs leading-5 text-zinc-500">This detector does not install anything or change browser settings. Disable the blocker if you choose, then run the check again.</p>
+                <button type="button" onClick={() => setAdBlockerCheckVersion((version) => version + 1)} className="mt-6 w-full rounded-full bg-white px-5 py-3 text-sm font-bold text-[#141417] hover:bg-zinc-100">Check again</button>
                 <button type="button" onClick={onClose} className="mt-3 w-full rounded-full border border-white/[0.10] px-5 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/[0.05] hover:text-white">Cancel</button>
               </div>
             )}
