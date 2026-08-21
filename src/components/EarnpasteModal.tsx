@@ -1,22 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check, Clock, Copy, Loader2 } from "lucide-react";
 import { saveKeyToDatabase } from "../lib/supabase";
 import type { LogEntry } from "./LogsPage";
 
+type ProviderKind = "lootlabs" | "earnpaste" | "workink";
+
 interface EarnpasteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCaught: () => void;
-  onLog?: (entry: Omit<LogEntry, "id" | "time">) => void;
   providerName?: string;
   providerIcon?: string;
+  providerKind?: ProviderKind;
   initialStep?: number;
   comebackStep?: number;
   earnpasteAction?: "upgrade" | "completed" | null;
   earnpasteSession?: string | null;
+  workinkSession?: string | null;
+  workinkStep?: number | null;
+  workinkToken?: string | null;
 }
 
-interface EarnpasteApiResponse {
+interface ProviderApiResponse {
   url?: string;
   session?: string;
   step?: number;
@@ -65,15 +69,31 @@ const createLootlabsUrl = async (destinationUrl: string, step: number): Promise<
 const callEarnpasteApi = async (
   action: "start" | "rotate" | "complete",
   session?: string,
-): Promise<EarnpasteApiResponse> => {
+): Promise<ProviderApiResponse> => {
   const response = await fetch(`/api/earnpaste?action=${action}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(session ? { session } : {}),
   });
-  const data = (await response.json().catch(() => ({}))) as EarnpasteApiResponse;
+  const data = (await response.json().catch(() => ({}))) as ProviderApiResponse;
   if (!response.ok) {
     throw new Error(data.error || "Earnpaste could not complete this request.");
+  }
+  return data;
+};
+
+const callWorkinkApi = async (
+  action: "start" | "verify",
+  payload: Record<string, string | number> = {},
+): Promise<ProviderApiResponse> => {
+  const response = await fetch(`/api/workink?action=${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = (await response.json().catch(() => ({}))) as ProviderApiResponse;
+  if (!response.ok) {
+    throw new Error(data.error || "Work.ink could not complete this request.");
   }
   return data;
 };
@@ -97,17 +117,23 @@ const ProviderIcon: React.FC<{ name: string; iconUrl?: string; className?: strin
 export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   isOpen,
   onClose,
-  onCaught,
-  onLog,
   providerName = "Earnpaste",
   providerIcon = EARNPASTE_ICON,
+  providerKind = "earnpaste",
   initialStep = 1,
   comebackStep = 0,
   earnpasteAction = null,
   earnpasteSession = null,
+  workinkSession = null,
+  workinkStep = null,
+  workinkToken = null,
 }) => {
-  const isEarnpaste = providerName.toLowerCase().includes("earnpaste");
+  const isEarnpaste = providerKind === "earnpaste";
+  const isWorkink = providerKind === "workink";
+  const hasWorkinkReturn = Boolean(workinkSession && workinkToken && (workinkStep === 1 || workinkStep === 2));
   const [currentStep, setCurrentStep] = useState(initialStep);
+  const [adBlockerAcknowledged, setAdBlockerAcknowledged] = useState(!isWorkink || hasWorkinkReturn);
+  const handledWorkinkReturn = useRef<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -169,13 +195,53 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     }
   };
 
+  const handleWorkinkReturn = async (session: string, step: number, token: string) => {
+    setIsRedirecting(false);
+    setIsVerifying(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    resetUrl();
+
+    try {
+      const result = await callWorkinkApi("verify", { session, step, token });
+      if (step === 1) {
+        if (!result.url) throw new Error("Work.ink did not return the step 2 link.");
+        sessionStorage.setItem("sotarium_workink_session", session);
+        setCompletedSteps([1]);
+        setCurrentStep(2);
+        setStatusMessage("Step 1 verified. Opening step 2...");
+        setIsVerifying(false);
+        setIsRedirecting(true);
+        window.location.assign(result.url);
+        return;
+      }
+
+      sessionStorage.removeItem("sotarium_workink_session");
+      setCompletedSteps([1]);
+      await finishStep(2);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Could not verify the Work.ink checkpoint.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   useEffect(() => {
     if (!isOpen || !isEarnpaste || !earnpasteAction || !earnpasteSession) return;
     void handleEarnpasteReturn(earnpasteAction, earnpasteSession);
   }, [isOpen, isEarnpaste, earnpasteAction, earnpasteSession]);
 
   useEffect(() => {
-    if (!isOpen || isEarnpaste || comebackStep < 1) return;
+    if (!isOpen || !isWorkink || !workinkSession || !workinkToken || (workinkStep !== 1 && workinkStep !== 2)) return;
+    const returnKey = `${workinkSession}:${workinkStep}:${workinkToken}`;
+    if (handledWorkinkReturn.current === returnKey) return;
+    handledWorkinkReturn.current = returnKey;
+    setAdBlockerAcknowledged(true);
+    void handleWorkinkReturn(workinkSession, workinkStep, workinkToken);
+  }, [isOpen, isWorkink, workinkSession, workinkStep, workinkToken]);
+
+  useEffect(() => {
+    if (!isOpen || isEarnpaste || isWorkink || comebackStep < 1) return;
     setIsVerifying(true);
     setErrorMessage(null);
     resetUrl();
@@ -184,7 +250,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       setIsVerifying(false);
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [isOpen, isEarnpaste, comebackStep]);
+  }, [isOpen, isEarnpaste, isWorkink, comebackStep]);
 
   useEffect(() => {
     if (!keyExpiry) return;
@@ -214,6 +280,18 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
         return;
       }
 
+      if (isWorkink) {
+        if (!adBlockerAcknowledged) {
+          setIsRedirecting(false);
+          return;
+        }
+        const result = await callWorkinkApi("start");
+        if (!result.url || !result.session) throw new Error("Work.ink did not return a step 1 link.");
+        sessionStorage.setItem("sotarium_workink_session", result.session);
+        window.location.assign(result.url);
+        return;
+      }
+
       const returnUrl = `${window.location.origin}/lootlabs?verify${currentStep}`;
       const lootUrl = await createLootlabsUrl(returnUrl, currentStep);
       if (!lootUrl) throw new Error("Could not create the Lootlabs link. Please try again.");
@@ -234,7 +312,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     setGeneratedKey(null);
     setKeyExpiry(null);
     setTimeLeft(0);
+    handledWorkinkReturn.current = null;
     sessionStorage.removeItem("sotarium_earnpaste_session");
+    sessionStorage.removeItem("sotarium_workink_session");
+    if (isWorkink && !hasWorkinkReturn) setAdBlockerAcknowledged(false);
     resetUrl();
   };
 
@@ -246,6 +327,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   };
 
   const isUnlocked = generatedKey !== null;
+  const showAdBlockerNotice = isWorkink && !adBlockerAcknowledged && !hasWorkinkReturn && !isUnlocked;
   if (!isOpen) return null;
 
   return (
@@ -305,8 +387,21 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
             )}
           </div>
 
-          <button type="button" onClick={onClose} disabled={isRedirecting || isVerifying} className="rounded-full border border-white/[0.07] p-3 text-sm font-semibold text-zinc-400 hover:bg-white/[0.04] hover:text-white disabled:opacity-50">Cancel</button>
-        </div>
+            <button type="button" onClick={onClose} disabled={isRedirecting || isVerifying} className="rounded-full border border-white/[0.07] p-3 text-sm font-semibold text-zinc-400 hover:bg-white/[0.04] hover:text-white disabled:opacity-50">Cancel</button>
+
+            {showAdBlockerNotice && (
+              <div role="alertdialog" aria-modal="true" aria-labelledby="adblocker-title" className="absolute inset-0 z-30 flex flex-col justify-center rounded-[26px] bg-[#121215]/[0.98] p-7 text-center backdrop-blur-sm">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-amber-300/30 bg-amber-300/10 text-amber-200">
+                  <AlertCircle className="h-7 w-7" strokeWidth={2.5} />
+                </div>
+                <h3 id="adblocker-title" className="text-xl font-black tracking-tight">Universal Ad Blocker</h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">To load the Work.ink Opera Browser offer, please temporarily disable any ad blocker for Work.ink. Then return here and confirm before you start the checkpoint.</p>
+                <p className="mt-3 text-xs leading-5 text-zinc-500">This notice does not install anything or change your browser settings. You choose whether to continue.</p>
+                <button type="button" onClick={() => setAdBlockerAcknowledged(true)} className="mt-6 w-full rounded-full bg-white px-5 py-3 text-sm font-bold text-[#141417] hover:bg-zinc-100">I’ve disabled my ad blocker</button>
+                <button type="button" onClick={onClose} className="mt-3 w-full rounded-full border border-white/[0.10] px-5 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/[0.05] hover:text-white">Cancel</button>
+              </div>
+            )}
+          </div>
       ) : (
         <div className="relative z-10 flex w-[440px] max-w-full flex-col gap-5 rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 text-white shadow-2xl">
           <header className="flex items-center justify-between"><h3 className="text-[19px] font-bold">Your Free Key Is Ready</h3><button type="button" onClick={onClose} className="text-zinc-400 hover:text-white">✕</button></header>

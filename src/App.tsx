@@ -4,18 +4,32 @@ import { ProductsPage } from "./components/ProductsPage";
 import { AddGamePage } from "./components/AddGamePage";
 import { ScriptsPage } from "./components/ScriptsPage";
 
+type ProviderId = "lootlabs" | "earnpaste" | "workink";
+
 interface ProviderOption {
-  name: "Lootlabs" | "Earnpaste";
+  id: ProviderId;
+  name: string;
   icon: string;
+  secondaryIcon?: string;
   description: string;
 }
 
 const EARNPASTE_ICON =
   "https://images.socialblade.com/128x,q75/https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s192-c-k-c0x00ffffff-no-rj";
 
+const WORKINK_ICON = "https://favicon.pub/api/work.ink?s=32";
+const OPERA_ICON = "https://favicon.pub/api/opera.com?s=32";
+
 const PROVIDERS: ProviderOption[] = [
-  { name: "Lootlabs", icon: "https://i.imgur.com/hmJCWhI.png", description: "Complete two Lootlabs checkpoints" },
-  { name: "Earnpaste", icon: EARNPASTE_ICON, description: "Complete two Earnpaste checkpoints" },
+  { id: "lootlabs", name: "Lootlabs", icon: "https://i.imgur.com/hmJCWhI.png", description: "Complete two Lootlabs checkpoints" },
+  { id: "earnpaste", name: "Earnpaste", icon: EARNPASTE_ICON, description: "Complete two Earnpaste checkpoints" },
+  {
+    id: "workink",
+    name: "Download Opera Browser",
+    icon: OPERA_ICON,
+    secondaryIcon: WORKINK_ICON,
+    description: "Complete two Work.ink checkpoints",
+  },
 ];
 
 function App() {
@@ -32,11 +46,17 @@ function App() {
   const [comebackStep, setComebackStep] = useState(0);
   const [earnpasteAction, setEarnpasteAction] = useState<"upgrade" | "completed" | null>(null);
   const [earnpasteSession, setEarnpasteSession] = useState<string | null>(null);
+  const [workinkSession, setWorkinkSession] = useState<string | null>(null);
+  const [workinkStep, setWorkinkStep] = useState<number | null>(null);
+  const [workinkToken, setWorkinkToken] = useState<string | null>(null);
 
   const closeKeyModal = () => {
     setIsKeyModalOpen(false);
     setEarnpasteAction(null);
     setEarnpasteSession(null);
+    setWorkinkSession(null);
+    setWorkinkStep(null);
+    setWorkinkToken(null);
     setComebackStep(0);
   };
 
@@ -46,6 +66,9 @@ function App() {
     setComebackStep(0);
     setEarnpasteAction(null);
     setEarnpasteSession(null);
+    setWorkinkSession(null);
+    setWorkinkStep(null);
+    setWorkinkToken(null);
     setIsKeyModalOpen(true);
   };
 
@@ -68,6 +91,17 @@ function App() {
       setEarnpasteAction(action);
       setEarnpasteSession(session);
       setIsKeyModalOpen(true);
+    } else if (path === "/workink" && params.has("verify")) {
+      const session = params.get("session");
+      const token = params.get("token");
+      const step = Number(params.get("step"));
+      if (session && token && (step === 1 || step === 2)) {
+        setSelectedProvider(PROVIDERS[2]);
+        setWorkinkSession(session);
+        setWorkinkStep(step);
+        setWorkinkToken(token);
+        setIsKeyModalOpen(true);
+      }
     } else if (path === "/lootlabs" && (params.has("verify") || params.has("verify1") || params.has("verify2"))) {
       setSelectedProvider(PROVIDERS[0]);
       setComebackStep(params.has("verify1") ? 1 : 2);
@@ -107,7 +141,10 @@ function App() {
                 onClick={() => openProvider(provider)}
                 className="flex w-full items-center gap-4 rounded-2xl border border-white/[0.10] bg-[#141417] p-4 text-left shadow-md transition-all hover:-translate-y-px hover:border-white/[0.24] hover:bg-[#1c1c20]"
               >
-                <img src={provider.icon} alt="" className="h-12 w-12 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" />
+                <span className="relative flex h-12 w-14 shrink-0 items-center" aria-hidden="true">
+                  <img src={provider.icon} alt="" className="h-12 w-12 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" />
+                  {provider.secondaryIcon && <img src={provider.secondaryIcon} alt="" className="absolute -right-0.5 -bottom-0.5 h-6 w-6 rounded-full border-2 border-[#141417] bg-[#141417] object-cover" referrerPolicy="no-referrer" />}
+                </span>
                 <span>
                   <span className="block text-sm font-bold text-white">{provider.name}</span>
                   <span className="mt-0.5 block text-xs text-zinc-400">{provider.description}</span>
@@ -127,16 +164,19 @@ function App() {
       )}
 
       <EarnpasteModal
-        key={`${selectedProvider.name}-${earnpasteAction || "new"}-${earnpasteSession || ""}`}
+        key={`${selectedProvider.id}-${earnpasteAction || "new"}-${earnpasteSession || ""}-${workinkSession || ""}-${workinkStep || ""}-${workinkToken || ""}`}
         isOpen={isKeyModalOpen}
         onClose={closeKeyModal}
-        onCaught={() => {}}
         providerName={selectedProvider.name}
         providerIcon={selectedProvider.icon}
+        providerKind={selectedProvider.id}
         initialStep={1}
         comebackStep={comebackStep}
         earnpasteAction={earnpasteAction}
         earnpasteSession={earnpasteSession}
+        workinkSession={workinkSession}
+        workinkStep={workinkStep}
+        workinkToken={workinkToken}
       />
     </div>
   );
