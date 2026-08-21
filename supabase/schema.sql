@@ -42,6 +42,8 @@ CREATE POLICY "anon_insert_unclaimed_keys" ON public.keys
 
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT INSERT ON TABLE public.keys TO anon, authenticated;
+GRANT USAGE ON SCHEMA public TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.keys TO service_role;
 
 CREATE TABLE IF NOT EXISTS public.key_authorized_devices (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -59,6 +61,7 @@ CREATE INDEX IF NOT EXISTS idx_key_authorized_devices_roblox_id
   ON public.key_authorized_devices(roblox_id);
 
 ALTER TABLE public.key_authorized_devices ENABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.key_authorized_devices TO service_role;
 
 DROP POLICY IF EXISTS "anon_select_key_authorized_devices" ON public.key_authorized_devices;
 DROP POLICY IF EXISTS "anon_insert_key_authorized_devices" ON public.key_authorized_devices;
