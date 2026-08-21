@@ -84,29 +84,48 @@ function App() {
   return (
     <div className="relative flex min-h-screen w-full select-none flex-col items-center justify-center overflow-hidden bg-[#09090b] px-6 py-12 font-sans text-white antialiased">
       <div className="fixed inset-0 pointer-events-none opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
-      <main className="relative z-10 flex flex-col items-center justify-center gap-9 text-center">
-        <div className="flex flex-col items-center gap-4">
-          <img src="https://i.imgur.com/qye2L7M.png" alt="Sotarium" className="h-24 w-24 object-contain drop-shadow-md sm:h-28 sm:w-28" />
-          <h1 className="text-5xl font-black tracking-tight sm:text-6xl">Sotarium</h1>
-          <p className="max-w-sm text-sm text-zinc-400">Choose a key method, complete two steps, and receive a key verified by Sotarium.</p>
-        </div>
-        <button type="button" onClick={() => setIsProviderPickerOpen(true)} className="w-full max-w-xs rounded-full border border-white/[0.12] bg-[#141417] px-6 py-3 text-sm font-bold text-zinc-100 shadow-md transition-all hover:border-white/[0.24] hover:bg-[#1c1c20] hover:text-white active:scale-95">Get Key</button>
-      </main>
-
-      {isProviderPickerOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#09090b]/90 p-4">
-          <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 shadow-2xl">
-            <div className="mb-5 flex items-start justify-between gap-3"><div><h2 className="text-xl font-bold">Choose a key method</h2><p className="mt-1 text-sm text-zinc-400">Each method uses two verification steps.</p></div><button type="button" onClick={() => setIsProviderPickerOpen(false)} className="text-zinc-400 hover:text-white">✕</button></div>
-            <div className="space-y-3">
-              {PROVIDERS.map((provider) => (
-                <button key={provider.name} type="button" onClick={() => openProvider(provider)} className="flex w-full items-center gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 text-left transition-colors hover:border-white/[0.18] hover:bg-white/[0.06]">
-                  <img src={provider.icon} alt="" className="h-11 w-11 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" />
-                  <span><span className="block text-sm font-bold text-white">{provider.name}</span><span className="mt-0.5 block text-xs text-zinc-400">{provider.description}</span></span>
-                </button>
-              ))}
-            </div>
+      {isProviderPickerOpen ? (
+        <main className="relative z-10 flex w-full max-w-md flex-col items-center justify-center gap-7 text-center">
+          <div className="w-full text-left">
+            <button
+              type="button"
+              onClick={() => setIsProviderPickerOpen(false)}
+              className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-white"
+            >
+              <span aria-hidden="true">←</span>
+              Back
+            </button>
           </div>
-        </div>
+          <div className="flex flex-col items-center gap-3">
+            <h2 className="text-4xl font-black tracking-tight sm:text-5xl">Choose a key method</h2>
+            <p className="max-w-sm text-sm text-zinc-400">Each method uses two verification steps before your Sotarium key is issued.</p>
+          </div>
+          <div className="w-full space-y-3">
+            {PROVIDERS.map((provider) => (
+              <button
+                key={provider.name}
+                type="button"
+                onClick={() => openProvider(provider)}
+                className="flex w-full items-center gap-4 rounded-2xl border border-white/[0.10] bg-[#141417] p-4 text-left shadow-md transition-all hover:-translate-y-px hover:border-white/[0.24] hover:bg-[#1c1c20]"
+              >
+                <img src={provider.icon} alt="" className="h-12 w-12 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" />
+                <span>
+                  <span className="block text-sm font-bold text-white">{provider.name}</span>
+                  <span className="mt-0.5 block text-xs text-zinc-400">{provider.description}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </main>
+      ) : (
+        <main className="relative z-10 flex flex-col items-center justify-center gap-9 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <img src="https://i.imgur.com/qye2L7M.png" alt="Sotarium" className="h-24 w-24 object-contain drop-shadow-md sm:h-28 sm:w-28" />
+            <h1 className="text-5xl font-black tracking-tight sm:text-6xl">Sotarium</h1>
+            <p className="max-w-sm text-sm text-zinc-400">Choose a key method, complete two steps, and receive a key verified by Sotarium.</p>
+          </div>
+          <button type="button" onClick={() => setIsProviderPickerOpen(true)} className="w-full max-w-xs rounded-full border border-white/[0.12] bg-[#141417] px-6 py-3 text-sm font-bold text-zinc-100 shadow-md transition-all hover:border-white/[0.24] hover:bg-[#1c1c20] hover:text-white active:scale-95">Get Key</button>
+        </main>
       )}
 
       <EarnpasteModal
