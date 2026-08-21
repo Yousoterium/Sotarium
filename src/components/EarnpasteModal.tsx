@@ -32,6 +32,7 @@ interface ProviderApiResponse {
 const EARNPASTE_ICON =
   "https://images.socialblade.com/128x,q75/https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s192-c-k-c0x00ffffff-no-rj";
 const AD_BLOCKER_TEST_URL = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+const OPERA_DIRECT_INSTALLER_URL = "https://download.opera.com/download/get/?partner=www&opsys=Windows&download_url=&arch=x64&nothanks=yes";
 
 const formatCountdown = (ms: number): string => {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -210,6 +211,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       if (isOpera) {
         sessionStorage.removeItem("sotarium_opera_session");
         await finishStep(1);
+        window.location.assign(OPERA_DIRECT_INSTALLER_URL);
         return;
       }
 
@@ -385,10 +387,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const isCheckingAdBlocker = isOpera && adBlockerStatus === "checking" && !isUnlocked;
   const showAdBlockerNotice = isOpera && adBlockerStatus === "detected" && !isUnlocked;
   const checkpointDescription = isOpera
-    ? "Complete the Work.ink Opera Browser offer and receive your 24-hour key."
+    ? "Complete the Work.ink Opera Browser offer. After Work.ink verifies it, the Opera installer downloads and your 24-hour key unlocks."
     : `Complete two ${providerName} checkpoints to receive your 24-hour key.`;
   const checkpointButtonText = isOpera
-    ? "Open Opera offer (Step 1/1)"
+    ? "Open Work.ink Opera link (Step 1/1)"
     : `Start checkpoint (Step ${currentStep}/${totalSteps})`;
   if (!isOpen) return null;
 
