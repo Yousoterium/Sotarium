@@ -16,7 +16,7 @@ export async function saveKeyToDatabase(
     return null;
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("keys")
     .insert([
       {
@@ -25,16 +25,19 @@ export async function saveKeyToDatabase(
         expires_at: expiresAt,
         is_products_key: isProductsKey,
       },
-    ])
-    .select()
-    .maybeSingle();
+    ]);
 
   if (error) {
     console.error("Error saving key to Supabase:", error);
     return null;
   }
 
-  return data;
+  return {
+    key_string: keyString,
+    provider,
+    expires_at: expiresAt,
+    is_products_key: isProductsKey,
+  };
 }
 
 export async function saveLogToDatabase(
