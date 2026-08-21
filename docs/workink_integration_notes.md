@@ -52,3 +52,7 @@ The created publisher base link is server configuration only: `https://work.ink/
 ## Test caveat
 
 The public endpoint returned HTTP 200 with an empty body to command-line requests from this environment, despite the authenticated dashboard documenting the `sr` JSON response. The deployed handler performs the documented request and validates the required `sr` field, so it fails closed rather than redirecting to an unverifiable URL if the provider does not return a usable override token.
+
+## Offer Card SDK scope clarification
+
+Work.ink’s public SDK announcement confirms that the current Offer Card SDK is a **Windows-native DLL** for desktop applications, installers, and software tools. Its documented C# example imports `work-ink-offer-sdk.dll` and calls `runOffer(int pubId)`. The announcement explicitly lists a future Web SDK as work in progress, so the current SDK cannot be embedded in this React/Vercel website. The browser-compatible supported integration remains the Link Override/key-system flow.

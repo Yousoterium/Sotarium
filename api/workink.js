@@ -75,8 +75,8 @@ async function validateWorkinkToken(token) {
   return Boolean(response.ok && data?.valid === true);
 }
 
-function getReturnUrl(req, sessionId, step) {
-  const url = new URL(`${getOrigin(req)}/workink`);
+function getReturnUrl(req, sessionId, step, flow = "workink") {
+  const url = new URL(`${getOrigin(req)}/${flow === "opera" ? "opera" : "workink"}`);
   url.searchParams.set("verify", "");
   url.searchParams.set("session", sessionId);
   url.searchParams.set("step", String(step));
@@ -87,7 +87,7 @@ function getReturnUrl(req, sessionId, step) {
 async function getPendingSession(supabase, sessionId) {
   const { data: session, error } = await supabase
     .from("earnpaste_sessions")
-    .select("id, current_step, status, expires_at, step_one_url")
+    .select("id, current_step, status, expires_at, step_one_url, step_two_url")
     .eq("id", sessionId)
     .maybeSingle();
 
@@ -129,6 +129,7 @@ export default async function handler(req, res) {
 
   try {
     if (action === "start") {
+      const flow = req.body?.flow === "opera" ? "opera" : "workink";
       const id = randomUUID();
       const expiresAt = new Date(Date.now() + SESSION_LIFETIME_MS).toISOString();
       const { error: insertError } = await supabase.from("earnpaste_sessions").insert({
@@ -136,6 +137,7 @@ export default async function handler(req, res) {
         current_step: 1,
         status: "pending",
         step_started_at: new Date().toISOString(),
+        step_two_url: flow === "opera" ? "opera" : null,
         expires_at: expiresAt,
       });
 
@@ -144,7 +146,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Could not create Work.ink session" });
       }
 
-      const url = await createOverrideUrl(getReturnUrl(req, id, 1));
+      const url = await createOverrideUrl(getReturnUrl(req, id, 1, flow));
       const { error: updateError } = await supabase
         .from("earnpaste_sessions")
         .update({ step_one_url: url })
@@ -157,7 +159,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Could not prepare the Work.ink checkpoint" });
       }
 
-      return res.status(200).json({ url, session: id, step: 1, expires_at: expiresAt });
+      return res.status(200).json({ url, session: id, step: 1, flow, expires_at: expiresAt });
     }
 
     if (action !== "verify") {
@@ -173,7 +175,8 @@ export default async function handler(req, res) {
     }
 
     const session = await getPendingSession(supabase, sessionId);
-    if (session.current_step !== step) {
+    const isOperaSession = session.step_two_url === "opera";
+    if (session.current_step !== step || (isOperaSession && step !== 1)) {
       return res.status(409).json({ error: "This Work.ink checkpoint is no longer active" });
     }
 
@@ -183,8 +186,27 @@ export default async function handler(req, res) {
     }
 
     const now = new Date().toISOString();
+    if (isOperaSession) {
+      const { error: updateError } = await supabase
+        .from("earnpaste_sessions")
+        .update({
+          status: "completed",
+          completed_at: now,
+        })
+        .eq("id", sessionId)
+        .eq("status", "pending")
+        .eq("current_step", 1);
+
+      if (updateError) {
+        console.error("Opera Work.ink completion error:", updateError);
+        return res.status(409).json({ error: "This Opera offer was already processed" });
+      }
+
+      return res.status(200).json({ accepted: true, session: sessionId, step: 1, flow: "opera" });
+    }
+
     if (step === 1) {
-      const nextUrl = await createOverrideUrl(getReturnUrl(req, sessionId, 2));
+      const nextUrl = await createOverrideUrl(getReturnUrl(req, sessionId, 2, "workink"));
       const { error: updateError } = await supabase
         .from("earnpaste_sessions")
         .update({

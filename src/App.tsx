@@ -33,7 +33,7 @@ const PROVIDERS: ProviderOption[] = [
     id: "opera",
     name: "Download Opera Browser",
     icon: OPERA_ICON,
-    description: "One download step to unlock your key",
+    description: "Complete one Work.ink Opera offer to unlock your key",
   },
 ];
 
@@ -96,12 +96,13 @@ function App() {
       setEarnpasteAction(action);
       setEarnpasteSession(session);
       setIsKeyModalOpen(true);
-    } else if (path === "/workink" && params.has("verify")) {
+    } else if ((path === "/workink" || path === "/opera") && params.has("verify")) {
       const session = params.get("session");
       const token = params.get("token");
       const step = Number(params.get("step"));
+      const providerId = path === "/opera" ? "opera" : "workink";
       if (session && token && (step === 1 || step === 2)) {
-        setSelectedProvider(PROVIDERS.find((provider) => provider.id === "workink") || PROVIDERS[0]);
+        setSelectedProvider(PROVIDERS.find((provider) => provider.id === providerId) || PROVIDERS[0]);
         setWorkinkSession(session);
         setWorkinkStep(step);
         setWorkinkToken(token);

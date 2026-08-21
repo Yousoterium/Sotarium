@@ -31,7 +31,6 @@ interface ProviderApiResponse {
 
 const EARNPASTE_ICON =
   "https://images.socialblade.com/128x,q75/https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s192-c-k-c0x00ffffff-no-rj";
-const OPERA_DOWNLOAD_URL = "https://download.opera.com/download/get/?partner=www&opsys=Windows&download_url=&arch=x64&nothanks=yes";
 const AD_BLOCKER_TEST_URL = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
 
 const formatCountdown = (ms: number): string => {
@@ -208,6 +207,12 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 
     try {
       const result = await callWorkinkApi("verify", { session, step, token });
+      if (isOpera) {
+        sessionStorage.removeItem("sotarium_opera_session");
+        await finishStep(1);
+        return;
+      }
+
       if (step === 1) {
         if (!result.url) throw new Error("Work.ink did not return the step 2 link.");
         sessionStorage.setItem("sotarium_workink_session", session);
@@ -236,15 +241,15 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   }, [isOpen, isEarnpaste, earnpasteAction, earnpasteSession]);
 
   useEffect(() => {
-    if (!isOpen || !isWorkink || !workinkSession || !workinkToken || (workinkStep !== 1 && workinkStep !== 2)) return;
+    if (!isOpen || (!isWorkink && !isOpera) || !workinkSession || !workinkToken || (workinkStep !== 1 && workinkStep !== 2)) return;
     const returnKey = `${workinkSession}:${workinkStep}:${workinkToken}`;
     if (handledWorkinkReturn.current === returnKey) return;
     handledWorkinkReturn.current = returnKey;
     void handleWorkinkReturn(workinkSession, workinkStep, workinkToken);
-  }, [isOpen, isWorkink, workinkSession, workinkStep, workinkToken]);
+  }, [isOpen, isWorkink, isOpera, workinkSession, workinkStep, workinkToken]);
 
   useEffect(() => {
-    if (!isOpen || !isOpera) {
+    if (!isOpen || !isOpera || hasWorkinkReturn) {
       setAdBlockerStatus("clear");
       return;
     }
@@ -276,7 +281,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       cancelled = true;
       bait.remove();
     };
-  }, [isOpen, isOpera, adBlockerCheckVersion]);
+  }, [isOpen, isOpera, hasWorkinkReturn, adBlockerCheckVersion]);
 
   useEffect(() => {
     if (!isOpen || isEarnpaste || isWorkink || isOpera || comebackStep < 1) return;
@@ -331,15 +336,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
           setIsRedirecting(false);
           return;
         }
-        const downloadLink = document.createElement("a");
-        downloadLink.href = OPERA_DOWNLOAD_URL;
-        downloadLink.target = "_self";
-        downloadLink.rel = "noopener noreferrer";
-        downloadLink.style.display = "none";
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        downloadLink.remove();
-        await finishStep(1);
+        const result = await callWorkinkApi("start", { flow: "opera" });
+        if (!result.url || !result.session) throw new Error("Work.ink did not return the Opera offer link.");
+        sessionStorage.setItem("sotarium_opera_session", result.session);
+        window.location.assign(result.url);
         return;
       }
 
@@ -366,6 +366,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     handledWorkinkReturn.current = null;
     sessionStorage.removeItem("sotarium_earnpaste_session");
     sessionStorage.removeItem("sotarium_workink_session");
+    sessionStorage.removeItem("sotarium_opera_session");
     if (isOpera) {
       setAdBlockerStatus("checking");
       setAdBlockerCheckVersion((version) => version + 1);
@@ -384,10 +385,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const isCheckingAdBlocker = isOpera && adBlockerStatus === "checking" && !isUnlocked;
   const showAdBlockerNotice = isOpera && adBlockerStatus === "detected" && !isUnlocked;
   const checkpointDescription = isOpera
-    ? "Download the official Opera Windows installer and receive your 24-hour key."
+    ? "Complete the Work.ink Opera Browser offer and receive your 24-hour key."
     : `Complete two ${providerName} checkpoints to receive your 24-hour key.`;
   const checkpointButtonText = isOpera
-    ? "Download Opera installer & unlock key"
+    ? "Open Opera offer (Step 1/1)"
     : `Start checkpoint (Step ${currentStep}/${totalSteps})`;
   if (!isOpen) return null;
 
@@ -456,7 +457,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
                   <AlertCircle className="h-7 w-7" strokeWidth={2.5} />
                 </div>
                 <h3 id="adblocker-title" className="text-xl font-black tracking-tight">Ad blocker detected</h3>
-                <p className="mt-3 text-sm leading-6 text-zinc-300">A real browser check found that an ad resource or ad placeholder is being blocked. The direct Opera installer download cannot start until the blocker is disabled for the official Opera site.</p>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">A real browser check found that an ad resource or ad placeholder is being blocked. The Work.ink Opera Browser offer cannot start until the blocker is disabled for Work.ink.</p>
                 <p className="mt-3 text-xs leading-5 text-zinc-500">This detector does not install anything or change browser settings. Disable the blocker if you choose, then run the check again.</p>
                 <button type="button" onClick={() => setAdBlockerCheckVersion((version) => version + 1)} className="mt-6 w-full rounded-full bg-white px-5 py-3 text-sm font-bold text-[#141417] hover:bg-zinc-100">Check again</button>
                 <button type="button" onClick={onClose} className="mt-3 w-full rounded-full border border-white/[0.10] px-5 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/[0.05] hover:text-white">Cancel</button>
