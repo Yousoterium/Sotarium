@@ -3,6 +3,7 @@ import { EarnpasteModal } from "./components/EarnpasteModal";
 import { ProductsPage } from "./components/ProductsPage";
 import { AddGamePage } from "./components/AddGamePage";
 import { ScriptsPage } from "./components/ScriptsPage";
+import { LogsPage, type LogEntry } from "./components/LogsPage";
 
 type ProviderId = "lootlabs" | "earnpaste" | "workink" | "opera";
 
@@ -42,13 +43,15 @@ const PROVIDERS: ProviderOption[] = [
 ];
 
 function App() {
-  const [page, setPage] = useState<"home" | "products" | "add" | "scripts">(() => {
+  const [page, setPage] = useState<"home" | "products" | "add" | "scripts" | "logs">(() => {
     const path = window.location.pathname;
     if (path === "/scripts") return "scripts";
     if (path === "/add") return "add";
     if (path === "/products") return "products";
+    if (path === "/logs") return "logs";
     return "home";
   });
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isProviderPickerOpen, setIsProviderPickerOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
@@ -88,6 +91,7 @@ function App() {
       if (path === "/scripts") setPage("scripts");
       else if (path === "/add") setPage("add");
       else if (path === "/products") setPage("products");
+      else if (path === "/logs") setPage("logs");
       else setPage("home");
     };
     window.addEventListener("popstate", handlePopState);
@@ -125,6 +129,7 @@ function App() {
   if (page === "scripts") return <ScriptsPage onBack={() => setPage("home")} />;
   if (page === "add") return <AddGamePage onBack={() => setPage("home")} />;
   if (page === "products") return <ProductsPage onBack={() => setPage("home")} />;
+  if (page === "logs") return <LogsPage logs={logs} onBack={() => { window.history.replaceState({}, "", "/"); setPage("home"); }} onClear={() => setLogs([])} />;
 
   return (
     <div className="relative flex min-h-screen w-full select-none flex-col items-center justify-center overflow-hidden bg-[#09090b] px-6 py-12 font-sans text-white antialiased">

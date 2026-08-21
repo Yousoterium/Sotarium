@@ -35,8 +35,11 @@ const statusLabel = (status: LogStatus): string => {
   }
 };
 
-const DEFAULT_PROVIDERS = [
-  { name: "Lootlabs", icon: "https://i.imgur.com/hmJCWhI.png" },
+const DEFAULT_PROVIDERS: Array<{ name: string; icon: string; status: "Active" | "SOON"; disabled?: boolean }> = [
+  { name: "Lootlabs", icon: "https://i.imgur.com/hmJCWhI.png", status: "Active" },
+  { name: "Earnpaste", icon: "https://images.socialblade.com/128x,q75/https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s192-c-k-c0x00ffffff-no-rj", status: "Active" },
+  { name: "Work.ink", icon: "https://favicon.pub/api/work.ink?s=32", status: "Active" },
+  { name: "Download Opera Browser", icon: "https://favicon.pub/api/opera.com?s=32", status: "SOON", disabled: true },
 ];
 
 const getProviderIcon = (providerName?: string) => {
@@ -304,12 +307,12 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
           )}
         </div>
 
-        {/* Centered Lootlabs provider card */}
-        <div className="flex justify-center mb-4">
+        {/* Provider overview */}
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {DEFAULT_PROVIDERS.map((provider) => {
             const count = logs.filter((l) => (l.providerName || "").toLowerCase() === provider.name.toLowerCase()).length;
             return (
-              <div key={provider.name} className="w-full max-w-md rounded-[26px] border border-white/[0.08] bg-[#131317] p-5 shadow-sm">
+              <div key={provider.name} className={`relative rounded-[22px] border p-5 shadow-sm ${provider.disabled ? "border-white/[0.05] bg-zinc-900/60 opacity-55 grayscale" : "border-white/[0.08] bg-[#131317]"}`}>
                 <div className="flex items-center gap-3">
                   {provider.icon ? (
                     <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/5 shadow-sm">
@@ -321,17 +324,18 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
                     </div>
                   )}
 
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.24em] text-zinc-400">{provider.name}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm uppercase tracking-[0.16em] text-zinc-400">{provider.name}</p>
                     <p className="mt-1 text-3xl font-bold text-white">{count}</p>
                   </div>
+                  <span className={`ml-auto rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.16em] ${provider.disabled ? "border border-white/10 bg-white/5 text-zinc-300" : "bg-[#1AF513]/15 text-[#1AF513]"}`}>{provider.status}</span>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Floating Category Filter Buttons Under Lootlabs Card (White Outline on Active) */}
+        {/* Category filter buttons */}
         <div className="flex items-center justify-center gap-2 mb-6">
           {(["all", "success", "pending", "error"] as const).map((cat) => {
             const catCount = logs.filter((l) => cat === "all" || l.status === cat).length;
