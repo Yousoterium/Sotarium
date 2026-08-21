@@ -12,6 +12,8 @@ interface ProviderOption {
   icon: string;
   secondaryIcon?: string;
   description: string;
+  disabled?: boolean;
+  badge?: string;
 }
 
 const EARNPASTE_ICON =
@@ -33,7 +35,9 @@ const PROVIDERS: ProviderOption[] = [
     id: "opera",
     name: "Download Opera Browser",
     icon: OPERA_ICON,
-    description: "Complete one Work.ink Opera offer to unlock your key",
+    description: "Coming soon",
+    disabled: true,
+    badge: "SOON",
   },
 ];
 
@@ -66,6 +70,7 @@ function App() {
   };
 
   const openProvider = (provider: ProviderOption) => {
+    if (provider.disabled) return;
     setSelectedProvider(provider);
     setIsProviderPickerOpen(false);
     setComebackStep(0);
@@ -145,7 +150,9 @@ function App() {
                 key={provider.name}
                 type="button"
                 onClick={() => openProvider(provider)}
-                className="flex w-full items-center gap-4 rounded-2xl border border-white/[0.10] bg-[#141417] p-4 text-left shadow-md transition-all hover:-translate-y-px hover:border-white/[0.24] hover:bg-[#1c1c20]"
+                disabled={provider.disabled}
+                aria-disabled={provider.disabled}
+                className={`relative flex w-full items-center gap-4 rounded-2xl border p-4 text-left shadow-md transition-all ${provider.disabled ? "cursor-not-allowed border-white/[0.06] bg-zinc-900/60 opacity-55 grayscale" : "border-white/[0.10] bg-[#141417] hover:-translate-y-px hover:border-white/[0.24] hover:bg-[#1c1c20]"}`}
               >
                 <span className="relative flex h-12 w-14 shrink-0 items-center" aria-hidden="true">
                   <img src={provider.icon} alt="" className="h-12 w-12 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" />
@@ -155,6 +162,11 @@ function App() {
                   <span className="block text-sm font-bold text-white">{provider.name}</span>
                   <span className="mt-0.5 block text-xs text-zinc-400">{provider.description}</span>
                 </span>
+                {provider.badge && (
+                  <span aria-hidden="true" className="pointer-events-none absolute inset-x-3 top-1/2 flex -translate-y-1/2 -rotate-3 items-center justify-center rounded-lg border border-white/15 bg-zinc-100/15 py-1 text-xs font-black tracking-[0.35em] text-zinc-100 shadow-sm">
+                    {provider.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
