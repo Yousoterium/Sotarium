@@ -45,6 +45,12 @@ function toLogStatus(value, fallback) {
     : fallback;
 }
 
+function getSessionProvider(session) {
+  if (session.step_two_url === "opera") return "Opera";
+  if (typeof session.step_one_url === "string" && session.step_one_url.includes("work.ink")) return "Work.ink";
+  return "Earnpaste";
+}
+
 async function fetchAllRows(queryFactory) {
   const rows = [];
   let from = 0;
@@ -88,7 +94,7 @@ export default async function handler(req, res) {
     for (const databaseKey of databaseKeys) {
       try {
         const supabase = createClient(SUPABASE_URL, databaseKey);
-        const [keys, providerEvents] = await Promise.all([
+        const [keys, providerEvents, verificationSessions] = await Promise.all([
           fetchAllRows(() =>
             supabase
               .from("keys")
@@ -105,6 +111,15 @@ export default async function handler(req, res) {
             console.warn("Could not read provider event history:", error.message || error);
             return [];
           }),
+          fetchAllRows(() =>
+            supabase
+              .from("earnpaste_sessions")
+              .select("id, current_step, status, created_at, completed_at, step_one_url, step_two_url")
+              .order("created_at", { ascending: false }),
+          ).catch((error) => {
+            console.warn("Could not read verification session history:", error.message || error);
+            return [];
+          }),
         ]);
 
         const keyLogs = keys.map((key) => {
@@ -118,7 +133,7 @@ export default async function handler(req, res) {
             message: key.claimed
               ? `Key ${key.key_string} claimed by Roblox user: ${owner}${expiry}`
               : `Key generated: ${key.key_string}${expiry}`,
-            status: key.claimed ? "success" : "pending",
+            status: "success",
             source: "key",
           };
         });
@@ -132,7 +147,24 @@ export default async function handler(req, res) {
           source: "provider-event",
         }));
 
-        const logs = [...keyLogs, ...eventLogs].sort((left, right) => {
+        const sessionLogs = verificationSessions.map((session) => {
+          const providerName = getSessionProvider(session);
+          const stepCount = providerName === "Opera" ? 1 : 2;
+          const completed = session.status === "completed";
+
+          return {
+            id: `session:${session.id}`,
+            time: completed && session.completed_at ? session.completed_at : session.created_at,
+            providerName,
+            message: completed
+              ? `Verification completed — key issued after ${stepCount} required ${stepCount === 1 ? "checkpoint" : "checkpoints"}.`
+              : `Verification pending — checkpoint ${session.current_step} of ${stepCount}.`,
+            status: completed ? "success" : "pending",
+            source: "verification-session",
+          };
+        });
+
+        const logs = [...keyLogs, ...eventLogs, ...sessionLogs].sort((left, right) => {
           return new Date(right.time).getTime() - new Date(left.time).getTime();
         });
 

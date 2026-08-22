@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { createClient } from "@supabase/supabase-js";
+import { issueVerifiedSessionKey } from "./_lib/key-issuance.js";
 
 const EARNPASTE_ENDPOINT = "https://us-central1-earnpaste-3cd5a.cloudfunctions.net/apiCreatePaste";
 const EARNPASTE_TIMER_SECONDS = 15;
@@ -8,6 +9,7 @@ const SESSION_LIFETIME_MS = 30 * 60 * 1000;
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 const EARNPASTE_API_KEY = process.env.EARNPASTE_API_KEY;
+const KEY_ISSUANCE_SECRET = process.env.KEY_ISSUANCE_SECRET || SUPABASE_SERVICE_ROLE_KEY;
 
 function getOrigin(req) {
   const forwardedHost = req.headers["x-forwarded-host"];
@@ -114,11 +116,12 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Earnpaste session not found" });
     }
 
-    if (session.status !== "pending" || new Date(session.expires_at).getTime() <= Date.now()) {
+    const isCompletedSession = session.status === "completed";
+    if ((!isCompletedSession && session.status !== "pending") || new Date(session.expires_at).getTime() <= Date.now()) {
       return res.status(410).json({ error: "Earnpaste session expired" });
     }
 
-    if (secondsSince(session.step_started_at) < EARNPASTE_TIMER_SECONDS) {
+    if (!isCompletedSession && secondsSince(session.step_started_at) < EARNPASTE_TIMER_SECONDS) {
       return res.status(429).json({
         error: "The Earnpaste timer has not completed yet",
         retry_after: Math.ceil(EARNPASTE_TIMER_SECONDS - secondsSince(session.step_started_at)),
@@ -126,7 +129,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "rotate") {
-      if (session.current_step !== 1) {
+      if (isCompletedSession || session.current_step !== 1) {
         return res.status(409).json({ error: "Earnpaste step 1 was already completed" });
       }
 
@@ -156,19 +159,30 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: "Complete Earnpaste step 1 before step 2" });
       }
 
-      const { error: updateError } = await supabase
-        .from("earnpaste_sessions")
-        .update({ status: "completed", completed_at: new Date().toISOString() })
-        .eq("id", sessionId)
-        .eq("current_step", 2)
-        .eq("status", "pending");
+      if (!isCompletedSession) {
+        const { data: completedSession, error: updateError } = await supabase
+          .from("earnpaste_sessions")
+          .update({ status: "completed", completed_at: new Date().toISOString() })
+          .eq("id", sessionId)
+          .eq("current_step", 2)
+          .eq("status", "pending")
+          .select("id")
+          .maybeSingle();
 
-      if (updateError) {
-        console.error("Earnpaste completion update error:", updateError);
-        return res.status(500).json({ error: "Could not complete the Earnpaste session" });
+        if (updateError || !completedSession) {
+          console.error("Earnpaste completion update error:", updateError);
+          return res.status(409).json({ error: "Could not complete the Earnpaste session" });
+        }
       }
 
-      return res.status(200).json({ accepted: true, session: sessionId, step: 2 });
+      const issuedKey = await issueVerifiedSessionKey({
+        supabase,
+        sessionId,
+        provider: "Earnpaste",
+        signingKey: KEY_ISSUANCE_SECRET,
+      });
+
+      return res.status(200).json({ accepted: true, session: sessionId, step: 2, ...issuedKey });
     }
 
     return res.status(400).json({ error: "Unknown Earnpaste action" });

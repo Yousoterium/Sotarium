@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check, Clock, Copy, Loader2 } from "lucide-react";
-import { saveKeyToDatabase } from "../lib/supabase";
 
 type ProviderKind = "lootlabs" | "earnpaste" | "workink" | "opera";
 type AdBlockerStatus = "checking" | "clear" | "detected";
@@ -12,7 +11,8 @@ interface EarnpasteModalProps {
   providerIcon?: string;
   providerKind?: ProviderKind;
   initialStep?: number;
-  comebackStep?: number;
+  lootlabsSession?: string | null;
+  lootlabsStep?: number | null;
   earnpasteAction?: "upgrade" | "completed" | null;
   earnpasteSession?: string | null;
   workinkSession?: string | null;
@@ -25,6 +25,8 @@ interface ProviderApiResponse {
   session?: string;
   step?: number;
   accepted?: boolean;
+  key?: string;
+  expires_at?: string;
   error?: string;
   retry_after?: number;
 }
@@ -42,29 +44,20 @@ const formatCountdown = (ms: number): string => {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 };
 
-const generateFinalKeyString = (): string => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const group = () => Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  return `${group()}-${group()}-${group()}`;
-};
-
-const createLootlabsUrl = async (destinationUrl: string, step: number): Promise<string | null> => {
-  try {
-    const response = await fetch("/api/lootlabs-proxy?action=create_link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: `Sotarium Checkpoint ${step}`,
-        destinationUrl,
-        tierId: 1,
-        numberOfTasks: 1,
-      }),
-    });
-    const data = await response.json();
-    return typeof data?.lootUrl === "string" && data.lootUrl.startsWith("http") ? data.lootUrl : null;
-  } catch {
-    return null;
+const callLootlabsApi = async (
+  action: "start" | "complete",
+  payload: Record<string, string | number> = {},
+): Promise<ProviderApiResponse> => {
+  const response = await fetch(`/api/lootlabs-proxy?action=${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = (await response.json().catch(() => ({}))) as ProviderApiResponse;
+  if (!response.ok) {
+    throw new Error(data.error || "Lootlabs could not complete this request.");
   }
+  return data;
 };
 
 const callEarnpasteApi = async (
@@ -122,7 +115,8 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   providerIcon = EARNPASTE_ICON,
   providerKind = "earnpaste",
   initialStep = 1,
-  comebackStep = 0,
+  lootlabsSession = null,
+  lootlabsStep = null,
   earnpasteAction = null,
   earnpasteSession = null,
   workinkSession = null,
@@ -150,21 +144,23 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 
   const resetUrl = () => window.history.replaceState({}, "", "/");
 
-  const generateFinalKey = async () => {
-    const key = generateFinalKeyString();
-    const lifetime = 24 * 60 * 60 * 1000;
-    const expiresAt = Date.now() + lifetime;
+  const unlockVerifiedKey = (result: ProviderApiResponse) => {
+    const key = typeof result.key === "string" ? result.key.trim().toUpperCase() : "";
+    const expiresAt = result.expires_at ? new Date(result.expires_at).getTime() : Number.NaN;
+    if (!key || !/^[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}$/.test(key) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+      throw new Error("The provider verified the checkpoint but did not return a valid key.");
+    }
+
     setGeneratedKey(key);
     setKeyExpiry(expiresAt);
-    setTimeLeft(lifetime);
-    await saveKeyToDatabase(key, providerName, new Date(expiresAt).toISOString(), false);
+    setTimeLeft(expiresAt - Date.now());
   };
 
   const finishStep = async (step: number) => {
     setCompletedSteps((previous) => Array.from(new Set([...previous, step])));
     setStatusMessage(`Step ${step} verified.`);
     if (step >= totalSteps) {
-      await generateFinalKey();
+      setStatusMessage("All required checkpoints were verified.");
       return;
     }
     setCurrentStep(step + 1);
@@ -189,11 +185,41 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
         return;
       }
 
-      await callEarnpasteApi("complete", session);
+      const result = await callEarnpasteApi("complete", session);
       sessionStorage.removeItem("sotarium_earnpaste_session");
       await finishStep(2);
+      unlockVerifiedKey(result);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Could not verify the Earnpaste step.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleLootlabsReturn = async (session: string, step: number) => {
+    setIsRedirecting(false);
+    setIsVerifying(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    resetUrl();
+
+    try {
+      const result = await callLootlabsApi("complete", { session, step });
+      if (step === 1) {
+        if (!result.url) throw new Error("Lootlabs did not return the second checkpoint link.");
+        setCompletedSteps([1]);
+        setCurrentStep(2);
+        setStatusMessage("Step 1 verified. Opening step 2...");
+        setIsVerifying(false);
+        setIsRedirecting(true);
+        window.location.assign(result.url);
+        return;
+      }
+
+      await finishStep(2);
+      unlockVerifiedKey(result);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Could not verify the Lootlabs checkpoint.");
     } finally {
       setIsVerifying(false);
     }
@@ -211,6 +237,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       if (isOpera) {
         sessionStorage.removeItem("sotarium_opera_session");
         await finishStep(1);
+        unlockVerifiedKey(result);
         window.location.assign(OPERA_DIRECT_INSTALLER_URL);
         return;
       }
@@ -230,6 +257,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       sessionStorage.removeItem("sotarium_workink_session");
       setCompletedSteps([1]);
       await finishStep(2);
+      unlockVerifiedKey(result);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Could not verify the Work.ink checkpoint.");
     } finally {
@@ -286,16 +314,9 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   }, [isOpen, isOpera, hasWorkinkReturn, adBlockerCheckVersion]);
 
   useEffect(() => {
-    if (!isOpen || isEarnpaste || isWorkink || isOpera || comebackStep < 1) return;
-    setIsVerifying(true);
-    setErrorMessage(null);
-    resetUrl();
-    const timer = window.setTimeout(() => {
-      void finishStep(comebackStep);
-      setIsVerifying(false);
-    }, 900);
-    return () => window.clearTimeout(timer);
-  }, [isOpen, isEarnpaste, isWorkink, isOpera, comebackStep]);
+    if (!isOpen || providerKind !== "lootlabs" || !lootlabsSession || (lootlabsStep !== 1 && lootlabsStep !== 2)) return;
+    void handleLootlabsReturn(lootlabsSession, lootlabsStep);
+  }, [isOpen, providerKind, lootlabsSession, lootlabsStep]);
 
   useEffect(() => {
     if (!keyExpiry) return;
@@ -345,10 +366,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
         return;
       }
 
-      const returnUrl = `${window.location.origin}/lootlabs?verify${currentStep}`;
-      const lootUrl = await createLootlabsUrl(returnUrl, currentStep);
-      if (!lootUrl) throw new Error("Could not create the Lootlabs link. Please try again.");
-      window.location.assign(lootUrl);
+      const result = await callLootlabsApi("start");
+      if (!result.url || !result.session) throw new Error("Lootlabs did not return the first checkpoint link.");
+      sessionStorage.setItem("sotarium_lootlabs_session", result.session);
+      window.location.assign(result.url);
     } catch (error) {
       setIsRedirecting(false);
       setErrorMessage(error instanceof Error ? error.message : "Could not start the checkpoint.");
@@ -366,6 +387,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     setKeyExpiry(null);
     setTimeLeft(0);
     handledWorkinkReturn.current = null;
+    sessionStorage.removeItem("sotarium_lootlabs_session");
     sessionStorage.removeItem("sotarium_earnpaste_session");
     sessionStorage.removeItem("sotarium_workink_session");
     sessionStorage.removeItem("sotarium_opera_session");

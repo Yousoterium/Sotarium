@@ -55,7 +55,8 @@ function App() {
   const [isProviderPickerOpen, setIsProviderPickerOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
-  const [comebackStep, setComebackStep] = useState(0);
+  const [lootlabsSession, setLootlabsSession] = useState<string | null>(null);
+  const [lootlabsStep, setLootlabsStep] = useState<number | null>(null);
   const [earnpasteAction, setEarnpasteAction] = useState<"upgrade" | "completed" | null>(null);
   const [earnpasteSession, setEarnpasteSession] = useState<string | null>(null);
   const [workinkSession, setWorkinkSession] = useState<string | null>(null);
@@ -69,14 +70,16 @@ function App() {
     setWorkinkSession(null);
     setWorkinkStep(null);
     setWorkinkToken(null);
-    setComebackStep(0);
+    setLootlabsSession(null);
+    setLootlabsStep(null);
   };
 
   const openProvider = (provider: ProviderOption) => {
     if (provider.disabled) return;
     setSelectedProvider(provider);
     setIsProviderPickerOpen(false);
-    setComebackStep(0);
+    setLootlabsSession(null);
+    setLootlabsStep(null);
     setEarnpasteAction(null);
     setEarnpasteSession(null);
     setWorkinkSession(null);
@@ -127,10 +130,15 @@ function App() {
         setWorkinkToken(token);
         setIsKeyModalOpen(true);
       }
-    } else if (path === "/lootlabs" && (params.has("verify") || params.has("verify1") || params.has("verify2"))) {
-      setSelectedProvider(PROVIDERS[0]);
-      setComebackStep(params.has("verify1") ? 1 : 2);
-      setIsKeyModalOpen(true);
+    } else if (path === "/lootlabs") {
+      const session = params.get("session");
+      const step = Number(params.get("step"));
+      if (session && (step === 1 || step === 2)) {
+        setSelectedProvider(PROVIDERS[0]);
+        setLootlabsSession(session);
+        setLootlabsStep(step);
+        setIsKeyModalOpen(true);
+      }
     }
 
     return () => window.removeEventListener("popstate", handlePopState);
@@ -197,14 +205,15 @@ function App() {
       )}
 
       <EarnpasteModal
-        key={`${selectedProvider.id}-${earnpasteAction || "new"}-${earnpasteSession || ""}-${workinkSession || ""}-${workinkStep || ""}-${workinkToken || ""}`}
+        key={`${selectedProvider.id}-${lootlabsSession || ""}-${lootlabsStep || ""}-${earnpasteAction || "new"}-${earnpasteSession || ""}-${workinkSession || ""}-${workinkStep || ""}-${workinkToken || ""}`}
         isOpen={isKeyModalOpen}
         onClose={closeKeyModal}
         providerName={selectedProvider.name}
         providerIcon={selectedProvider.icon}
         providerKind={selectedProvider.id}
         initialStep={1}
-        comebackStep={comebackStep}
+        lootlabsSession={lootlabsSession}
+        lootlabsStep={lootlabsStep}
         earnpasteAction={earnpasteAction}
         earnpasteSession={earnpasteSession}
         workinkSession={workinkSession}

@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { createClient } from "@supabase/supabase-js";
+import { issueVerifiedSessionKey } from "./_lib/key-issuance.js";
 
 const WORKINK_OVERRIDE_ENDPOINT = "https://work.ink/_api/v2/override";
 const WORKINK_TOKEN_VALIDATION_BASE = "https://work.ink/_api/v2/token/isValid/";
@@ -8,6 +9,7 @@ const SESSION_LIFETIME_MS = 30 * 60 * 1000;
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 const WORKINK_BASE_LINK = process.env.WORKINK_BASE_LINK;
+const KEY_ISSUANCE_SECRET = process.env.KEY_ISSUANCE_SECRET || SUPABASE_SERVICE_ROLE_KEY;
 
 function getOrigin(req) {
   const forwardedHost = req.headers["x-forwarded-host"];
@@ -97,7 +99,7 @@ async function getPendingSession(supabase, sessionId) {
     throw notFound;
   }
 
-  if (session.status !== "pending" || new Date(session.expires_at).getTime() <= Date.now()) {
+  if (!["pending", "completed"].includes(session.status) || new Date(session.expires_at).getTime() <= Date.now()) {
     const expired = new Error("Work.ink session expired");
     expired.statusCode = 410;
     throw expired;
@@ -176,8 +178,23 @@ export default async function handler(req, res) {
 
     const session = await getPendingSession(supabase, sessionId);
     const isOperaSession = session.step_two_url === "opera";
+    const isFinalStep = isOperaSession ? step === 1 : step === 2;
     if (session.current_step !== step || (isOperaSession && step !== 1)) {
       return res.status(409).json({ error: "This Work.ink checkpoint is no longer active" });
+    }
+
+    if (session.status === "completed") {
+      if (!isFinalStep) {
+        return res.status(409).json({ error: "This Work.ink session was already completed" });
+      }
+
+      const issuedKey = await issueVerifiedSessionKey({
+        supabase,
+        sessionId,
+        provider: isOperaSession ? "Opera" : "Work.ink",
+        signingKey: KEY_ISSUANCE_SECRET,
+      });
+      return res.status(200).json({ accepted: true, session: sessionId, step, flow: isOperaSession ? "opera" : "workink", ...issuedKey });
     }
 
     const valid = await validateWorkinkToken(token);
@@ -187,7 +204,7 @@ export default async function handler(req, res) {
 
     const now = new Date().toISOString();
     if (isOperaSession) {
-      const { error: updateError } = await supabase
+      const { data: completedSession, error: updateError } = await supabase
         .from("earnpaste_sessions")
         .update({
           status: "completed",
@@ -195,14 +212,22 @@ export default async function handler(req, res) {
         })
         .eq("id", sessionId)
         .eq("status", "pending")
-        .eq("current_step", 1);
+        .eq("current_step", 1)
+        .select("id")
+        .maybeSingle();
 
-      if (updateError) {
+      if (updateError || !completedSession) {
         console.error("Opera Work.ink completion error:", updateError);
         return res.status(409).json({ error: "This Opera offer was already processed" });
       }
 
-      return res.status(200).json({ accepted: true, session: sessionId, step: 1, flow: "opera" });
+      const issuedKey = await issueVerifiedSessionKey({
+        supabase,
+        sessionId,
+        provider: "Opera",
+        signingKey: KEY_ISSUANCE_SECRET,
+      });
+      return res.status(200).json({ accepted: true, session: sessionId, step: 1, flow: "opera", ...issuedKey });
     }
 
     if (step === 1) {
@@ -226,7 +251,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ url: nextUrl, session: sessionId, step: 2 });
     }
 
-    const { error: updateError } = await supabase
+    const { data: completedSession, error: updateError } = await supabase
       .from("earnpaste_sessions")
       .update({
         status: "completed",
@@ -234,14 +259,22 @@ export default async function handler(req, res) {
       })
       .eq("id", sessionId)
       .eq("status", "pending")
-      .eq("current_step", 2);
+      .eq("current_step", 2)
+      .select("id")
+      .maybeSingle();
 
-    if (updateError) {
+    if (updateError || !completedSession) {
       console.error("Work.ink step-two completion error:", updateError);
       return res.status(409).json({ error: "This Work.ink checkpoint was already processed" });
     }
 
-    return res.status(200).json({ accepted: true, session: sessionId, step: 2 });
+    const issuedKey = await issueVerifiedSessionKey({
+      supabase,
+      sessionId,
+      provider: "Work.ink",
+      signingKey: KEY_ISSUANCE_SECRET,
+    });
+    return res.status(200).json({ accepted: true, session: sessionId, step: 2, ...issuedKey });
   } catch (error) {
     console.error("Work.ink handler error:", error);
     const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 502;
