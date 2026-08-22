@@ -139,73 +139,15 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
 
   if (!isAllowed) {
     return (
-      <div className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#050506] px-6 py-12 text-white">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-300/35 to-transparent" />
-        <div className="pointer-events-none absolute inset-0 [background:radial-gradient(ellipse_at_center,rgba(118,92,255,0.10),transparent_38%),linear-gradient(180deg,#050506_0%,#07070a_100%)]" />
-
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[510px] w-[min(720px,125vw)] -translate-x-1/2 -translate-y-[60%] opacity-90">
-          <svg viewBox="0 0 720 510" className="h-full w-full" aria-hidden="true">
-            <defs>
-              <radialGradient id="verificationGlow" cx="50%" cy="46%" r="54%">
-                <stop offset="0%" stopColor="#8b7bff" stopOpacity="0.22" />
-                <stop offset="52%" stopColor="#634cff" stopOpacity="0.07" />
-                <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-              </radialGradient>
-              <pattern id="verificationDots" width="13" height="13" patternUnits="userSpaceOnUse">
-                <circle cx="6.5" cy="6.5" r="1.25" fill="#a89cff" />
-              </pattern>
-              <mask id="verificationOrbMask">
-                <ellipse cx="360" cy="245" rx="232" ry="184" fill="white" />
-              </mask>
-              <linearGradient id="verificationFade" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="white" stopOpacity="0.20" />
-                <stop offset="45%" stopColor="white" stopOpacity="0.90" />
-                <stop offset="100%" stopColor="white" stopOpacity="0.08" />
-              </linearGradient>
-            </defs>
-            <ellipse cx="360" cy="245" rx="310" ry="240" fill="url(#verificationGlow)" />
-            <g mask="url(#verificationOrbMask)" opacity="0.68">
-              <rect x="120" y="55" width="480" height="385" fill="url(#verificationDots)" mask="url(#verificationFade)" />
-            </g>
-            <ellipse cx="360" cy="245" rx="232" ry="184" fill="none" stroke="#b3a8ff" strokeOpacity="0.16" />
-            <path d="M144 245C204 193 516 193 576 245C516 297 204 297 144 245Z" fill="none" stroke="#b3a8ff" strokeOpacity="0.12" />
-            <path d="M198 115C305 176 305 314 198 375M522 115C415 176 415 314 522 375" fill="none" stroke="#b3a8ff" strokeOpacity="0.11" />
-          </svg>
-        </div>
-
-        <main className="relative z-10 w-full max-w-2xl text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.10] bg-white/[0.045] text-violet-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_16px_42px_rgba(0,0,0,0.34)] backdrop-blur">
-            <ShieldAlert className="h-5 w-5" strokeWidth={1.8} />
-          </div>
-          <h1 className="mt-7 text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.052em] text-[#f7f7f9] sm:text-6xl">Access cannot be verified.</h1>
-          <p className="mx-auto mt-5 max-w-lg text-[15px] leading-6 text-[#9b9ba5]">
-            This page only responds after a successful private access check. Refresh the verification or return to the previous page.
-          </p>
-
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => void loadDatabaseLogs()}
-              className="inline-flex min-w-44 items-center justify-center gap-2 rounded-xl bg-[#f4f4f6] px-5 py-3 text-sm font-semibold text-[#0a0a0c] shadow-[inset_0_1px_0_rgba(255,255,255,0.75),0_14px_34px_-16px_rgba(139,92,246,0.78)] transition duration-300 hover:-translate-y-0.5 hover:bg-white"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Verify again
-            </button>
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex min-w-44 items-center justify-center rounded-xl border border-white/[0.11] bg-white/[0.025] px-5 py-3 text-sm font-medium text-[#e2e2e7] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition duration-300 hover:-translate-y-0.5 hover:border-white/[0.18] hover:bg-white/[0.055]"
-            >
-              Return to previous page
-            </button>
-          </div>
-
-          <div className="mx-auto mt-10 flex w-fit items-center gap-2 rounded-full border border-white/[0.07] bg-black/20 px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-[#777780]">
-            <span className="h-1.5 w-1.5 rounded-full bg-violet-300 shadow-[0_0_9px_rgba(167,139,250,0.9)]" />
-            Verification remains private
-          </div>
-          {accessError && <p className="mt-3 text-xs text-[#6e6e76]">The verification service is temporarily unavailable. Please retry shortly.</p>}
-        </main>
+      <div className="relative flex min-h-screen w-full select-none items-center justify-center overflow-hidden bg-[#09090b] px-6 py-12 font-sans text-white antialiased">
+        <div
+          className="fixed inset-0 pointer-events-none opacity-[0.28]"
+          style={{
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+        <h1 className="relative z-10 text-center text-4xl font-black tracking-tight sm:text-5xl">You cannot access this page!</h1>
       </div>
     );
   }
