@@ -73,7 +73,7 @@ export default async function handler(req, res) {
 
   const clientIp = getClientIp(req);
   if (!clientIp || !getAllowedIps().includes(clientIp)) {
-    return res.status(403).json({ authorized: false, ip: clientIp, error: "Access denied" });
+    return res.status(403).json({ authorized: false, error: "Access denied" });
   }
 
   const databaseKeys = [...new Set([SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY].filter(Boolean))];
@@ -138,7 +138,6 @@ export default async function handler(req, res) {
 
         return res.status(200).json({
           authorized: true,
-          ip: clientIp,
           total: logs.length,
           logs,
         });

@@ -74,7 +74,6 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
     }
   });
 
-  const [userIp, setUserIp] = useState<string | null>(null);
   const [isIpChecking, setIsIpChecking] = useState<boolean>(true);
   const [isAllowed, setIsAllowed] = useState<boolean>(false);
   const [accessError, setAccessError] = useState<string>("");
@@ -89,7 +88,6 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
       const payload = await response.json().catch(() => ({}));
       const authorized = response.ok && payload?.authorized === true;
 
-      setUserIp(typeof payload?.ip === "string" ? payload.ip : null);
       setIsAllowed(authorized);
 
       if (!authorized) {
@@ -188,12 +186,11 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
             </button>
           </div>
 
-          <div className="mt-9 flex max-w-full items-center gap-2 rounded-full border border-white/[0.08] bg-black/30 px-4 py-2 font-mono text-[11px] text-zinc-500">
+          <div className="mt-9 flex items-center gap-2 rounded-full border border-white/[0.08] bg-black/30 px-4 py-2 text-[11px] text-zinc-500">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
-            <span className="uppercase tracking-[0.12em] text-zinc-600">Detected IP</span>
-            <span className="max-w-[170px] truncate text-zinc-300">{userIp || "Unavailable"}</span>
+            <span className="uppercase tracking-[0.12em] text-zinc-600">Private access verification</span>
           </div>
-          {accessError && <p className="mt-3 text-xs text-zinc-600">{accessError}</p>}
+          {accessError && <p className="mt-3 text-xs text-zinc-600">The access check could not be completed. Please try again.</p>}
         </main>
 
         <footer className="relative z-10 mx-auto w-full max-w-6xl text-center text-[11px] text-zinc-700">© {new Date().getFullYear()} Sotarium</footer>
