@@ -139,61 +139,46 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
 
   if (!isAllowed) {
     return (
-      <div className="relative isolate flex min-h-screen flex-col overflow-hidden bg-black px-6 py-5 text-white">
-        <div className="pointer-events-none absolute inset-0 opacity-70 [background:radial-gradient(circle_at_50%_39%,rgba(118,70,255,0.20),transparent_20%),radial-gradient(circle_at_50%_42%,rgba(255,255,255,0.045),transparent_40%)]" />
-        <div
-          className="pointer-events-none absolute left-1/2 top-[16%] h-[430px] w-[700px] -translate-x-1/2 rounded-[50%] opacity-70 [mask-image:radial-gradient(ellipse_at_center,black_0%,black_43%,transparent_72%)]"
-          style={{
-            backgroundImage: "radial-gradient(circle, rgba(132, 104, 255, 0.82) 1px, transparent 1.5px)",
-            backgroundSize: "11px 11px",
-            transform: "translateX(-50%) perspective(700px) rotateX(64deg)",
-          }}
-        />
-        <div className="pointer-events-none absolute left-1/2 top-[23%] h-72 w-[460px] -translate-x-1/2 rounded-[50%] border border-violet-400/15 bg-violet-400/[0.025] blur-[1px]" />
+      <div className="relative isolate grid min-h-screen place-items-center overflow-hidden bg-[#070708] px-6 py-10 text-white">
+        <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.055)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-fuchsia-500/[0.09] blur-[110px]" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-[64px] border border-white/[0.06] rotate-45" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[340px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-[52px] border border-fuchsia-300/[0.08] -rotate-12" />
 
-        <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between py-1">
-          <button type="button" onClick={onBack} className="flex items-center gap-2 text-sm font-bold tracking-tight text-white transition-opacity hover:opacity-75">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-violet-500 text-[11px] text-white">S</span>
-            Sotarium
-          </button>
-          <span className="rounded-full border border-white/[0.10] bg-white/[0.03] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Logs Console</span>
-        </header>
-
-        <main className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center pb-20 text-center">
-          <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-2xl border border-violet-400/25 bg-violet-400/10 text-violet-200 shadow-[0_0_42px_rgba(124,92,255,0.18)]">
-            <ShieldAlert className="h-5 w-5" />
+        <main className="relative z-10 w-full max-w-xl text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[23px] border border-fuchsia-300/25 bg-fuchsia-300/[0.10] text-fuchsia-100 shadow-[0_0_70px_rgba(217,70,239,0.18)]">
+            <ShieldAlert className="h-7 w-7" strokeWidth={1.7} />
           </div>
-          <h1 className="text-4xl font-black tracking-[-0.055em] text-white sm:text-6xl">Logs are protected.</h1>
-          <p className="mt-4 max-w-md text-sm leading-6 text-zinc-400 sm:text-[15px]">
-            This endpoint is limited to authorized networks. The logs themselves stay private, even when the page is reachable.
+          <p className="mt-8 text-[11px] font-bold uppercase tracking-[0.28em] text-fuchsia-200/70">Access control</p>
+          <h1 className="mt-4 text-4xl font-black tracking-[-0.055em] text-white sm:text-6xl">This area is restricted.</h1>
+          <p className="mx-auto mt-5 max-w-md text-sm leading-6 text-zinc-400 sm:text-[15px]">
+            You do not currently have permission to view this page. If you should have access, verify your connection and try again.
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={onBack}
-              className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-zinc-200 active:scale-[0.98]"
-            >
-              Return to home
-            </button>
+          <div className="mx-auto mt-9 max-w-sm rounded-2xl border border-white/[0.09] bg-white/[0.035] p-1.5 shadow-2xl shadow-black/30 backdrop-blur">
             <button
               type="button"
               onClick={() => void loadDatabaseLogs()}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.03] px-5 py-3 text-sm font-semibold text-zinc-200 transition hover:border-white/[0.24] hover:bg-white/[0.07] active:scale-[0.98]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-zinc-200 active:scale-[0.98]"
             >
               <RefreshCw className="h-4 w-4" />
-              Retry access
+              Retry verification
+            </button>
+            <button
+              type="button"
+              onClick={onBack}
+              className="mt-1 inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-zinc-400 transition hover:bg-white/[0.06] hover:text-white"
+            >
+              Go back
             </button>
           </div>
 
-          <div className="mt-9 flex items-center gap-2 rounded-full border border-white/[0.08] bg-black/30 px-4 py-2 text-[11px] text-zinc-500">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
-            <span className="uppercase tracking-[0.12em] text-zinc-600">Private access verification</span>
+          <div className="mt-6 flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.18em] text-zinc-600">
+            <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-300/80" />
+            Secure verification enabled
           </div>
-          {accessError && <p className="mt-3 text-xs text-zinc-600">The access check could not be completed. Please try again.</p>}
+          {accessError && <p className="mt-3 text-xs text-zinc-600">The access service is temporarily unavailable. Try again shortly.</p>}
         </main>
-
-        <footer className="relative z-10 mx-auto w-full max-w-6xl text-center text-[11px] text-zinc-700">© {new Date().getFullYear()} Sotarium</footer>
       </div>
     );
   }
