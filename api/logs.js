@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 const DEFAULT_ALLOWED_IPS = ["24.49.252.230"];
 const PAGE_SIZE = 1000;
 
@@ -75,68 +76,81 @@ export default async function handler(req, res) {
     return res.status(403).json({ authorized: false, ip: clientIp, error: "Access denied" });
   }
 
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("Logs endpoint is missing Supabase server credentials");
+  const databaseKeys = [...new Set([SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY].filter(Boolean))];
+  if (!SUPABASE_URL || databaseKeys.length === 0) {
+    console.error("Logs endpoint is missing Supabase credentials");
     return res.status(500).json({ authorized: true, error: "Logs service is not configured" });
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    let lastError;
 
-    const [keys, providerEvents] = await Promise.all([
-      fetchAllRows(() =>
-        supabase
-          .from("keys")
-          .select("id, key_string, provider, expires_at, claimed, owner_roblox_id, owner_username, created_at")
-          .order("created_at", { ascending: false }),
-      ),
-      fetchAllRows(() =>
-        supabase
-          .from("logs")
-          .select("id, provider_name, message, status, created_at")
-          .order("created_at", { ascending: false }),
-      ).catch((error) => {
-        // The logs table is optional on older projects; key history still remains available.
-        console.warn("Could not read provider event history:", error.message || error);
-        return [];
-      }),
-    ]);
+    for (const databaseKey of databaseKeys) {
+      try {
+        const supabase = createClient(SUPABASE_URL, databaseKey);
+        const [keys, providerEvents] = await Promise.all([
+          fetchAllRows(() =>
+            supabase
+              .from("keys")
+              .select("id, key_string, provider, expires_at, claimed, owner_roblox_id, owner_username, created_at")
+              .order("created_at", { ascending: false }),
+          ),
+          fetchAllRows(() =>
+            supabase
+              .from("logs")
+              .select("id, provider_name, message, status, created_at")
+              .order("created_at", { ascending: false }),
+          ).catch((error) => {
+            // The logs table is optional on older projects; key history still remains available.
+            console.warn("Could not read provider event history:", error.message || error);
+            return [];
+          }),
+        ]);
 
-    const keyLogs = keys.map((key) => {
-      const owner = key.owner_username || key.owner_roblox_id || "Unknown";
-      const expiry = key.expires_at ? ` · expires ${new Date(key.expires_at).toLocaleString("en-US", { timeZone: "UTC", timeZoneName: "short" })}` : "";
+        const keyLogs = keys.map((key) => {
+          const owner = key.owner_username || key.owner_roblox_id || "Unknown";
+          const expiry = key.expires_at ? ` · expires ${new Date(key.expires_at).toLocaleString("en-US", { timeZone: "UTC", timeZoneName: "short" })}` : "";
 
-      return {
-        id: `key:${key.id}`,
-        time: key.created_at,
-        providerName: key.provider || "Lootlabs",
-        message: key.claimed
-          ? `Key ${key.key_string} claimed by Roblox user: ${owner}${expiry}`
-          : `Key generated: ${key.key_string}${expiry}`,
-        status: key.claimed ? "success" : "pending",
-        source: "key",
-      };
-    });
+          return {
+            id: `key:${key.id}`,
+            time: key.created_at,
+            providerName: key.provider || "Lootlabs",
+            message: key.claimed
+              ? `Key ${key.key_string} claimed by Roblox user: ${owner}${expiry}`
+              : `Key generated: ${key.key_string}${expiry}`,
+            status: key.claimed ? "success" : "pending",
+            source: "key",
+          };
+        });
 
-    const eventLogs = providerEvents.map((event) => ({
-      id: `event:${event.id}`,
-      time: event.created_at,
-      providerName: event.provider_name || "Unknown",
-      message: event.message || "Provider event recorded",
-      status: toLogStatus(event.status, "info"),
-      source: "provider-event",
-    }));
+        const eventLogs = providerEvents.map((event) => ({
+          id: `event:${event.id}`,
+          time: event.created_at,
+          providerName: event.provider_name || "Unknown",
+          message: event.message || "Provider event recorded",
+          status: toLogStatus(event.status, "info"),
+          source: "provider-event",
+        }));
 
-    const logs = [...keyLogs, ...eventLogs].sort((left, right) => {
-      return new Date(right.time).getTime() - new Date(left.time).getTime();
-    });
+        const logs = [...keyLogs, ...eventLogs].sort((left, right) => {
+          return new Date(right.time).getTime() - new Date(left.time).getTime();
+        });
 
-    return res.status(200).json({
-      authorized: true,
-      ip: clientIp,
-      total: logs.length,
-      logs,
-    });
+        return res.status(200).json({
+          authorized: true,
+          ip: clientIp,
+          total: logs.length,
+          logs,
+        });
+      } catch (error) {
+        lastError = error;
+        const canRetryWithFallback = error?.code === "PGRST303" && databaseKey !== databaseKeys.at(-1);
+        if (!canRetryWithFallback) throw error;
+        console.warn("Logs endpoint retrying with the configured read credential because the server JWT was rejected for clock skew.");
+      }
+    }
+
+    throw lastError;
   } catch (error) {
     console.error("Logs endpoint error:", error);
     return res.status(500).json({ authorized: true, error: "Could not load logs" });

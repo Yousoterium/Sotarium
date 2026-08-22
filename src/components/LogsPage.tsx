@@ -141,27 +141,49 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
 
   if (!isAllowed) {
     return (
-      <div className="min-h-screen bg-[#0e0e11] text-white flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 shadow-xl">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
-        <div className="space-y-1">
-          <h1 className="text-2xl font-black tracking-tight text-white">Access Denied</h1>
-          <p className="text-sm text-zinc-400 max-w-sm">
-            This logs page is restricted to authorized IP addresses.
+      <div className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#090a0e] px-6 py-10 text-white">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.09),transparent_34%),radial-gradient(circle_at_15%_85%,rgba(244,63,94,0.12),transparent_30%)]" />
+        <main className="relative w-full max-w-lg overflow-hidden rounded-[30px] border border-white/[0.10] bg-[#121319]/95 p-6 shadow-2xl shadow-black/40 backdrop-blur sm:p-8">
+          <div className="mb-8 flex items-start justify-between gap-6">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-400/10 text-rose-300">
+              <ShieldAlert className="h-5 w-5" />
+            </div>
+            <span className="rounded-full border border-white/[0.10] bg-white/[0.04] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
+              Logs Console
+            </span>
+          </div>
+
+          <h1 className="text-3xl font-black tracking-tight text-white">Logs are unavailable</h1>
+          <p className="mt-3 max-w-md text-sm leading-6 text-zinc-400">
+            This console only opens from an authorized network. Check the diagnostic details below, then return to the dashboard.
           </p>
-          {accessError && <p className="text-xs text-rose-300 mt-2">{accessError}</p>}
-          {userIp && (
-            <p className="text-xs text-zinc-500 font-mono mt-2">Your IP: {userIp}</p>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={onBack}
-          className="mt-2 px-6 py-2.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition cursor-pointer"
-        >
-          Return Home
-        </button>
+
+          <div className="mt-7 space-y-3 rounded-2xl border border-white/[0.08] bg-black/20 p-4">
+            <div className="flex items-center justify-between gap-4 text-xs">
+              <span className="uppercase tracking-[0.14em] text-zinc-500">Connection</span>
+              <span className="font-medium text-rose-300">Not authorized</span>
+            </div>
+            <div className="h-px bg-white/[0.07]" />
+            <div className="flex items-center justify-between gap-4 text-xs">
+              <span className="uppercase tracking-[0.14em] text-zinc-500">Detected IP</span>
+              <span className="max-w-[60%] truncate font-mono text-zinc-200">{userIp || "Unavailable"}</span>
+            </div>
+            {accessError && (
+              <>
+                <div className="h-px bg-white/[0.07]" />
+                <div className="text-xs leading-5 text-zinc-400">{accessError}</div>
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={onBack}
+            className="mt-7 inline-flex w-full items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-[#111216] transition hover:bg-zinc-200 active:scale-[0.99]"
+          >
+            Return to dashboard
+          </button>
+        </main>
       </div>
     );
   }
