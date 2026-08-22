@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft, CircleDot, Loader2, RefreshCw, Trash2, ShieldAlert, CheckSquare, Square, X } from "lucide-react";
-import { fetchKeysFromDatabase } from "../lib/supabase";
 
 export type LogStatus = "info" | "pending" | "success" | "error";
 
@@ -19,8 +18,6 @@ interface LogsPageProps {
   onBack: () => void;
   onClear: () => void;
 }
-
-const ALLOWED_IP = "24.49.252.230";
 
 const statusLabel = (status: LogStatus): string => {
   switch (status) {
@@ -50,6 +47,17 @@ const getProviderIcon = (providerName?: string) => {
   return match ? match.icon : DEFAULT_PROVIDERS[0].icon;
 };
 
+const formatLogTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime()) ? timestamp : date.toLocaleString();
+};
+
+const normalizeLogStatus = (status: unknown): LogStatus => {
+  return status === "success" || status === "error" || status === "info" || status === "pending"
+    ? status
+    : "info";
+};
+
 export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onClear }) => {
   const [dbLogs, setDbLogs] = useState<LogEntry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -69,74 +77,58 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
   const [userIp, setUserIp] = useState<string | null>(null);
   const [isIpChecking, setIsIpChecking] = useState<boolean>(true);
   const [isAllowed, setIsAllowed] = useState<boolean>(false);
-
-  useEffect(() => {
-    const checkIp = async () => {
-      try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        if (data && data.ip) {
-          const ip = String(data.ip).trim();
-          setUserIp(ip);
-          if (ip === ALLOWED_IP) {
-            setIsAllowed(true);
-          }
-        }
-      } catch {
-        try {
-          const res = await fetch("https://ipapi.co/json/");
-          const data = await res.json();
-          if (data && data.ip) {
-            const ip = String(data.ip).trim();
-            setUserIp(ip);
-            if (ip === ALLOWED_IP) {
-              setIsAllowed(true);
-            }
-          }
-        } catch {
-          // If IP check fails
-        }
-      }
-      setIsIpChecking(false);
-    };
-    checkIp();
-  }, []);
+  const [accessError, setAccessError] = useState<string>("");
 
   const loadDatabaseLogs = async () => {
     setIsLoading(true);
-    const keys = await fetchKeysFromDatabase();
-    if (keys && keys.length > 0) {
-      const converted: LogEntry[] = keys.map((k: any, idx: number) => {
-        const provider = k.provider
-          ? k.provider.charAt(0).toUpperCase() + k.provider.slice(1)
-          : "Lootlabs";
-        
-        let msg = `Key generated: ${k.key_string}`;
-        if (k.claimed) {
-          msg = `Key ${k.key_string} claimed by Roblox user: ${k.owner_username || k.owner_roblox_id || "Unknown"}`;
-        }
+    setIsIpChecking(true);
+    setAccessError("");
+
+    try {
+      const response = await fetch("/api/logs", { cache: "no-store" });
+      const payload = await response.json().catch(() => ({}));
+      const authorized = response.ok && payload?.authorized === true;
+
+      setUserIp(typeof payload?.ip === "string" ? payload.ip : null);
+      setIsAllowed(authorized);
+
+      if (!authorized) {
+        setDbLogs([]);
+        setAccessError(payload?.error || "Access denied");
+        return;
+      }
+
+      const records = Array.isArray(payload?.logs) ? payload.logs : [];
+      const converted: LogEntry[] = records.map((record: any, index: number) => {
+        const provider = typeof record?.providerName === "string" && record.providerName.trim()
+          ? record.providerName.trim()
+          : "Unknown";
 
         return {
-          id: k.id ? String(k.id) : `db-key-${idx}`,
-          time: k.created_at ? new Date(k.created_at).toLocaleTimeString() : new Date().toLocaleTimeString(),
+          id: typeof record?.id === "string" ? record.id : `history-${index}`,
+          time: typeof record?.time === "string" ? record.time : new Date().toISOString(),
           providerName: provider,
           providerIcon: getProviderIcon(provider),
-          message: msg,
-          status: k.claimed ? ("success" as LogStatus) : ("pending" as LogStatus),
+          message: typeof record?.message === "string" ? record.message : "Log entry recorded",
+          status: normalizeLogStatus(record?.status),
+          source: typeof record?.source === "string" ? record.source : undefined,
         };
       });
+
       setDbLogs(converted);
-    } else {
+    } catch {
+      setIsAllowed(false);
       setDbLogs([]);
+      setAccessError("Could not load the logs service");
+    } finally {
+      setIsLoading(false);
+      setIsIpChecking(false);
     }
-    setIsLoading(false);
   };
 
   useEffect(() => {
-    if (isAllowed) {
-      loadDatabaseLogs();
-    }
-  }, [isAllowed]);
+    void loadDatabaseLogs();
+  }, []);
 
   if (isIpChecking) {
     return (
@@ -158,6 +150,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
           <p className="text-sm text-zinc-400 max-w-sm">
             This logs page is restricted to authorized IP addresses.
           </p>
+          {accessError && <p className="text-xs text-rose-300 mt-2">{accessError}</p>}
           {userIp && (
             <p className="text-xs text-zinc-500 font-mono mt-2">Your IP: {userIp}</p>
           )}
@@ -362,7 +355,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
           <div className="rounded-[18px] border border-white/[0.04] bg-[#0f0f12] p-3 max-h-[52vh] overflow-auto">
             {isLoading ? (
               <div className="flex items-center justify-center gap-2 text-zinc-400 text-sm p-6">
-                <Loader2 className="w-5 h-5 animate-spin" /> Loading logs from database...
+                <Loader2 className="w-5 h-5 animate-spin" /> Loading lifetime logs...
               </div>
             ) : filteredLogs.length === 0 ? (
               <div className="text-zinc-500 text-sm p-6 text-center">No {filter !== "all" ? filter : ""} log entries found.</div>
@@ -414,7 +407,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
                             <span className="text-sm font-semibold text-white">{entry.providerName || "Unknown"}</span>
                             <span className="text-xs text-zinc-400">{statusLabel(entry.status)}</span>
                           </div>
-                          <span className="text-xs text-zinc-500">{entry.time}</span>
+                          <span className="text-xs text-zinc-500">{formatLogTime(entry.time)}</span>
                         </div>
                         <p className="mt-1 text-sm text-zinc-300">{entry.message}</p>
                       </div>
