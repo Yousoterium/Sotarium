@@ -153,15 +153,16 @@ function App() {
                 key={provider.name}
                 type="button"
                 onClick={() => openProvider(provider)}
-                className="group relative flex min-h-60 flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/[0.10] bg-[#141417] p-7 text-center shadow-md transition-all hover:-translate-y-1 hover:border-orange-400/45 hover:bg-[#1c1c20] focus:outline-none focus:ring-2 focus:ring-orange-400/45 active:scale-[0.98]"
+                className="group relative flex min-h-60 flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/[0.10] bg-[#141417] p-7 text-center shadow-md transition-all hover:-translate-y-1 hover:border-[#0989F1]/75 hover:bg-[#0989F1]/[0.12] focus:outline-none focus:ring-2 focus:ring-[#0989F1]/70 active:scale-[0.98]"
               >
                 <span className="flex h-24 w-24 items-center justify-center rounded-3xl border border-white/[0.12] bg-zinc-700/70 shadow-[0_0_38px_rgba(255,255,255,0.05)] transition-transform duration-200 group-hover:scale-105" aria-hidden="true">
-                  <img
-                    src={provider.icon}
-                    alt=""
-                    className={`h-16 w-16 object-contain ${provider.id === "workink" ? "rounded-xl bg-zinc-600 p-2" : "rounded-2xl"}`}
-                    referrerPolicy="no-referrer"
-                  />
+                  {provider.id === "workink" ? (
+                    <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#00a37a] text-4xl font-black tracking-[-0.12em] text-white shadow-inner" aria-label="Work.ink">
+                      W
+                    </span>
+                  ) : (
+                    <img src={provider.icon} alt="" className="h-16 w-16 rounded-2xl object-contain" referrerPolicy="no-referrer" />
+                  )}
                 </span>
                 <span className="mt-5">
                   <span className="block text-xl font-bold tracking-tight text-white">{provider.name}</span>
