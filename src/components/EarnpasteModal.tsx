@@ -77,7 +77,7 @@ const callEarnpasteApi = async (
 };
 
 const callWorkinkApi = async (
-  action: "start" | "verify",
+  action: "start" | "advance",
   payload: Record<string, string | number> = {},
 ): Promise<ProviderApiResponse> => {
   const response = await fetch(`/api/workink?action=${action}`, {
@@ -127,7 +127,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const isWorkink = providerKind === "workink";
   const isOpera = providerKind === "opera";
   const totalSteps = isOpera ? 1 : 2;
-  const hasWorkinkReturn = Boolean(workinkSession && workinkToken && (workinkStep === 1 || workinkStep === 2));
+  const hasWorkinkReturn = Boolean(workinkStep === 1 || workinkStep === 2);
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [adBlockerStatus, setAdBlockerStatus] = useState<AdBlockerStatus>(() => (isOpera ? "checking" : "clear"));
   const [adBlockerCheckVersion, setAdBlockerCheckVersion] = useState(0);
@@ -225,7 +225,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     }
   };
 
-  const handleWorkinkReturn = async (session: string, step: number, token: string) => {
+  const handleWorkinkReturn = async (step: number) => {
     setIsRedirecting(false);
     setIsVerifying(true);
     setErrorMessage(null);
@@ -233,18 +233,9 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     resetUrl();
 
     try {
-      const result = await callWorkinkApi("verify", { session, step, token });
-      if (isOpera) {
-        sessionStorage.removeItem("sotarium_opera_session");
-        await finishStep(1);
-        unlockVerifiedKey(result);
-        window.location.assign(OPERA_DIRECT_INSTALLER_URL);
-        return;
-      }
-
+      const result = await callWorkinkApi("advance", { step });
       if (step === 1) {
         if (!result.url) throw new Error("Work.ink did not return the step 2 link.");
-        sessionStorage.setItem("sotarium_workink_session", session);
         setCompletedSteps([1]);
         setCurrentStep(2);
         setStatusMessage("Step 1 verified. Opening step 2...");
@@ -254,12 +245,11 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
         return;
       }
 
-      sessionStorage.removeItem("sotarium_workink_session");
       setCompletedSteps([1]);
       await finishStep(2);
       unlockVerifiedKey(result);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not verify the Work.ink checkpoint.");
+      setErrorMessage(error instanceof Error ? error.message : "Could not complete the Work.ink checkpoint.");
     } finally {
       setIsVerifying(false);
     }
@@ -271,12 +261,12 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   }, [isOpen, isEarnpaste, earnpasteAction, earnpasteSession]);
 
   useEffect(() => {
-    if (!isOpen || (!isWorkink && !isOpera) || !workinkSession || !workinkToken || (workinkStep !== 1 && workinkStep !== 2)) return;
-    const returnKey = `${workinkSession}:${workinkStep}:${workinkToken}`;
+    if (!isOpen || !isWorkink || (workinkStep !== 1 && workinkStep !== 2)) return;
+    const returnKey = `workink:${workinkStep}`;
     if (handledWorkinkReturn.current === returnKey) return;
     handledWorkinkReturn.current = returnKey;
-    void handleWorkinkReturn(workinkSession, workinkStep, workinkToken);
-  }, [isOpen, isWorkink, isOpera, workinkSession, workinkStep, workinkToken]);
+    void handleWorkinkReturn(workinkStep);
+  }, [isOpen, isWorkink, workinkStep]);
 
   useEffect(() => {
     if (!isOpen || !isOpera || hasWorkinkReturn) {
@@ -348,8 +338,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 
       if (isWorkink) {
         const result = await callWorkinkApi("start");
-        if (!result.url || !result.session) throw new Error("Work.ink did not return a step 1 link.");
-        sessionStorage.setItem("sotarium_workink_session", result.session);
+        if (!result.url) throw new Error("Work.ink did not return a step 1 link.");
         window.location.assign(result.url);
         return;
       }

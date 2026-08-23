@@ -33,6 +33,10 @@ const PROVIDERS: ProviderOption[] = [
   },
 ];
 
+// Temporary picker configuration: keep all provider definitions intact, but only show Work.ink.
+const VISIBLE_PROVIDER_IDS: ProviderId[] = ["workink"];
+const VISIBLE_PROVIDERS = PROVIDERS.filter((provider) => VISIBLE_PROVIDER_IDS.includes(provider.id));
+
 function App() {
   const [page, setPage] = useState<"home" | "products" | "add" | "scripts" | "logs">(() => {
     const path = window.location.pathname;
@@ -45,7 +49,7 @@ function App() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isProviderPickerOpen, setIsProviderPickerOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS[0]);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS.find((provider) => provider.id === "workink") || PROVIDERS[0]);
   const [lootlabsSession, setLootlabsSession] = useState<string | null>(null);
   const [lootlabsStep, setLootlabsStep] = useState<number | null>(null);
   const [earnpasteAction, setEarnpasteAction] = useState<"upgrade" | "completed" | null>(null);
@@ -100,16 +104,12 @@ function App() {
       setEarnpasteSession(session);
       setIsKeyModalOpen(true);
     } else if (path === "/workink" && (params.has("ok") || params.has("done"))) {
-      const session = params.get("session");
-      const token = params.get("token");
       const step = params.has("done") ? 2 : 1;
-      if (session && token) {
-        setSelectedProvider(PROVIDERS.find((provider) => provider.id === "workink") || PROVIDERS[0]);
-        setWorkinkSession(session);
-        setWorkinkStep(step);
-        setWorkinkToken(token);
-        setIsKeyModalOpen(true);
-      }
+      setSelectedProvider(PROVIDERS.find((provider) => provider.id === "workink") || PROVIDERS[0]);
+      setWorkinkSession(null);
+      setWorkinkStep(step);
+      setWorkinkToken(null);
+      setIsKeyModalOpen(true);
     } else if (path === "/lootlabs") {
       const session = params.get("session");
       const step = Number(params.get("step"));
@@ -147,8 +147,8 @@ function App() {
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl">Choose a provider to obtain a key</h2>
             <p className="max-w-md text-sm text-zinc-400">Complete two verification checkpoints to receive a key.</p>
           </div>
-          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
-            {PROVIDERS.map((provider) => (
+          <div className="grid w-full max-w-sm grid-cols-1 gap-4">
+            {VISIBLE_PROVIDERS.map((provider) => (
               <button
                 key={provider.name}
                 type="button"
