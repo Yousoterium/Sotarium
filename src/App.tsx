@@ -5,7 +5,7 @@ import { AddGamePage } from "./components/AddGamePage";
 import { ScriptsPage } from "./components/ScriptsPage";
 import { LogsPage, type LogEntry } from "./components/LogsPage";
 
-type ProviderId = "lootlabs" | "earnpaste" | "workink" | "opera";
+type ProviderId = "lootlabs" | "earnpaste" | "workink";
 
 interface ProviderOption {
   id: ProviderId;
@@ -21,7 +21,6 @@ const EARNPASTE_ICON =
   "https://images.socialblade.com/128x,q75/https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s192-c-k-c0x00ffffff-no-rj";
 
 const WORKINK_ICON = "https://favicon.pub/api/work.ink?s=32";
-const OPERA_ICON = "https://favicon.pub/api/opera.com?s=32";
 
 const PROVIDERS: ProviderOption[] = [
   { id: "lootlabs", name: "Lootlabs", icon: "https://i.imgur.com/hmJCWhI.png", description: "Complete two Lootlabs checkpoints" },
@@ -31,14 +30,6 @@ const PROVIDERS: ProviderOption[] = [
     name: "Work.ink",
     icon: WORKINK_ICON,
     description: "Complete two Work.ink checkpoints",
-  },
-  {
-    id: "opera",
-    name: "Download Opera Browser",
-    icon: OPERA_ICON,
-    description: "Coming soon",
-    disabled: true,
-    badge: "SOON",
   },
 ];
 
@@ -119,17 +110,6 @@ function App() {
         setWorkinkToken(token);
         setIsKeyModalOpen(true);
       }
-    } else if (path === "/opera" && params.has("verify")) {
-      const session = params.get("session");
-      const token = params.get("token");
-      const step = Number(params.get("step"));
-      if (session && token && step === 1) {
-        setSelectedProvider(PROVIDERS.find((provider) => provider.id === "opera") || PROVIDERS[0]);
-        setWorkinkSession(session);
-        setWorkinkStep(step);
-        setWorkinkToken(token);
-        setIsKeyModalOpen(true);
-      }
     } else if (path === "/lootlabs") {
       const session = params.get("session");
       const step = Number(params.get("step"));
@@ -153,7 +133,7 @@ function App() {
     <div className="relative flex min-h-screen w-full select-none flex-col items-center justify-center overflow-hidden bg-[#09090b] px-6 py-12 font-sans text-white antialiased">
       <div className="fixed inset-0 pointer-events-none opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
       {isProviderPickerOpen ? (
-        <main className="relative z-10 flex w-full max-w-md flex-col items-center justify-center gap-7 text-center">
+        <main className="relative z-10 flex w-full max-w-5xl flex-col items-center justify-center gap-8 text-center">
           <div className="w-full text-left">
             <button
               type="button"
@@ -165,31 +145,24 @@ function App() {
           </div>
           <div className="flex flex-col items-center gap-3">
             <h2 className="text-4xl font-black tracking-tight sm:text-5xl">Choose a provider to obtain a key</h2>
-            <p className="max-w-sm text-sm text-zinc-400">Choose a one-step or two-step method.</p>
+            <p className="max-w-md text-sm text-zinc-400">Complete two verification checkpoints to receive a key.</p>
           </div>
-          <div className="w-full space-y-3">
+          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
             {PROVIDERS.map((provider) => (
               <button
                 key={provider.name}
                 type="button"
                 onClick={() => openProvider(provider)}
-                disabled={provider.disabled}
-                aria-disabled={provider.disabled}
-                className={`relative flex w-full items-center gap-4 rounded-2xl border p-4 text-left shadow-md transition-all ${provider.disabled ? "cursor-not-allowed border-white/[0.06] bg-zinc-900/60 opacity-55 grayscale" : "border-white/[0.10] bg-[#141417] hover:-translate-y-px hover:border-white/[0.24] hover:bg-[#1c1c20]"}`}
+                className="group relative flex min-h-52 flex-col items-start overflow-hidden rounded-2xl border border-white/[0.10] bg-[#141417] p-6 text-left shadow-md transition-all hover:-translate-y-1 hover:border-white/[0.28] hover:bg-[#1c1c20] focus:outline-none focus:ring-2 focus:ring-white/30 active:scale-[0.98]"
               >
-                <span className="relative flex h-12 w-14 shrink-0 items-center" aria-hidden="true">
-                  <img src={provider.icon} alt="" className="h-12 w-12 rounded-full border border-white/10 object-cover" referrerPolicy="no-referrer" />
-                  {provider.secondaryIcon && <img src={provider.secondaryIcon} alt="" className="absolute -right-0.5 -bottom-0.5 h-6 w-6 rounded-full border-2 border-[#141417] bg-[#141417] object-cover" referrerPolicy="no-referrer" />}
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] transition-transform duration-200 group-hover:scale-105" aria-hidden="true">
+                  <img src={provider.icon} alt="" className="h-10 w-10 rounded-full object-cover" referrerPolicy="no-referrer" />
                 </span>
-                <span>
-                  <span className="block text-sm font-bold text-white">{provider.name}</span>
-                  <span className="mt-0.5 block text-xs text-zinc-400">{provider.description}</span>
+                <span className="mt-auto pt-8">
+                  <span className="block text-lg font-bold tracking-tight text-white">{provider.name}</span>
+                  <span className="mt-1 block text-sm leading-5 text-zinc-400">{provider.description}</span>
                 </span>
-                {provider.badge && (
-                  <span aria-hidden="true" className="pointer-events-none absolute inset-x-3 top-1/2 flex -translate-y-1/2 -rotate-3 items-center justify-center rounded-lg border border-white/15 bg-zinc-100/15 py-1 text-xs font-black tracking-[0.35em] text-zinc-100 shadow-sm">
-                    {provider.badge}
-                  </span>
-                )}
+                <span aria-hidden="true" className="absolute right-5 top-5 text-lg text-zinc-600 transition-colors group-hover:text-white">↗</span>
               </button>
             ))}
           </div>
