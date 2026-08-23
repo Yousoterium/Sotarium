@@ -153,16 +153,16 @@ function App() {
                 key={provider.name}
                 type="button"
                 onClick={() => openProvider(provider)}
-                className="group relative flex min-h-52 flex-col items-start overflow-hidden rounded-2xl border border-white/[0.10] bg-[#141417] p-6 text-left shadow-md transition-all hover:-translate-y-1 hover:border-white/[0.28] hover:bg-[#1c1c20] focus:outline-none focus:ring-2 focus:ring-white/30 active:scale-[0.98]"
+                className="group relative flex min-h-60 flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/[0.10] bg-[#141417] p-7 text-center shadow-md transition-all hover:-translate-y-1 hover:border-orange-400/45 hover:bg-[#1c1c20] focus:outline-none focus:ring-2 focus:ring-orange-400/45 active:scale-[0.98]"
               >
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] transition-transform duration-200 group-hover:scale-105" aria-hidden="true">
-                  <img src={provider.icon} alt="" className="h-10 w-10 rounded-full object-cover" referrerPolicy="no-referrer" />
+                <span className="flex h-24 w-24 items-center justify-center rounded-3xl border border-orange-400/30 bg-orange-500/[0.10] shadow-[0_0_38px_rgba(249,115,22,0.12)] transition-transform duration-200 group-hover:scale-105" aria-hidden="true">
+                  <img src={provider.icon} alt="" className="h-16 w-16 rounded-2xl object-contain [filter:brightness(0)_saturate(100%)_invert(53%)_sepia(99%)_saturate(1884%)_hue-rotate(350deg)_brightness(102%)_contrast(97%)]" referrerPolicy="no-referrer" />
                 </span>
-                <span className="mt-auto pt-8">
-                  <span className="block text-lg font-bold tracking-tight text-white">{provider.name}</span>
-                  <span className="mt-1 block text-sm leading-5 text-zinc-400">{provider.description}</span>
+                <span className="mt-5">
+                  <span className="block text-xl font-bold tracking-tight text-white">{provider.name}</span>
+                  <span className="mt-2 block text-sm leading-5 text-zinc-400">{provider.description}</span>
                 </span>
-                <span aria-hidden="true" className="absolute right-5 top-5 text-lg text-zinc-600 transition-colors group-hover:text-white">↗</span>
+                <span aria-hidden="true" className="absolute right-5 top-5 text-lg text-orange-400/50 transition-colors group-hover:text-orange-300">↗</span>
               </button>
             ))}
           </div>
