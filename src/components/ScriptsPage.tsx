@@ -19,6 +19,7 @@ import {
 import { GameItem } from "./AddGamePage";
 import { generateFullKeySystemScript } from "../lib/scriptGenerator";
 
+/** Midnight Game Index: use the homepage dot field behind solid utility panels and game-led selection rows. */
 const ALLOWED_IP = "24.49.252.230";
 
 const CURRENT_KEY_SYSTEM_VERSION = "2.4.0";
@@ -277,7 +278,9 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0d] text-white flex flex-col items-center py-8 px-4 font-sans select-none">
+    <div className="relative isolate min-h-screen overflow-hidden bg-[#09090b] text-white font-sans select-none">
+      <div className="pointer-events-none fixed inset-0 opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
+      <div className="relative z-10 flex min-h-screen flex-col items-center px-4 py-8">
       {/* Top Header */}
       <header className="w-full max-w-6xl flex items-center justify-between pb-6 border-b border-zinc-800/80 mb-8">
         <div className="flex items-center gap-3">
@@ -336,15 +339,15 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
                   <div
                     key={g.id}
                     onClick={() => setSelectedGameId(g.id)}
-                    className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                    className={`group flex items-center justify-between rounded-xl border p-2.5 transition-all cursor-pointer ${
                       isSelected 
                         ? "bg-[#1e1e26] border-zinc-500 shadow-md" 
-                        : "bg-[#16161a] border-zinc-800/80 hover:bg-[#1a1a20]"
+                        : "bg-[#15161b] border-zinc-800/80 hover:bg-[#1a1a20] hover:border-zinc-700"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-zinc-800 overflow-hidden shrink-0 border border-zinc-700/60">
-                        <img src={g.imageUrl} alt={g.name} className="w-full h-full object-cover" />
+                      <div className="relative h-11 w-16 shrink-0 overflow-hidden rounded-lg border border-white/[0.10] bg-[#15161b]">
+                        <img src={g.imageUrl} alt={g.name} className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
                       </div>
                       <div className="truncate">
                         <p className="font-bold text-xs text-white truncate">{g.name}</p>
@@ -444,6 +447,7 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
           {toastMsg}
         </div>
       )}
+      </div>
     </div>
   );
 };

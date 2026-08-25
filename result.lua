@@ -750,6 +750,50 @@ SupportedGamesButton.MouseLeave:Connect(function()
     }):Play()
 end)
 
+-- 4. Discord Button (Full-width pill, copy-only action)
+local JoinDiscordButton = Instance.new("TextButton")
+JoinDiscordButton.Name = "JoinDiscordButton"
+JoinDiscordButton.Size = UDim2.new(1, 0, 0, 42)
+JoinDiscordButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+JoinDiscordButton.BorderSizePixel = 0
+JoinDiscordButton.Font = Enum.Font.GothamBold
+JoinDiscordButton.Text = "Join Discord"
+JoinDiscordButton.TextColor3 = Color3.fromRGB(220, 220, 220)
+JoinDiscordButton.TextSize = 14
+JoinDiscordButton.AutoButtonColor = false
+JoinDiscordButton.LayoutOrder = 5
+JoinDiscordButton.Parent = ContentFrame
+
+local DiscordCorner = Instance.new("UICorner")
+DiscordCorner.CornerRadius = UDim.new(1, 0)
+DiscordCorner.Parent = JoinDiscordButton
+
+local DiscordStroke = Instance.new("UIStroke")
+DiscordStroke.Color = Color3.fromRGB(34, 34, 34)
+DiscordStroke.Thickness = 1
+DiscordStroke.Parent = JoinDiscordButton
+
+JoinDiscordButton.MouseEnter:Connect(function()
+    TweenService:Create(JoinDiscordButton, TweenInfo.new(0.15), {
+        BackgroundColor3 = Color3.fromRGB(26, 26, 26),
+        TextColor3 = Color3.fromRGB(255, 255, 255)
+    }):Play()
+end)
+
+JoinDiscordButton.MouseLeave:Connect(function()
+    TweenService:Create(JoinDiscordButton, TweenInfo.new(0.15), {
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+        TextColor3 = Color3.fromRGB(220, 220, 220)
+    }):Play()
+end)
+
+JoinDiscordButton.MouseButton1Click:Connect(function()
+    if setclipboard then
+        pcall(setclipboard, "https://discord.gg/3aghbJBybQ")
+    end
+    showNotification("Link for Discord copied!", "key", 2.5)
+end)
+
 -- Key input watcher: White when text entered, black text
 KeyTextBox:GetPropertyChangedSignal("Text"):Connect(function()
     local text = KeyTextBox.Text:gsub("%s+", "")
@@ -771,6 +815,7 @@ local function setMenuControlsEnabled(enabled)
     SubmitButton.Active = enabled
     GetKeyButton.Active = enabled
     SupportedGamesButton.Active = enabled
+    JoinDiscordButton.Active = enabled
     KeyTextBox.TextEditable = enabled
     KeyTextBox.Active = enabled
 end
@@ -982,10 +1027,10 @@ CardStroke.Thickness = 1
 CardStroke.Transparency = 1
 CardStroke.Parent = GameCard
 
--- San Diego Border Roleplay Image Thumbnail (Top 2 corners rounded, bottom 2 corners square)
+-- San Diego Border Roleplay thumbnail fills the entire card; the title overlays it instead of using a detached footer.
 local GameThumbImage = Instance.new("ImageLabel")
 GameThumbImage.Name = "GameThumbImage"
-GameThumbImage.Size = UDim2.new(1, 0, 1, -34)
+GameThumbImage.Size = UDim2.new(1, 0, 1, 0)
 GameThumbImage.Position = UDim2.new(0, 0, 0, 0)
 GameThumbImage.BackgroundTransparency = 1
 GameThumbImage.Image = SanDiegoAssetId
@@ -1000,68 +1045,40 @@ local ThumbCorner = Instance.new("UICorner")
 ThumbCorner.CornerRadius = UDim.new(0, 10)
 ThumbCorner.Parent = GameThumbImage
 
--- Square filler at the bottom of the thumbnail so only the top 2 corners stay rounded
-local ThumbBottomSquareFiller = Instance.new("Frame")
-ThumbBottomSquareFiller.Name = "ThumbBottomSquareFiller"
-ThumbBottomSquareFiller.Size = UDim2.new(1, 0, 0, 10)
-ThumbBottomSquareFiller.Position = UDim2.new(0, 0, 1, -10)
-ThumbBottomSquareFiller.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
-ThumbBottomSquareFiller.BackgroundTransparency = 1
-ThumbBottomSquareFiller.BorderSizePixel = 0
-ThumbBottomSquareFiller.ZIndex = 40
-ThumbBottomSquareFiller.Parent = GameThumbImage
+local TitleScrim = Instance.new("Frame")
+TitleScrim.Name = "TitleScrim"
+TitleScrim.Size = UDim2.new(1, 0, 0.44, 0)
+TitleScrim.Position = UDim2.new(0, 0, 0.56, 0)
+TitleScrim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+TitleScrim.BackgroundTransparency = 1
+TitleScrim.BorderSizePixel = 0
+TitleScrim.ZIndex = 41
+TitleScrim.Parent = GameThumbImage
 
--- Attached Bottom Title Bar (Top 2 corners square, bottom 2 corners rounded)
-local TitleBar = Instance.new("Frame")
-TitleBar.Name = "TitleBar"
-TitleBar.Size = UDim2.new(1, 0, 0, 34)
-TitleBar.Position = UDim2.new(0, 0, 1, -34)
-TitleBar.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-TitleBar.BackgroundTransparency = 1
-TitleBar.BorderSizePixel = 0
-TitleBar.ClipsDescendants = true
-TitleBar.ZIndex = 41
-TitleBar.Parent = GameCard
-
-local TitleBarCorner = Instance.new("UICorner")
-TitleBarCorner.CornerRadius = UDim.new(0, 10)
-TitleBarCorner.Parent = TitleBar
-
--- Square filler at the top of the title bar so its top 2 corners stay square
-local TitleBarTopSquareFiller = Instance.new("Frame")
-TitleBarTopSquareFiller.Name = "TitleBarTopSquareFiller"
-TitleBarTopSquareFiller.Size = UDim2.new(1, 0, 0, 10)
-TitleBarTopSquareFiller.Position = UDim2.new(0, 0, 0, 0)
-TitleBarTopSquareFiller.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-TitleBarTopSquareFiller.BackgroundTransparency = 1
-TitleBarTopSquareFiller.BorderSizePixel = 0
-TitleBarTopSquareFiller.ZIndex = 41
-TitleBarTopSquareFiller.Parent = TitleBar
-
-local TitleBarDivider = Instance.new("Frame")
-TitleBarDivider.Name = "TitleBarDivider"
-TitleBarDivider.Size = UDim2.new(1, 0, 0, 1)
-TitleBarDivider.Position = UDim2.new(0, 0, 0, 0)
-TitleBarDivider.BackgroundColor3 = Color3.fromRGB(34, 34, 34)
-TitleBarDivider.BackgroundTransparency = 1
-TitleBarDivider.BorderSizePixel = 0
-TitleBarDivider.ZIndex = 42
-TitleBarDivider.Parent = TitleBar
+local ScrimGradient = Instance.new("UIGradient")
+ScrimGradient.Transparency = NumberSequence.new({
+    NumberSequenceKeypoint.new(0, 1),
+    NumberSequenceKeypoint.new(1, 0.38)
+})
+ScrimGradient.Rotation = 90
+ScrimGradient.Parent = TitleScrim
 
 local GameTitleLabel = Instance.new("TextLabel")
 GameTitleLabel.Name = "GameTitleLabel"
-GameTitleLabel.Size = UDim2.new(1, -16, 1, 0)
-GameTitleLabel.Position = UDim2.new(0, 8, 0, 0)
+GameTitleLabel.Size = UDim2.new(1, -20, 0, 28)
+GameTitleLabel.Position = UDim2.new(0, 10, 1, -34)
 GameTitleLabel.BackgroundTransparency = 1
 GameTitleLabel.Font = Enum.Font.GothamBold
 GameTitleLabel.Text = "San Diego Border Roleplay"
 GameTitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 GameTitleLabel.TextSize = 12
 GameTitleLabel.TextTruncate = Enum.TextTruncate.AtEnd
-GameTitleLabel.TextXAlignment = Enum.TextXAlignment.Center
+GameTitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+GameTitleLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+GameTitleLabel.TextStrokeTransparency = 0.45
 GameTitleLabel.TextTransparency = 1
-GameTitleLabel.ZIndex = 43
-GameTitleLabel.Parent = TitleBar
+GameTitleLabel.ZIndex = 42
+GameTitleLabel.Parent = GameThumbImage
 
 -- Supported Games Control Handlers
 local isShowingGames = false
@@ -1094,9 +1111,7 @@ local function closeSupportedGames()
     TweenService:Create(GameCard, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
     TweenService:Create(CardStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
     TweenService:Create(GameThumbImage, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
-    TweenService:Create(TitleBar, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(TitleBarTopFiller, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(TitleBarDivider, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(TitleScrim, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
     TweenService:Create(GameTitleLabel, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
     
     fadeOut:Play()
@@ -1208,9 +1223,7 @@ SupportedGamesButton.MouseButton1Click:Connect(function()
             TweenService:Create(GameCard, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
             TweenService:Create(CardStroke, TweenInfo.new(0.3), {Transparency = 0}):Play()
             TweenService:Create(GameThumbImage, TweenInfo.new(0.3), {ImageTransparency = 0}):Play()
-            TweenService:Create(TitleBar, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
-            TweenService:Create(TitleBarTopFiller, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
-            TweenService:Create(TitleBarDivider, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+            TweenService:Create(TitleScrim, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
             TweenService:Create(GameTitleLabel, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
         end)
     end)

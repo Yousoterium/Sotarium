@@ -57,6 +57,21 @@ function App() {
   const [workinkSession, setWorkinkSession] = useState<string | null>(null);
   const [workinkStep, setWorkinkStep] = useState<number | null>(null);
   const [workinkToken, setWorkinkToken] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMsg(message);
+    window.setTimeout(() => setToastMsg(null), 2500);
+  };
+
+  const handleJoinDiscord = async () => {
+    try {
+      await navigator.clipboard.writeText("https://discord.gg/3aghbJBybQ");
+      showToast("Link for Discord copied!");
+    } catch {
+      showToast("Could not copy the Discord link.");
+    }
+  };
 
   const closeKeyModal = () => {
     setIsKeyModalOpen(false);
@@ -178,8 +193,18 @@ function App() {
             <img src="https://i.imgur.com/qye2L7M.png" alt="Sotarium" className="h-24 w-24 object-contain drop-shadow-md sm:h-28 sm:w-28" />
             <h1 className="text-5xl font-black tracking-tight sm:text-6xl">Sotarium</h1>
           </div>
-          <button type="button" onClick={() => setIsProviderPickerOpen(true)} className="w-full max-w-xs rounded-full border border-white/[0.12] bg-[#141417] px-6 py-3 text-sm font-bold text-zinc-100 shadow-md transition-all hover:border-white/[0.24] hover:bg-[#1c1c20] hover:text-white active:scale-95">Get Key</button>
+          <div className="flex w-full max-w-xs flex-col gap-3">
+            <button type="button" onClick={() => setIsProviderPickerOpen(true)} className="w-full rounded-full border border-white/[0.12] bg-[#141417] px-6 py-3 text-sm font-bold text-zinc-100 shadow-md transition-all hover:border-white/[0.24] hover:bg-[#1c1c20] hover:text-white active:scale-95">Get Key</button>
+            <button type="button" onClick={handleJoinDiscord} className="w-full rounded-full border border-white/[0.12] bg-white/[0.04] px-6 py-3 text-sm font-bold text-zinc-300 shadow-sm transition-all hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white active:scale-95">Join Discord</button>
+          </div>
         </main>
+      )}
+
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-xl border border-zinc-700 bg-[#18181c] px-4 py-3 text-xs font-bold text-white shadow-2xl animate-bounce">
+          <div className="h-2 w-2 rounded-full bg-emerald-400" />
+          {toastMsg}
+        </div>
       )}
 
       <EarnpasteModal

@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { 
-  Gamepad2, 
-  Plus, 
-  Trash2, 
-  Copy, 
-  Check, 
-  Code2, 
-  ShieldAlert, 
-  Loader2, 
+import React, { useEffect, useState } from "react";
+import {
   ArrowLeft,
+  Check,
+  Code2,
+  Copy,
+  Gamepad2,
+  Layers3,
+  Loader2,
+  Plus,
+  ShieldAlert,
+  ShieldCheck,
   Sparkles,
-  Image as ImageIcon,
-  ChevronLeft,
-  ChevronRight
+  Trash2,
 } from "lucide-react";
 import { generateFullKeySystemScript } from "../lib/scriptGenerator";
 
@@ -32,16 +31,18 @@ const DEFAULT_GAMES: GameItem[] = [
     name: "San Diego Border Roleplay",
     imageUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png",
     placeId: "123456789",
-    scriptUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/scripts/sandiego.lua"
-  }
+    scriptUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/scripts/sandiego.lua",
+  },
 ];
 
+/**
+ * Midnight Game Index: image-led charcoal cards, integrated lower overlays,
+ * sparse Signal Green status cues, and an editorial game-shelf hierarchy.
+ */
 export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [userIp, setUserIp] = useState<string | null>(null);
-  const [isIpChecking, setIsIpChecking] = useState<boolean>(true);
-  const [isAllowed, setIsAllowed] = useState<boolean>(false);
-
-  // Games state (stored in localStorage)
+  const [isIpChecking, setIsIpChecking] = useState(true);
+  const [isAllowed, setIsAllowed] = useState(false);
   const [games, setGames] = useState<GameItem[]>(() => {
     try {
       const saved = localStorage.getItem("sotarium_supported_games");
@@ -50,139 +51,114 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       return DEFAULT_GAMES;
     }
   });
-
-  const [newGameName, setNewGameName] = useState<string>("");
-  const [newImageUrl, setNewImageUrl] = useState<string>("");
-  const [newPlaceId, setNewPlaceId] = useState<string>("");
-  const [newScriptUrl, setNewScriptUrl] = useState<string>("");
-
-  const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const [newGameName, setNewGameName] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [newPlaceId, setNewPlaceId] = useState("");
+  const [newScriptUrl, setNewScriptUrl] = useState("");
+  const [copiedCode, setCopiedCode] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // Helper to convert Roblox web asset IDs or raw URLs into reliable web images
   const resolvePreviewImageUrl = (url: string) => {
-    if (!url) return "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png";
+    if (!url) return DEFAULT_GAMES[0].imageUrl;
     if (url.includes("rbxassetid://")) {
-      const id = url.replace("rbxassetid://", "").trim();
-      return `https://assetdelivery.roblox.com/v1/asset/?id=${id}`;
+      return `https://assetdelivery.roblox.com/v1/asset/?id=${url.replace("rbxassetid://", "").trim()}`;
     }
     return url;
   };
 
-  // IP Authorization Check
   useEffect(() => {
     const checkIp = async () => {
       try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        if (data && data.ip) {
-          const ip = String(data.ip).trim();
-          setUserIp(ip);
-          if (ip === ALLOWED_IP) setIsAllowed(true);
-        }
+        const response = await fetch("https://api.ipify.org?format=json");
+        const data = await response.json();
+        const ip = data?.ip ? String(data.ip).trim() : null;
+        setUserIp(ip);
+        setIsAllowed(ip === ALLOWED_IP);
       } catch {
         try {
-          const res = await fetch("https://ipapi.co/json/");
-          const data = await res.json();
-          if (data && data.ip) {
-            const ip = String(data.ip).trim();
-            setUserIp(ip);
-            if (ip === ALLOWED_IP) setIsAllowed(true);
-          }
+          const response = await fetch("https://ipapi.co/json/");
+          const data = await response.json();
+          const ip = data?.ip ? String(data.ip).trim() : null;
+          setUserIp(ip);
+          setIsAllowed(ip === ALLOWED_IP);
         } catch {
-          // fallback
+          setIsAllowed(false);
         }
+      } finally {
+        setIsIpChecking(false);
       }
-      setIsIpChecking(false);
     };
     checkIp();
   }, []);
 
-  // Save games to localStorage
   useEffect(() => {
     try {
       localStorage.setItem("sotarium_supported_games", JSON.stringify(games));
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
     }
   }, [games]);
 
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 2500);
+  const showToast = (message: string) => {
+    setToastMsg(message);
+    window.setTimeout(() => setToastMsg(null), 2500);
   };
 
-  const handleAddGame = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddGame = (event: React.FormEvent) => {
+    event.preventDefault();
     if (!newGameName.trim()) {
       showToast("Please enter a game name");
       return;
     }
-    const finalImageUrl = newImageUrl.trim() || "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png";
 
-    // Auto extract Place ID from full Roblox URL (e.g. https://www.roblox.com/games/136020512003847/...)
-    let parsedPlaceId = newPlaceId.trim();
-    const urlMatch = parsedPlaceId.match(/\/games\/(\d+)/) || parsedPlaceId.match(/roblox\.com\/.*?(\d{5,})/) || parsedPlaceId.match(/(\d{5,})/);
-    if (urlMatch && urlMatch[1]) {
-      parsedPlaceId = urlMatch[1];
-    }
-
-    const newItem: GameItem = {
+    const source = newPlaceId.trim();
+    const idMatch = source.match(/\/games\/(\d+)/) || source.match(/roblox\.com\/.*?(\d{5,})/) || source.match(/(\d{5,})/);
+    const game: GameItem = {
       id: `game-${Date.now()}`,
       name: newGameName.trim(),
-      imageUrl: finalImageUrl,
-      placeId: parsedPlaceId,
-      scriptUrl: newScriptUrl.trim()
+      imageUrl: newImageUrl.trim() || DEFAULT_GAMES[0].imageUrl,
+      placeId: idMatch?.[1] || source,
+      scriptUrl: newScriptUrl.trim(),
     };
 
-    setGames([...games, newItem]);
+    setGames((currentGames) => [...currentGames, game]);
     setNewGameName("");
     setNewImageUrl("");
     setNewPlaceId("");
     setNewScriptUrl("");
-    showToast(`Added "${newItem.name}" to 3-column showcase!`);
+    showToast(`Added “${game.name}” to the supported-games shelf`);
   };
 
   const handleDeleteGame = (id: string, name: string) => {
     if (games.length <= 1) {
-      showToast("You must keep at least 1 game in the list");
+      showToast("You must keep at least one game in the list");
       return;
     }
-    const filtered = games.filter(g => g.id !== id);
-    setGames(filtered);
-    showToast(`Removed "${name}"`);
+    setGames((currentGames) => currentGames.filter((game) => game.id !== id));
+    showToast(`Removed “${name}”`);
   };
 
-  // Generate dynamic Lua script incorporating all games
-  const generateLuaScript = (): string => {
-    return generateFullKeySystemScript(games, games[0], "");
-  };
-
-  const handleCopyScript = () => {
-    navigator.clipboard.writeText(generateLuaScript());
+  const copyScript = () => {
+    navigator.clipboard.writeText(generateFullKeySystemScript(games, games[0], ""));
     setCopiedCode(true);
-    showToast("Script copied to clipboard!");
-    setTimeout(() => setCopiedCode(false), 2000);
+    showToast("Script copied to clipboard");
+    window.setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  // Access Denied Screen
   if (!isIpChecking && !isAllowed) {
     return (
-      <div className="min-h-screen bg-[#0a0a0c] text-white flex flex-col items-center justify-center p-6 select-none">
-        <div className="w-full max-w-md bg-[#131316] border border-red-500/20 rounded-2xl p-8 flex flex-col items-center text-center shadow-2xl space-y-6">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400">
-            <ShieldAlert className="w-8 h-8" />
+      <div className="flex min-h-screen select-none flex-col items-center justify-center bg-[#0a0a0c] p-6 text-white">
+        <div className="flex w-full max-w-md flex-col items-center space-y-6 rounded-2xl border border-red-500/20 bg-[#131316] p-8 text-center shadow-2xl">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10 text-red-400">
+            <ShieldAlert className="h-8 w-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-black tracking-tight text-white">Access Restricted</h2>
-            <p className="text-zinc-400 text-sm">
-              Your IP address <span className="text-red-400 font-mono font-bold">{userIp || "checking..."}</span> is not authorized to access this administration page.
+            <h2 className="text-2xl font-black tracking-tight">Access Restricted</h2>
+            <p className="text-sm text-zinc-400">
+              Your IP address <span className="font-mono font-bold text-red-400">{userIp || "checking..."}</span> is not authorized to access this administration page.
             </p>
           </div>
-          <button
-            onClick={onBack}
-            className="w-full py-3 bg-[#1e1e24] hover:bg-[#282830] border border-zinc-700/60 rounded-xl font-bold text-sm transition-all"
-          >
+          <button onClick={onBack} className="w-full rounded-xl border border-zinc-700/60 bg-[#1e1e24] py-3 text-sm font-bold transition-all hover:bg-[#282830]">
             Return to Home
           </button>
         </div>
@@ -190,12 +166,11 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     );
   }
 
-  // Loading Screen
   if (isIpChecking) {
     return (
-      <div className="min-h-screen bg-[#0e0e11] text-white flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-[#0e0e11] text-white">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
           <span className="text-sm font-medium text-zinc-400">Verifying access rights...</span>
         </div>
       </div>
@@ -203,261 +178,161 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0d] text-white flex flex-col items-center py-8 px-4 font-sans select-none">
-      {/* Top Header */}
-      <header className="w-full max-w-6xl flex items-center justify-between pb-6 border-b border-zinc-800/80 mb-8">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 bg-[#16161a] hover:bg-[#202026] border border-zinc-800 rounded-xl text-zinc-300 hover:text-white font-bold text-xs transition-all cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </button>
-          <div className="h-4 w-px bg-zinc-800 mx-2" />
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-            <span className="font-extrabold text-sm tracking-wide text-zinc-200">Sotarium Game Manager</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-zinc-500 font-mono">IP: {userIp}</span>
-          <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold">Authorized</span>
-        </div>
-      </header>
+    <div className="relative isolate min-h-screen overflow-hidden bg-[#09090b] font-sans text-white select-none">
+      <div className="pointer-events-none fixed inset-0 opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
 
-      {/* Main Studio Viewport */}
-      <main className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Side: Game Form & Game List */}
-        <section className="lg:col-span-5 flex flex-col gap-6">
-          {/* Add Game Form Box */}
-          <div className="bg-[#121215] border border-zinc-800/80 rounded-2xl p-6 shadow-xl space-y-5">
-            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-              <div className="flex items-center gap-2.5">
-                <Plus className="w-4 h-4 text-emerald-400" />
-                <h3 className="font-bold text-sm text-white">Add New Supported Game</h3>
-              </div>
-              <Sparkles className="w-4 h-4 text-zinc-500" />
-            </div>
-
-            <form onSubmit={handleAddGame} className="space-y-4">
+      <div className="relative z-10 flex min-h-screen flex-col items-center px-4 py-8">
+        <header className="mb-7 flex w-full max-w-6xl items-center justify-between border-b border-white/[0.08] pb-5">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 rounded-lg border border-white/[0.10] bg-white/[0.035] px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:border-white/[0.20] hover:bg-white/[0.07] hover:text-white active:scale-[0.97]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </button>
+            <div className="mx-1 hidden h-4 w-px bg-white/[0.10] sm:block" />
+            <div className="hidden items-center gap-2 sm:flex">
+              <img src="/Sotarium.png" alt="" className="h-7 w-7 object-contain" />
               <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">
-                  Game Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. San Diego Border Roleplay"
-                  value={newGameName}
-                  onChange={(e) => setNewGameName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#18181c] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-all"
-                  required
-                />
+                <span className="block text-sm font-extrabold tracking-wide text-zinc-100">Sotarium Game Manager</span>
+                <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">Supported games index</span>
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">
-                  Image URL / Asset Link
-                </label>
-                <input
-                  type="text"
-                  placeholder="https://raw.githubusercontent.com/.../game.png"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#18181c] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-all font-mono text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">
-                    Roblox Game URL or Place ID
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="https://www.roblox.com/games/136020512003847/San-Diego-Border-Roleplay"
-                    value={newPlaceId}
-                    onChange={(e) => setNewPlaceId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#18181c] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-all font-mono text-xs"
-                  />
-                  <p className="text-[10px] text-zinc-500 mt-1">
-                    Auto-extracts Place ID so your script executes automatically when loaded in this game.
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-zinc-400 mb-1.5 uppercase tracking-wider">
-                    Script URL or Loadstring (Payload to run on valid key)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="loadstring(game:HttpGet('https://pastebin.com/raw/...'))()"
-                    value={newScriptUrl}
-                    onChange={(e) => setNewScriptUrl(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-[#18181c] border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 transition-all font-mono text-xs"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-white hover:bg-zinc-200 text-black font-extrabold rounded-xl text-sm transition-all shadow-lg active:scale-98 flex items-center justify-center gap-2 cursor-pointer mt-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add Game (Adds Left to Right)
-              </button>
-            </form>
-          </div>
-
-          {/* Configured Games List */}
-          <div className="bg-[#121215] border border-zinc-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-              <div className="flex items-center gap-2">
-                <Gamepad2 className="w-4 h-4 text-zinc-400" />
-                <h3 className="font-bold text-sm text-white">Active Games List ({games.length})</h3>
-              </div>
-              <span className="text-xs text-zinc-500">Left to Right Order</span>
-            </div>
-
-            <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
-              {games.map((g, idx) => (
-                <div
-                  key={g.id}
-                  className="flex items-center justify-between p-3 rounded-xl border bg-[#16161a] border-zinc-800/80 hover:bg-[#19191f] hover:border-zinc-700 transition-all"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xs font-mono font-bold text-zinc-500 w-4">#{idx + 1}</span>
-                    <div className="w-10 h-10 rounded-lg bg-zinc-800 overflow-hidden shrink-0 border border-zinc-700/60 flex items-center justify-center">
-                      <img 
-                        src={resolvePreviewImageUrl(g.imageUrl)} 
-                        alt={g.name} 
-                        className="w-full h-full object-cover" 
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = "none";
-                        }}
-                      />
-                      <Gamepad2 className="w-5 h-5 text-zinc-600 absolute" />
-                    </div>
-                    <div className="truncate">
-                      <p className="font-bold text-xs text-white truncate">{g.name}</p>
-                      <p className="text-[11px] text-zinc-500 truncate font-mono">
-                        {g.placeId ? `ID: ${g.placeId}` : "Universal"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteGame(g.id, g.name)}
-                    className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all ml-2 cursor-pointer"
-                    title="Remove game"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
             </div>
           </div>
-        </section>
+          <div className="flex items-center gap-3">
+            <span className="hidden font-mono text-xs text-zinc-500 md:block">IP: {userIp}</span>
+            <span className="flex items-center gap-1.5 rounded-md border border-[#8DF2A3]/25 bg-[#8DF2A3]/[0.08] px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8DF2A3]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#8DF2A3]" />
+              Authorized
+            </span>
+          </div>
+        </header>
 
-        {/* Right Side: Exact Roblox GUI Live Preview + Script Output */}
-        <section className="lg:col-span-7 flex flex-col gap-6">
-          {/* Roblox GUI Recreation Frame */}
-          <div className="bg-[#121215] border border-zinc-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-              <div className="flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-zinc-400" />
-                <h3 className="font-bold text-sm text-white">Roblox Lua GUI Live Preview</h3>
+        <main className="grid w-full max-w-6xl grid-cols-1 items-start gap-6 lg:grid-cols-12">
+          <section className="flex flex-col gap-6 lg:col-span-5">
+            <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-[#111217]/90 p-6 shadow-2xl shadow-black/25 backdrop-blur-md">
+              <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <Plus className="h-4 w-4 text-[#8DF2A3]" />
+                  <h3 className="text-sm font-bold text-white">Add New Supported Game</h3>
+                </div>
+                <Sparkles className="h-4 w-4 text-zinc-500" />
               </div>
-              <span className="text-xs text-emerald-400 font-mono font-bold">3-Column Grid ({games.length} Games)</span>
+
+              <form onSubmit={handleAddGame} className="space-y-4">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-zinc-400">Game Name <span className="text-red-400">*</span></span>
+                  <input type="text" placeholder="e.g. San Diego Border Roleplay" value={newGameName} onChange={(event) => setNewGameName(event.target.value)} className="w-full rounded-xl border border-zinc-800 bg-[#18181c] px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 transition-all focus:border-zinc-500 focus:outline-none" required />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-zinc-400">Image URL / Asset Link</span>
+                  <input type="text" placeholder="https://raw.githubusercontent.com/.../game.png" value={newImageUrl} onChange={(event) => setNewImageUrl(event.target.value)} className="w-full rounded-xl border border-zinc-800 bg-[#18181c] px-3.5 py-2.5 font-mono text-xs text-white placeholder-zinc-600 transition-all focus:border-zinc-500 focus:outline-none" />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-zinc-400">Roblox Game URL or Place ID</span>
+                  <input type="text" placeholder="https://www.roblox.com/games/136020512003847/..." value={newPlaceId} onChange={(event) => setNewPlaceId(event.target.value)} className="w-full rounded-xl border border-zinc-800 bg-[#18181c] px-3.5 py-2.5 font-mono text-xs text-white placeholder-zinc-600 transition-all focus:border-zinc-500 focus:outline-none" />
+                  <span className="mt-1 block text-[10px] text-zinc-500">Place IDs are extracted automatically from Roblox URLs.</span>
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-zinc-400">Script URL or Loadstring</span>
+                  <input type="text" placeholder="loadstring(game:HttpGet('https://...'))()" value={newScriptUrl} onChange={(event) => setNewScriptUrl(event.target.value)} className="w-full rounded-xl border border-zinc-800 bg-[#18181c] px-3.5 py-2.5 font-mono text-xs text-white placeholder-zinc-600 transition-all focus:border-zinc-500 focus:outline-none" />
+                </label>
+                <button type="submit" className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3 text-sm font-extrabold text-black shadow-lg transition-all hover:bg-zinc-200 active:scale-[0.98]">
+                  <Plus className="h-4 w-4" />
+                  Add to Supported Games
+                </button>
+              </form>
             </div>
 
-            {/* GUI Window Container (720x440 aspect ratio with matching rounded corners) */}
-            <div className="w-full aspect-[720/440] bg-[#0f0f0f] border border-[#222222] rounded-[14px] overflow-hidden relative shadow-2xl flex flex-col">
-              {/* Top Bar with Controls */}
-              <div className="h-10 w-full flex items-center justify-between px-4 bg-transparent z-20 shrink-0">
+            <div className="space-y-4 rounded-2xl border border-white/[0.08] bg-[#111217]/90 p-6 shadow-2xl shadow-black/25 backdrop-blur-md">
+              <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
                 <div className="flex items-center gap-2">
-                  <button className="px-3 py-1 bg-[#161616] border border-[#2a2a2a] rounded-lg text-xs font-bold text-zinc-300 flex items-center gap-1.5 pointer-events-none">
-                    <ArrowLeft className="w-3 h-3 text-zinc-400" />
-                    Back
-                  </button>
+                  <Gamepad2 className="h-4 w-4 text-zinc-400" />
+                  <h3 className="text-sm font-bold text-white">Active Games List ({games.length})</h3>
                 </div>
-                {/* Minimize, Maximize, Close */}
-                <div className="flex items-center gap-3 text-zinc-500">
-                  <div className="w-3 h-0.5 bg-zinc-500 rounded-full" />
-                  <div className="w-3 h-3 border border-zinc-500 rounded-[2px]" />
-                  <div className="text-xs font-bold">✕</div>
-                </div>
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500">Shelf order</span>
               </div>
 
-              {/* Centered Showcase: 3 Columns Grid Layout */}
-              <div className="flex-1 grid grid-cols-3 gap-3 px-5 py-2 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-                {games.map((g) => (
-                  <div
-                    key={g.id}
-                    className="w-full h-[140px] bg-[#101010] border border-[#262626] rounded-[10px] shadow-xl flex flex-col overflow-hidden transition-transform hover:scale-[1.02]"
-                  >
-                    {/* Top Game Thumbnail: Top 2 Rounded (10px), Bottom 2 Square (0px) */}
-                    <div className="w-full flex-1 bg-zinc-900 overflow-hidden relative rounded-t-[10px] rounded-b-none flex items-center justify-center">
-                      <img
-                        src={resolvePreviewImageUrl(g.imageUrl)}
-                        alt={g.name}
-                        className="w-full h-full object-cover rounded-t-[10px] rounded-b-none z-10"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = "none";
-                        }}
-                      />
-                      {/* Fallback Icon if image cannot be fetched directly */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 text-zinc-500 gap-1.5">
-                        <Gamepad2 className="w-6 h-6 text-zinc-600" />
-                        <span className="text-[10px] font-bold text-zinc-500">Game Thumbnail</span>
+              <div className="grid max-h-[310px] grid-cols-1 gap-2.5 overflow-y-auto pr-1">
+                {games.map((game, index) => (
+                  <div key={game.id} className="group relative flex min-h-[84px] items-center overflow-hidden rounded-xl border border-white/[0.08] bg-[#15161b] p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.16] hover:bg-[#191a20]">
+                    <span className="pointer-events-none absolute -bottom-5 -right-1 select-none font-mono text-6xl font-bold tracking-tighter text-white/[0.035]">{String(index + 1).padStart(2, "0")}</span>
+                    <div className="relative z-10 flex min-w-0 items-center gap-3">
+                      <div className="relative h-14 w-[74px] shrink-0 overflow-hidden rounded-lg border border-white/[0.10] bg-[linear-gradient(135deg,#1b1d24_0%,#101115_45%,#0b0c0f_100%)]">
+                        <img src={resolvePreviewImageUrl(game.imageUrl)} alt={game.name} className="relative z-10 h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" onError={(event) => { event.currentTarget.style.opacity = "0"; }} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="mb-1 flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#8DF2A3]" />
+                          <span className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#8DF2A3]">Supported</span>
+                        </div>
+                        <p className="truncate text-xs font-bold text-white">{game.name}</p>
+                        <p className="mt-0.5 truncate font-mono text-[10px] text-zinc-500">{game.placeId ? `Place ${game.placeId}` : "Universal access"}</p>
                       </div>
                     </div>
-
-                    {/* Attached Bottom Title Bar: Top 2 Square (0px), Bottom 2 Rounded (10px) */}
-                    <div className="w-full h-8 bg-[#0c0c0c] border-t border-[#222222] flex items-center justify-center px-2 rounded-b-[10px] rounded-t-none">
-                      <span className="font-bold text-[11px] text-white tracking-wide truncate text-center">
-                        {g.name}
-                      </span>
-                    </div>
+                    <button type="button" onClick={() => handleDeleteGame(game.id, game.name)} className="relative z-10 ml-auto rounded-lg p-2 text-zinc-500 transition-all hover:bg-red-500/10 hover:text-red-400" title={`Remove ${game.name}`}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Generated Lua Script Result Output Box */}
-          <div className="bg-[#121215] border border-zinc-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-              <div className="flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-emerald-400" />
-                <h3 className="font-bold text-sm text-white">Generated Script Result</h3>
+          <section className="flex flex-col gap-6 lg:col-span-7">
+            <div className="space-y-4 rounded-2xl border border-white/[0.08] bg-[#111217]/90 p-6 shadow-2xl shadow-black/25 backdrop-blur-md">
+              <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
+                <div className="flex items-center gap-2">
+                  <Layers3 className="h-4 w-4 text-[#8DF2A3]" />
+                  <h3 className="text-sm font-bold text-white">Supported Games Live Preview</h3>
+                </div>
+                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.12em] text-[#8DF2A3]">Responsive shelf · {games.length}</span>
               </div>
-              <button
-                onClick={handleCopyScript}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-zinc-200 text-black font-extrabold rounded-lg text-xs transition-all shadow-md active:scale-95 cursor-pointer"
-              >
-                {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copiedCode ? "Copied!" : "Copy Result Script"}
-              </button>
+
+              <div className="relative flex aspect-[720/440] w-full flex-col overflow-hidden rounded-[14px] border border-white/[0.10] bg-[#09090b] shadow-2xl">
+                <div className="pointer-events-none absolute inset-0 opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
+                <div className="z-20 flex h-11 w-full shrink-0 items-center justify-between border-b border-white/[0.07] bg-black/10 px-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5 rounded-md border border-white/[0.10] bg-black/25 px-3 py-1 text-xs font-bold text-zinc-300"><ArrowLeft className="h-3 w-3 text-zinc-400" />Back</span>
+                    <span className="hidden border-l border-white/[0.10] pl-3 font-mono text-[9px] uppercase tracking-[0.16em] text-zinc-500 sm:block">Supported titles</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-zinc-500"><div className="h-0.5 w-3 rounded-full bg-zinc-500" /><div className="h-3 w-3 rounded-[2px] border border-zinc-500" /><div className="text-xs font-bold">✕</div></div>
+                </div>
+
+                <div className="grid flex-1 grid-cols-1 gap-3 overflow-y-auto px-4 py-4 sm:grid-cols-2 sm:px-5">
+                  {games.map((game, index) => (
+                    <article key={game.id} className="group relative min-h-[132px] overflow-hidden rounded-[10px] border border-white/[0.12] bg-[#15161b] shadow-[0_16px_32px_rgba(0,0,0,0.30)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.24] hover:shadow-[0_20px_36px_rgba(0,0,0,0.42)]">
+                      <div className="absolute inset-0 overflow-hidden bg-[linear-gradient(135deg,#1b1d24_0%,#101115_45%,#0b0c0f_100%)]">
+                        <img src={resolvePreviewImageUrl(game.imageUrl)} alt={game.name} className="relative z-10 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.055]" onError={(event) => { event.currentTarget.style.opacity = "0"; }} />
+                      </div>
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
+                      <span className="absolute left-3 top-3 rounded border border-white/[0.13] bg-black/35 px-1.5 py-1 font-mono text-[9px] font-bold tracking-[0.12em] text-zinc-300">{String(index + 1).padStart(2, "0")}</span>
+                      <div className="absolute right-3 top-3 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#8DF2A3]"><span className="h-1.5 w-1.5 rounded-full bg-[#8DF2A3]" />Supported</div>
+                      <div className="absolute inset-x-0 bottom-0 p-3.5">
+                        <h4 className="max-w-[85%] text-left text-sm font-extrabold leading-tight tracking-tight text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.9)]">{game.name}</h4>
+                      </div>
+                      <span className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-45" />
+                    </article>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div className="relative">
-              <pre className="w-full h-44 bg-[#0a0a0d] border border-zinc-800/90 rounded-xl p-4 text-xs font-mono text-emerald-400/90 overflow-x-auto overflow-y-auto select-all leading-relaxed">
-                {generateLuaScript()}
-              </pre>
+            <div className="space-y-4 rounded-2xl border border-white/[0.08] bg-[#111217]/90 p-6 shadow-2xl shadow-black/25 backdrop-blur-md">
+              <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
+                <div className="flex items-center gap-2"><Code2 className="h-4 w-4 text-[#8DF2A3]" /><h3 className="text-sm font-bold text-white">Generated Script Result</h3></div>
+                <button onClick={copyScript} className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-extrabold text-black shadow-md transition-all hover:bg-zinc-200 active:scale-95">
+                  {copiedCode ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copiedCode ? "Copied" : "Copy Result Script"}
+                </button>
+              </div>
+              <pre className="h-44 w-full overflow-x-auto overflow-y-auto rounded-xl border border-zinc-800/90 bg-[#0a0a0d] p-4 font-mono text-xs leading-relaxed text-[#8DF2A3]/90 select-all">{generateFullKeySystemScript(games, games[0], "")}</pre>
             </div>
-          </div>
-        </section>
-      </main>
+          </section>
+        </main>
 
-      {/* Floating Toast Notification */}
-      {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-[#18181c] border border-zinc-700 text-white text-xs font-bold rounded-xl shadow-2xl flex items-center gap-2.5 animate-bounce">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          {toastMsg}
-        </div>
-      )}
+        {toastMsg && <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-xl border border-[#8DF2A3]/25 bg-[#16171c] px-4 py-3 text-xs font-bold text-white shadow-2xl"><div className="h-2 w-2 rounded-full bg-[#8DF2A3]" />{toastMsg}</div>}
+      </div>
     </div>
   );
 };
