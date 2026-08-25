@@ -346,11 +346,13 @@ game:GetService("StarterGui"):SetCore("SendNotification", {
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative h-11 w-16 shrink-0 overflow-hidden rounded-lg border border-white/[0.10] bg-[#15161b]">
-                        <img src={g.imageUrl} alt={g.name} className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
+                      <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-white/[0.10] bg-black">
+                        <img src={g.imageUrl} alt={g.name} className="h-9 w-full object-cover transition-transform duration-200 group-hover:scale-105" />
+                        <div className="flex h-5 items-center bg-black px-1.5">
+                          <span className="w-full truncate text-center text-[8px] font-extrabold text-white">{g.name}</span>
+                        </div>
                       </div>
                       <div className="truncate">
-                        <p className="font-bold text-xs text-white truncate">{g.name}</p>
                         <p className="text-[10px] text-zinc-500 font-mono">
                           {hasCustomPayload ? "Payload Configured" : "Default Payload"}
                         </p>

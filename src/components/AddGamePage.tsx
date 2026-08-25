@@ -259,15 +259,17 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                   <div key={game.id} className="group relative flex min-h-[84px] items-center overflow-hidden rounded-xl border border-white/[0.08] bg-[#15161b] p-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.16] hover:bg-[#191a20]">
                     <span className="pointer-events-none absolute -bottom-5 -right-1 select-none font-mono text-6xl font-bold tracking-tighter text-white/[0.035]">{String(index + 1).padStart(2, "0")}</span>
                     <div className="relative z-10 flex min-w-0 items-center gap-3">
-                      <div className="relative h-14 w-[74px] shrink-0 overflow-hidden rounded-lg border border-white/[0.10] bg-[linear-gradient(135deg,#1b1d24_0%,#101115_45%,#0b0c0f_100%)]">
-                        <img src={resolvePreviewImageUrl(game.imageUrl)} alt={game.name} className="relative z-10 h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" onError={(event) => { event.currentTarget.style.opacity = "0"; }} />
+                      <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-white/[0.10] bg-black">
+                        <img src={resolvePreviewImageUrl(game.imageUrl)} alt={game.name} className="relative z-10 h-9 w-full object-cover transition-transform duration-200 group-hover:scale-105" onError={(event) => { event.currentTarget.style.opacity = "0"; }} />
+                        <div className="flex h-5 items-center bg-black px-1.5">
+                          <span className="w-full truncate text-center text-[8px] font-extrabold text-white">{game.name}</span>
+                        </div>
                       </div>
                       <div className="min-w-0">
                         <div className="mb-1 flex items-center gap-1.5">
                           <span className="h-1.5 w-1.5 rounded-full bg-[#8DF2A3]" />
                           <span className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-[#8DF2A3]">Supported</span>
                         </div>
-                        <p className="truncate text-xs font-bold text-white">{game.name}</p>
                         <p className="mt-0.5 truncate font-mono text-[10px] text-zinc-500">{game.placeId ? `Place ${game.placeId}` : "Universal access"}</p>
                       </div>
                     </div>
@@ -302,17 +304,15 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
                 <div className="grid flex-1 grid-cols-1 gap-3 overflow-y-auto px-4 py-4 sm:grid-cols-2 sm:px-5">
                   {games.map((game, index) => (
-                    <article key={game.id} className="group relative min-h-[132px] overflow-hidden rounded-[10px] border border-white/[0.12] bg-[#15161b] shadow-[0_16px_32px_rgba(0,0,0,0.30)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.24] hover:shadow-[0_20px_36px_rgba(0,0,0,0.42)]">
-                      <div className="absolute inset-0 overflow-hidden bg-[linear-gradient(135deg,#1b1d24_0%,#101115_45%,#0b0c0f_100%)]">
+                    <article key={game.id} className="group relative min-h-[132px] overflow-hidden rounded-[10px] border border-white/[0.12] bg-black shadow-[0_16px_32px_rgba(0,0,0,0.30)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.24] hover:shadow-[0_20px_36px_rgba(0,0,0,0.42)]">
+                      <div className="absolute inset-x-0 top-0 bottom-8 overflow-hidden bg-[#15161b]">
                         <img src={resolvePreviewImageUrl(game.imageUrl)} alt={game.name} className="relative z-10 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.055]" onError={(event) => { event.currentTarget.style.opacity = "0"; }} />
                       </div>
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
                       <span className="absolute left-3 top-3 rounded border border-white/[0.13] bg-black/35 px-1.5 py-1 font-mono text-[9px] font-bold tracking-[0.12em] text-zinc-300">{String(index + 1).padStart(2, "0")}</span>
                       <div className="absolute right-3 top-3 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#8DF2A3]"><span className="h-1.5 w-1.5 rounded-full bg-[#8DF2A3]" />Supported</div>
-                      <div className="absolute inset-x-0 bottom-0 p-3.5">
-                        <h4 className="max-w-[85%] text-left text-sm font-extrabold leading-tight tracking-tight text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.9)]">{game.name}</h4>
+                      <div className="absolute inset-x-0 bottom-0 flex h-8 items-center bg-black px-3">
+                        <h4 className="w-full truncate text-center text-[11px] font-extrabold tracking-tight text-white">{game.name}</h4>
                       </div>
-                      <span className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-white/60 to-transparent opacity-45" />
                     </article>
                   ))}
                 </div>
