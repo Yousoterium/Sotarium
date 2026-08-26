@@ -148,13 +148,7 @@ function App() {
                 className="group relative flex min-h-[70px] items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-[14px] transition duration-180 hover:border-white/[0.18] hover:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/[0.24] active:scale-[0.985]"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-[#121316]" aria-hidden="true">
-                  {provider.id === "workink" ? (
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#138b70] text-[17px] font-black tracking-[-0.15em] text-white" aria-label="Work.ink">
-                      w
-                    </span>
-                  ) : (
-                    <img src={provider.icon} alt="" className="h-7 w-7 rounded-lg object-contain" referrerPolicy="no-referrer" />
-                  )}
+                  <img src={provider.icon} alt="" className="h-7 w-7 rounded-lg object-contain" referrerPolicy="no-referrer" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-bold tracking-tight text-white">{provider.name}</span>
@@ -176,6 +170,7 @@ function App() {
         </main>
       )}
 
+      <div className={isKeyModalOpen ? "relative z-0" : "relative z-10"}>
       <EarnpasteModal
         key={`${selectedProvider.id}-${lootlabsSession || ""}-${lootlabsStep || ""}-${earnpasteAction || "new"}-${earnpasteSession || ""}-${workinkSession || ""}-${workinkStep || ""}-${workinkToken || ""}`}
         isOpen={isKeyModalOpen}
@@ -192,6 +187,7 @@ function App() {
         workinkStep={workinkStep}
         workinkToken={workinkToken}
       />
+      </div>
     </div>
   );
 }

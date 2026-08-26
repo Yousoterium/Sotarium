@@ -98,9 +98,6 @@ const ProviderIcon: React.FC<{ name: string; iconUrl?: string; className?: strin
   className = "h-[42px] w-[42px]",
 }) => {
   const [failed, setFailed] = useState(false);
-  if (name.toLowerCase() === "work.ink") {
-    return <div className={`${className} rounded-full border border-[#00a37a]/30 bg-[#00a37a] flex items-center justify-center text-[22px] font-black tracking-[-0.16em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]`}>w</div>;
-  }
   if (!iconUrl || failed) {
     return <div className={`${className} rounded-full bg-[#181820] border border-white/10 flex items-center justify-center text-white font-black`}>{name.slice(0, 1)}</div>;
   }
@@ -413,9 +410,8 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-transparent p-4 text-white">
-      <div className="fixed inset-0 pointer-events-none bg-black/20" />
       {!isUnlocked ? (
-        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[380px] max-w-full flex-col items-center overflow-hidden rounded-2xl border border-white/[0.14] bg-[#0d0d0d]/55 px-7 py-8 shadow-[0_24px_80px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl">
+        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[380px] max-w-full flex-col items-center overflow-hidden rounded-[20px] border border-white/[0.08] bg-[#0d0d0d]/40 px-7 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_30px_70px_-30px_rgba(0,0,0,0.9)]">
           <header className="relative z-10 flex flex-col items-center text-center">
             <ProviderIcon name={providerName} iconUrl={providerIcon} className="h-16 w-16" />
             <h2 className="mt-4 text-[23px] font-bold tracking-tight text-white">{providerName}</h2>
