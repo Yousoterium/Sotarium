@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check, Clock, Copy, Loader2 } from "lucide-react";
 
-// Reference-matched glass key card: selected provider identity, a single quiet progress rail, and exactly one active step button.
+// Get Key card fidelity: preserve the supplied compact dark-glass card and swap only its provider identity and staged action area.
 type ProviderKind = "lootlabs" | "earnpaste" | "workink" | "opera";
 type AdBlockerStatus = "checking" | "clear" | "detected";
 
@@ -415,8 +415,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black p-4 text-white">
       <div className="fixed inset-0 pointer-events-none opacity-[0.62]" style={{ backgroundImage: "radial-gradient(rgba(28,140,246,0.78) 1px,transparent 1px)", backgroundSize: "17px 17px", maskImage: "radial-gradient(ellipse at center, transparent 0%, transparent 24%, black 43%, black 67%, transparent 92%)" }} />
       {!isUnlocked ? (
-        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[378px] max-w-full flex-col items-center overflow-hidden rounded-[19px] border border-white/[0.16] bg-[#0d141c]/[0.68] px-7 py-8 shadow-[0_28px_86px_rgba(0,0,0,0.68),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-[28px]">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,rgba(255,255,255,0.075),transparent_35%,rgba(7,13,21,0.2))]" />
+        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[378px] max-w-full flex-col items-center overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d0d]/40 px-7 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_30px_70px_-30px_rgba(0,0,0,0.9)] backdrop-blur-[18px] backdrop-saturate-150">
           <header className="relative z-10 flex flex-col items-center text-center">
             <ProviderIcon name={providerName} iconUrl={providerIcon} className="h-[56px] w-[56px]" />
             <h2 className="mt-4 text-[23px] font-bold tracking-tight text-white">{providerName}</h2>
@@ -424,7 +423,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
 
           <section className="relative z-10 mt-8 w-full">
             <div className="h-[7px] overflow-hidden rounded-full border border-white/[0.09] bg-black/55 p-px" aria-label={`${progressPercent}% complete`}>
-              <div className="h-full rounded-full bg-[#128d72] transition-[width] duration-200" style={{ width: `${progressPercent}%` }} />
+              <div className="h-full rounded-full bg-[#128d72] transition-[width] duration-200" style={{ width: progressPercent === 0 ? "7px" : `${progressPercent}%` }} />
             </div>
           </section>
 

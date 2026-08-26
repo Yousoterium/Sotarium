@@ -135,7 +135,7 @@ function App() {
       <div className="fixed inset-0 pointer-events-none opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
       {isProviderPickerOpen ? (
         <main className="relative z-10 w-full max-w-6xl">
-          <section className="auth-card rounded-2xl border border-white/[0.1] bg-[#0d0d0e]/85 p-5 shadow-[0_22px_70px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:p-6">
+          <section className="auth-card rounded-2xl border border-white/[0.08] bg-[#0d0d0d]/40 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_30px_70px_-30px_rgba(0,0,0,0.9)] backdrop-blur-[18px] backdrop-saturate-150 sm:p-6">
             <div className="auth-head">
               <h2 className="text-base font-bold tracking-tight text-white">Available</h2>
             </div>
@@ -145,7 +145,7 @@ function App() {
                 key={provider.name}
                 type="button"
                 onClick={() => openProvider(provider)}
-                className="group relative flex min-h-[70px] items-center gap-3 rounded-xl border border-white/[0.07] bg-[#0a0a0b] px-4 py-3 text-left transition duration-180 hover:border-white/[0.18] hover:bg-[#0f1011] focus:outline-none focus:ring-2 focus:ring-white/[0.24] active:scale-[0.985]"
+                className="group relative flex min-h-[70px] items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-[14px] transition duration-180 hover:border-white/[0.18] hover:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/[0.24] active:scale-[0.985]"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-[#121316]" aria-hidden="true">
                   {provider.id === "workink" ? (
@@ -159,7 +159,6 @@ function App() {
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-bold tracking-tight text-white">{provider.name}</span>
                 </span>
-                <span className="text-xl font-light text-zinc-600 transition duration-180 group-hover:text-zinc-300" aria-hidden="true">+</span>
               </button>
             ))}
             </div>
