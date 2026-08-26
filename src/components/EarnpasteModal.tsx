@@ -412,17 +412,17 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black p-4 text-white">
-      <div className="fixed inset-0 pointer-events-none opacity-[0.62]" style={{ backgroundImage: "radial-gradient(rgba(28,140,246,0.78) 1px,transparent 1px)", backgroundSize: "17px 17px", maskImage: "radial-gradient(ellipse at center, transparent 0%, transparent 24%, black 43%, black 67%, transparent 92%)" }} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-transparent p-4 text-white">
+      <div className="fixed inset-0 pointer-events-none bg-black/20" />
       {!isUnlocked ? (
-        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[378px] max-w-full flex-col items-center overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0d0d0d]/40 px-7 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_30px_70px_-30px_rgba(0,0,0,0.9)] backdrop-blur-[18px] backdrop-saturate-150">
+        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[380px] max-w-full flex-col items-center overflow-hidden rounded-2xl border border-white/[0.14] bg-[#0d0d0d]/55 px-7 py-8 shadow-[0_24px_80px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl">
           <header className="relative z-10 flex flex-col items-center text-center">
-            <ProviderIcon name={providerName} iconUrl={providerIcon} className="h-[56px] w-[56px]" />
+            <ProviderIcon name={providerName} iconUrl={providerIcon} className="h-16 w-16" />
             <h2 className="mt-4 text-[23px] font-bold tracking-tight text-white">{providerName}</h2>
           </header>
 
-          <section className="relative z-10 mt-8 w-full">
-            <div className="h-[7px] overflow-hidden rounded-full border border-white/[0.09] bg-black/55 p-px" aria-label={`${progressPercent}% complete`}>
+          <section className="relative z-10 mt-7 w-full">
+            <div className="h-2 overflow-hidden rounded-full border border-white/[0.12] bg-black/60 p-px" aria-label={`${progressPercent}% complete`}>
               <div className="h-full rounded-full bg-[#128d72] transition-[width] duration-200" style={{ width: progressPercent === 0 ? "7px" : `${progressPercent}%` }} />
             </div>
           </section>
