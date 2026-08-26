@@ -5,6 +5,7 @@ import { AddGamePage } from "./components/AddGamePage";
 import { ScriptsPage } from "./components/ScriptsPage";
 import { LogsPage, type LogEntry } from "./components/LogsPage";
 
+// Operator Glass: a compact, left-anchored provider rack on graphite surfaces; Work.ink teal is reserved for the live route.
 type ProviderId = "lootlabs" | "earnpaste" | "workink";
 
 interface ProviderOption {
@@ -57,21 +58,6 @@ function App() {
   const [workinkSession, setWorkinkSession] = useState<string | null>(null);
   const [workinkStep, setWorkinkStep] = useState<number | null>(null);
   const [workinkToken, setWorkinkToken] = useState<string | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
-
-  const showToast = (message: string) => {
-    setToastMsg(message);
-    window.setTimeout(() => setToastMsg(null), 2500);
-  };
-
-  const handleJoinDiscord = async () => {
-    try {
-      await navigator.clipboard.writeText("https://discord.gg/3aghbJBybQ");
-      showToast("Link for Discord copied!");
-    } catch {
-      showToast("Could not copy the Discord link.");
-    }
-  };
 
   const closeKeyModal = () => {
     setIsKeyModalOpen(false);
@@ -145,66 +131,72 @@ function App() {
   if (page === "logs") return <LogsPage logs={logs} onBack={() => { window.history.replaceState({}, "", "/"); setPage("home"); }} onClear={() => setLogs([])} />;
 
   return (
-    <div className="relative flex min-h-screen w-full select-none flex-col items-center justify-center overflow-hidden bg-[#09090b] px-6 py-12 font-sans text-white antialiased">
-      <div className="fixed inset-0 pointer-events-none opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
+    <div className="relative flex min-h-screen w-full select-none flex-col items-center justify-center overflow-hidden bg-[#08090b] px-5 py-8 font-sans text-white antialiased sm:px-8">
+      <div className="fixed inset-0 pointer-events-none opacity-[0.2]" style={{ backgroundImage: "radial-gradient(rgba(101,183,255,0.22) 1px,transparent 1px)", backgroundSize: "30px 30px", maskImage: "radial-gradient(ellipse at center, black 0%, transparent 68%)" }} />
       {isProviderPickerOpen ? (
-        <main className="relative z-10 flex w-full max-w-5xl flex-col items-center justify-center gap-8 text-center">
-          <div className="w-full text-left">
+        <main className="relative z-10 flex w-full max-w-6xl flex-col gap-7">
+          <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#65B7FF]/75">Sotarium / player access</p>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Choose your provider</h1>
+              <p className="mt-2 max-w-md text-sm leading-6 text-zinc-400">Select an available provider to start your key verification flow.</p>
+            </div>
             <button
               type="button"
               onClick={() => setIsProviderPickerOpen(false)}
-              className="rounded-full border border-white/[0.10] bg-white/[0.04] px-4 py-2 text-sm font-semibold text-zinc-300 shadow-sm transition-all hover:border-white/[0.20] hover:bg-white/[0.08] hover:text-white active:scale-95"
+              className="w-fit rounded-lg border border-white/[0.1] bg-white/[0.035] px-4 py-2 text-sm font-semibold text-zinc-300 shadow-sm transition duration-180 hover:border-white/[0.22] hover:bg-white/[0.075] hover:text-white active:scale-[0.97]"
             >
-              Back to home
+              ← Back home
             </button>
-          </div>
-          <div className="flex flex-col items-center gap-3">
-            <h2 className="text-4xl font-black tracking-tight sm:text-5xl">Choose a provider to obtain a key</h2>
-            <p className="max-w-md text-sm text-zinc-400">Complete two verification checkpoints to receive a key.</p>
-          </div>
-          <div className="grid w-full max-w-sm grid-cols-1 gap-4">
+          </header>
+
+          <section className="auth-card rounded-[18px] border border-white/[0.1] bg-[#0d0e10]/90 p-5 shadow-[0_24px_80px_rgba(0,0,0,0.34)] backdrop-blur-xl sm:p-6">
+            <div className="auth-head flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-base font-bold tracking-tight text-white">Available</h2>
+                <p className="mt-1 text-xs text-zinc-500">Providers ready for player verification</p>
+              </div>
+              <span className="rounded-full border border-[#00a37a]/20 bg-[#00a37a]/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#6de2c4]">1 live</span>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:max-w-[390px]">
             {VISIBLE_PROVIDERS.map((provider) => (
               <button
                 key={provider.name}
                 type="button"
                 onClick={() => openProvider(provider)}
-                className="group relative flex min-h-60 flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/[0.10] bg-[#141417] p-7 text-center shadow-md transition-all hover:-translate-y-1 hover:border-[#0989F1]/75 hover:bg-[#0989F1]/[0.12] focus:outline-none focus:ring-2 focus:ring-[#0989F1]/70 active:scale-[0.98]"
+                className="group relative flex min-h-[74px] items-center gap-3 overflow-hidden rounded-xl border border-white/[0.075] bg-[#0b0c0e] px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.025)] transition duration-180 hover:-translate-y-0.5 hover:border-[#00a37a]/45 hover:bg-[#101315] focus:outline-none focus:ring-2 focus:ring-[#00a37a]/50 active:scale-[0.985]"
               >
-                <span className="flex h-24 w-24 items-center justify-center rounded-3xl border border-white/[0.12] bg-zinc-700/70 shadow-[0_0_38px_rgba(255,255,255,0.05)] transition-transform duration-200 group-hover:scale-105" aria-hidden="true">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-[#141619] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" aria-hidden="true">
                   {provider.id === "workink" ? (
-                    <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#00a37a] text-4xl font-black tracking-[-0.12em] text-white shadow-inner" aria-label="Work.ink">
-                      W
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#00a37a] text-[17px] font-black tracking-[-0.15em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.32)]" aria-label="Work.ink">
+                      w
                     </span>
                   ) : (
-                    <img src={provider.icon} alt="" className="h-16 w-16 rounded-2xl object-contain" referrerPolicy="no-referrer" />
+                    <img src={provider.icon} alt="" className="h-7 w-7 rounded-lg object-contain" referrerPolicy="no-referrer" />
                   )}
                 </span>
-                <span className="mt-5">
-                  <span className="block text-xl font-bold tracking-tight text-white">{provider.name}</span>
-                  <span className="mt-2 block text-sm leading-5 text-zinc-400">{provider.description}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-bold tracking-tight text-white">{provider.name}</span>
+                  <span className="mt-0.5 block truncate text-xs text-zinc-500">Ready to start</span>
                 </span>
+                <span className="text-xl font-light text-zinc-600 transition duration-180 group-hover:text-[#6de2c4]" aria-hidden="true">+</span>
               </button>
             ))}
-          </div>
+            </div>
+          </section>
         </main>
       ) : (
-        <main className="relative z-10 flex flex-col items-center justify-center gap-9 text-center">
+        <main className="relative z-10 flex w-full max-w-sm flex-col items-center justify-center gap-9 text-center">
           <div className="flex flex-col items-center gap-4">
-            <img src="https://i.imgur.com/qye2L7M.png" alt="Sotarium" className="h-24 w-24 object-contain drop-shadow-md sm:h-28 sm:w-28" />
-            <h1 className="text-5xl font-black tracking-tight sm:text-6xl">Sotarium</h1>
+            <img src="/logo.svg" alt="Sotarium" className="h-20 w-20 object-contain drop-shadow-[0_0_24px_rgba(101,183,255,0.2)] sm:h-24 sm:w-24" />
+            <div>
+              <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">Sotarium</h1>
+              <p className="mt-3 text-sm text-zinc-500">Player access gateway</p>
+            </div>
           </div>
-          <div className="flex w-full max-w-xs flex-col gap-3">
-            <button type="button" onClick={() => setIsProviderPickerOpen(true)} className="w-full rounded-full border border-white/[0.12] bg-[#141417] px-6 py-3 text-sm font-bold text-zinc-100 shadow-md transition-all hover:border-white/[0.24] hover:bg-[#1c1c20] hover:text-white active:scale-95">Get Key</button>
-            <button type="button" onClick={handleJoinDiscord} className="w-full rounded-full border border-white/[0.12] bg-white/[0.04] px-6 py-3 text-sm font-bold text-zinc-300 shadow-sm transition-all hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white active:scale-95">Join Discord</button>
-          </div>
+          <button type="button" onClick={() => setIsProviderPickerOpen(true)} className="w-full rounded-xl border border-white/[0.12] bg-white/[0.065] px-6 py-3.5 text-sm font-bold text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_12px_32px_rgba(0,0,0,0.25)] transition duration-180 hover:border-[#65B7FF]/45 hover:bg-white/[0.1] hover:text-white active:scale-[0.98]">Get key</button>
         </main>
-      )}
-
-      {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-xl border border-zinc-700 bg-[#18181c] px-4 py-3 text-xs font-bold text-white shadow-2xl animate-bounce">
-          <div className="h-2 w-2 rounded-full bg-emerald-400" />
-          {toastMsg}
-        </div>
       )}
 
       <EarnpasteModal

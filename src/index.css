@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
 
-/* Midnight Game Index: technical editorial surfaces, restrained motion, and a single Signal Green state color. */
+/* Operator Glass: graphite layers, precise hairlines, and Work.ink teal used only for an active provider route. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,7 +17,7 @@
 }
 
 button:focus-visible {
-  outline: 2px solid #8DF2A3;
+  outline: 2px solid #65B7FF;
   outline-offset: 3px;
 }
 

@@ -3,7 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string) || "";
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || "";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Keep the public access UI mountable in preview environments where database variables are not injected.
+// Each database helper below already exits early when the real credentials are unavailable.
+export const supabase = createClient(
+  supabaseUrl || "https://preview-placeholder.supabase.co",
+  supabaseAnonKey || "preview-placeholder-anon-key",
+);
 
 export async function saveKeyToDatabase(
   keyString: string,

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check, Clock, Copy, Loader2 } from "lucide-react";
 
+// Operator Glass: provider identity is centered above a thin progress rail; the only primary action is the active checkpoint.
 type ProviderKind = "lootlabs" | "earnpaste" | "workink" | "opera";
 type AdBlockerStatus = "checking" | "clear" | "detected";
 
@@ -34,7 +35,6 @@ interface ProviderApiResponse {
 const EARNPASTE_ICON =
   "https://images.socialblade.com/128x,q75/https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s192-c-k-c0x00ffffff-no-rj";
 const AD_BLOCKER_TEST_URL = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
-const OPERA_DIRECT_INSTALLER_URL = "https://download.opera.com/download/get/?partner=www&opsys=Windows&download_url=&arch=x64&nothanks=yes";
 
 const formatCountdown = (ms: number): string => {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -98,6 +98,9 @@ const ProviderIcon: React.FC<{ name: string; iconUrl?: string; className?: strin
   className = "h-[42px] w-[42px]",
 }) => {
   const [failed, setFailed] = useState(false);
+  if (name.toLowerCase() === "work.ink") {
+    return <div className={`${className} rounded-full border border-[#00a37a]/30 bg-[#00a37a] flex items-center justify-center text-[22px] font-black tracking-[-0.16em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]`}>w</div>;
+  }
   if (!iconUrl || failed) {
     return <div className={`${className} rounded-full bg-[#181820] border border-white/10 flex items-center justify-center text-white font-black`}>{name.slice(0, 1)}</div>;
   }
@@ -119,9 +122,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   lootlabsStep = null,
   earnpasteAction = null,
   earnpasteSession = null,
-  workinkSession = null,
   workinkStep = null,
-  workinkToken = null,
 }) => {
   const isEarnpaste = providerKind === "earnpaste";
   const isWorkink = providerKind === "workink";
@@ -141,6 +142,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const [keyExpiry, setKeyExpiry] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [workinkNextUrl, setWorkinkNextUrl] = useState<string | null>(null);
 
   const resetUrl = () => window.history.replaceState({}, "", "/");
 
@@ -238,10 +240,8 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
         if (!result.url) throw new Error("Work.ink did not return the step 2 link.");
         setCompletedSteps([1]);
         setCurrentStep(2);
-        setStatusMessage("Step 1 verified. Opening step 2...");
-        setIsVerifying(false);
-        setIsRedirecting(true);
-        window.location.assign(result.url);
+        setWorkinkNextUrl(result.url);
+        setStatusMessage("Step 1 verified. Step 2 is ready.");
         return;
       }
 
@@ -337,6 +337,10 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
       }
 
       if (isWorkink) {
+        if (currentStep === 2 && workinkNextUrl) {
+          window.location.assign(workinkNextUrl);
+          return;
+        }
         const result = await callWorkinkApi("start");
         if (!result.url) throw new Error("Work.ink did not return a step 1 link.");
         window.location.assign(result.url);
@@ -375,6 +379,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     setGeneratedKey(null);
     setKeyExpiry(null);
     setTimeLeft(0);
+    setWorkinkNextUrl(null);
     handledWorkinkReturn.current = null;
     sessionStorage.removeItem("sotarium_lootlabs_session");
     sessionStorage.removeItem("sotarium_earnpaste_session");
@@ -402,67 +407,64 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
     : `Complete two ${providerName} checkpoints to receive your 24-hour key.`;
   const checkpointButtonText = isOpera
     ? "Open Work.ink Opera link (Step 1/1)"
-    : `Start checkpoint (Step ${currentStep}/${totalSteps})`;
+    : isWorkink && currentStep === 2 && workinkNextUrl
+      ? `Open Work.ink (Step 2/${totalSteps})`
+      : `Open ${providerName} (Step ${currentStep}/${totalSteps})`;
+  const completedCount = isUnlocked ? totalSteps : Math.max(completedSteps.length, currentStep - 1);
+  const progressPercent = Math.round((completedCount / totalSteps) * 100);
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b] text-white">
       <div className="fixed inset-0 pointer-events-none opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
       {!isUnlocked ? (
-        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[440px] max-w-full flex-col gap-6 rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 shadow-2xl">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3.5">
-              <ProviderIcon name={providerName} iconUrl={providerIcon} />
-              <div>
-                <h2 className="text-[19px] font-bold tracking-tight">Unlock your key</h2>
-                <p className="text-xs text-zinc-400">Method: {providerName}</p>
-              </div>
+        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[420px] max-w-full flex-col rounded-[24px] border border-white/[0.1] bg-[#101114]/82 p-7 shadow-[0_28px_90px_rgba(0,0,0,0.52)] backdrop-blur-2xl">
+          <button type="button" onClick={onClose} className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-zinc-500 transition hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white" aria-label="Close">✕</button>
+
+          <header className="flex flex-col items-center text-center">
+            <ProviderIcon name={providerName} iconUrl={providerIcon} className="h-[58px] w-[58px]" />
+            <h2 className="mt-4 text-2xl font-bold tracking-tight text-white">{providerName}</h2>
+            <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Key verification</p>
+          </header>
+
+          <section className="mt-8">
+            <div className="mb-3 flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-500">
+              <span>Progress</span>
+              <span className="text-zinc-300">{completedCount}/{totalSteps} steps</span>
             </div>
-            <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.05] text-zinc-400 hover:bg-white/[0.1] hover:text-white">✕</button>
-          </div>
+            <div className="h-2 overflow-hidden rounded-full border border-white/[0.08] bg-black/35 p-[2px]" aria-label={`${progressPercent}% complete`}>
+              <div className="h-full rounded-full bg-[#00a37a] shadow-[0_0_18px_rgba(0,163,122,0.46)] transition-[width] duration-200" style={{ width: `${progressPercent}%` }} />
+            </div>
+            <div className="mt-3 flex justify-between px-0.5 text-xs font-semibold">
+              {Array.from({ length: totalSteps }, (_, index) => index + 1).map((step) => {
+                const complete = completedSteps.includes(step) || (isUnlocked && step <= totalSteps);
+                const active = currentStep === step && !complete;
+                return <span key={step} className={complete ? "text-[#6de2c4]" : active ? "text-white" : "text-zinc-600"}>{complete ? `Step ${step} ✓` : `Step ${step}`}</span>;
+              })}
+            </div>
+          </section>
 
-          <div className="flex items-center gap-2.5 px-0.5">
-            {Array.from({ length: totalSteps }, (_, index) => index + 1).map((step) => {
-              const complete = completedSteps.includes(step);
-              const active = currentStep === step && !complete;
-              return (
-                <React.Fragment key={step}>
-                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${complete ? "bg-[#1AF513] text-white" : active ? "bg-white text-[#141417]" : "border border-white/[0.08] bg-[#1a1a1e] text-zinc-500"}`}>
-                    {complete ? <Check className="h-4 w-4" strokeWidth={3} /> : step}
-                  </div>
-                  {step < totalSteps && <div className={`h-[2px] flex-1 rounded-full ${complete ? "bg-[#1AF513]" : "bg-white/[0.08]"}`} />}
-                </React.Fragment>
-              );
-            })}
-          </div>
-
-          <div className="flex min-h-[160px] flex-col items-center justify-center rounded-[18px] border border-white/[0.06] bg-white/[0.025] p-6 text-center">
-            {errorMessage ? (
-              <div className="flex flex-col items-center gap-3 text-rose-400">
-                <AlertCircle className="h-8 w-8" />
-                <p className="text-sm font-semibold">{errorMessage}</p>
-                <button type="button" onClick={resetProgress} className="text-xs text-zinc-300 underline hover:text-white">Start again</button>
-              </div>
-            ) : isRedirecting || isVerifying ? (
-              <div className="flex flex-col items-center gap-3 text-zinc-300">
-                <Loader2 className="h-8 w-8 animate-spin text-[#1AF513]" />
-                <p className="text-sm font-semibold">{statusMessage || (isRedirecting ? `Opening ${providerName}...` : "Verifying your completed step...")}</p>
-              </div>
-            ) : statusMessage ? (
-              <div className="flex flex-col items-center gap-3 text-[#1AF513]">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1AF513]"><Check className="h-6 w-6 text-white" strokeWidth={3} /></div>
-                <p className="text-sm font-bold">{statusMessage}</p>
-                <button type="button" onClick={startCheckpoint} className="w-full rounded-full border border-white bg-white px-5 py-3 text-sm font-semibold text-[#141417] hover:bg-zinc-100">Start step {currentStep} of {totalSteps}</button>
-              </div>
-            ) : (
-              <div className="w-full">
-                <p className="mb-4 text-sm text-zinc-300">{checkpointDescription}</p>
-                <button type="button" onClick={startCheckpoint} disabled={isCheckingAdBlocker} className="w-full rounded-full border border-white bg-white px-5 py-3.5 text-sm font-semibold text-[#141417] shadow-lg hover:bg-zinc-100 disabled:cursor-wait disabled:opacity-60">{isCheckingAdBlocker ? "Checking for ad blocker..." : checkpointButtonText}</button>
+          <div className="mt-7">
+            {errorMessage && (
+              <div role="alert" className="mb-3 flex items-start gap-2.5 rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-3.5 py-3 text-left text-xs leading-5 text-rose-200">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{errorMessage}</span>
               </div>
             )}
+            {statusMessage && !isRedirecting && !isVerifying && (
+              <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-[#00a37a]/20 bg-[#00a37a]/[0.08] px-3.5 py-3 text-left text-xs font-medium text-[#a7f4df]">
+                <Check className="h-4 w-4 shrink-0" strokeWidth={3} />
+                <span>{statusMessage}</span>
+              </div>
+            )}
+            <button type="button" onClick={errorMessage ? resetProgress : startCheckpoint} disabled={isCheckingAdBlocker || isRedirecting || isVerifying} className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.13] bg-white/[0.075] px-5 py-3.5 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_28px_rgba(0,0,0,0.2)] transition duration-180 hover:border-[#00a37a]/45 hover:bg-[#00a37a]/[0.14] disabled:cursor-wait disabled:opacity-60 active:scale-[0.98]">
+              {isRedirecting || isVerifying ? <Loader2 className="h-4 w-4 animate-spin text-[#6de2c4]" /> : null}
+              {errorMessage ? "Start again" : isCheckingAdBlocker ? "Checking for ad blocker..." : isRedirecting ? `Opening ${providerName}...` : isVerifying ? "Verifying completed step..." : checkpointButtonText}
+            </button>
           </div>
 
-            <button type="button" onClick={onClose} disabled={isRedirecting || isVerifying} className="rounded-full border border-white/[0.07] p-3 text-sm font-semibold text-zinc-400 hover:bg-white/[0.04] hover:text-white disabled:opacity-50">Cancel</button>
+          <p className="mt-4 text-center text-xs leading-5 text-zinc-500">{checkpointDescription}</p>
+          <button type="button" onClick={onClose} disabled={isRedirecting || isVerifying} className="mt-5 text-sm font-semibold text-zinc-500 transition hover:text-white disabled:opacity-50">Cancel</button>
 
             {showAdBlockerNotice && (
               <div role="alertdialog" aria-modal="true" aria-labelledby="adblocker-title" className="absolute inset-0 z-30 flex flex-col justify-center rounded-[26px] bg-[#121215]/[0.98] p-7 text-center backdrop-blur-sm">
@@ -478,8 +480,8 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
             )}
           </div>
       ) : (
-        <div className="relative z-10 flex w-[440px] max-w-full flex-col gap-5 rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 text-white shadow-2xl">
-          <header className="flex items-center justify-between"><h3 className="text-[19px] font-bold">Your Free Key Is Ready</h3><button type="button" onClick={onClose} className="text-zinc-400 hover:text-white">✕</button></header>
+        <div className="relative z-10 flex w-[420px] max-w-full flex-col gap-5 rounded-[24px] border border-white/[0.1] bg-[#101114]/90 p-7 text-white shadow-[0_28px_90px_rgba(0,0,0,0.52)] backdrop-blur-2xl">
+          <header className="flex items-center justify-between gap-3"><div className="flex items-center gap-3"><ProviderIcon name={providerName} iconUrl={providerIcon} className="h-10 w-10" /><h3 className="text-[19px] font-bold">{providerName} key ready</h3></div><button type="button" onClick={onClose} className="text-zinc-400 hover:text-white">✕</button></header>
           <div className="flex flex-col items-center gap-4 py-2 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1AF513]"><Check className="h-7 w-7" strokeWidth={3} /></div>
             <p className="text-sm font-semibold text-zinc-400">Your key</p>
