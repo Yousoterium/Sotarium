@@ -1,454 +1,277 @@
-import React, { useState, useEffect } from "react";
-import { 
-  Code2, 
-  ArrowLeft, 
-  Copy, 
-  Check, 
-  RefreshCw, 
-  Play, 
-  Sparkles, 
-  ShieldCheck, 
-  Gamepad2, 
-  Save, 
-  Download, 
-  Layers, 
-  ShieldAlert,
+import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  Check,
+  Code2,
+  Copy,
+  FileCode,
+  Link2,
   Loader2,
-  FileCode
+  MapPin,
+  Plus,
+  Save,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
 } from "lucide-react";
-import { GameItem } from "./AddGamePage";
 import { generateFullKeySystemScript } from "../lib/scriptGenerator";
 
-/** Midnight Game Index: use the homepage dot field behind solid utility panels and game-led selection rows. */
 const ALLOWED_IP = "24.49.252.230";
+const STORAGE_KEY = "sotarium_game_loadstrings";
+const LEGACY_STORAGE_KEY = "sotarium_supported_games";
 
-const CURRENT_KEY_SYSTEM_VERSION = "2.4.0";
-
-export interface ScriptEntry {
+interface GameLoadstringEntry {
   id: string;
-  gameId: string;
-  gameName: string;
-  payloadCode: string;
-  version: string;
-  lastUpdated: string;
+  name: string;
+  placeId: string;
+  loadstringUrl: string;
 }
 
-const DEFAULT_GAMES: GameItem[] = [
+const DEFAULT_GAMES: GameLoadstringEntry[] = [
   {
     id: "game-1",
     name: "San Diego Border Roleplay",
-    imageUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png",
-    placeId: "123456789",
-    scriptUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/scripts/sandiego.lua"
-  }
+    placeId: "136020512003847",
+    loadstringUrl: "",
+  },
 ];
 
-const DEFAULT_SCRIPTS: ScriptEntry[] = [
-  {
-    id: "script-1",
-    gameId: "game-1",
-    gameName: "San Diego Border Roleplay",
-    payloadCode: `-- [Protected Script Payload - Executed after Key Validation]
-local player = game.Players.LocalPlayer
+function loadStoredGames(): GameLoadstringEntry[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as GameLoadstringEntry[];
+      if (Array.isArray(parsed)) {
+        return parsed.filter((game) => game && game.id && game.name).map((game) => ({
+          id: String(game.id),
+          name: String(game.name),
+          placeId: String(game.placeId || ""),
+          loadstringUrl: String(game.loadstringUrl || ""),
+        }));
+      }
+    }
 
--- Notify player on screen
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Sotarium Hub",
-    Text = "San Diego Border Roleplay script loaded successfully!",
-    Duration = 5
-})
-
--- Put your custom hub/feature code below:
--- loadstring(game:HttpGet("https://raw.githubusercontent.com/.../hub.lua"))()`,
-    version: CURRENT_KEY_SYSTEM_VERSION,
-    lastUpdated: new Date().toLocaleDateString()
+    // One-time migration from the retired /add page.
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy) as Array<{ id?: string; name?: string; placeId?: string; scriptUrl?: string }>;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((game, index) => ({
+          id: game.id || `game-${index + 1}`,
+          name: game.name || `Game ${index + 1}`,
+          placeId: game.placeId || "",
+          loadstringUrl: game.scriptUrl || "",
+        }));
+      }
+    }
+  } catch {
+    // Use the starter entry if browser storage is unavailable or malformed.
   }
-];
+
+  return DEFAULT_GAMES;
+}
 
 export const ScriptsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [userIp, setUserIp] = useState<string | null>(null);
-  const [isIpChecking, setIsIpChecking] = useState<boolean>(true);
-  const [isAllowed, setIsAllowed] = useState<boolean>(false);
-
-  // Load configured games from /add
-  const [games, setGames] = useState<GameItem[]>(() => {
-    try {
-      const saved = localStorage.getItem("sotarium_supported_games");
-      return saved ? JSON.parse(saved) : DEFAULT_GAMES;
-    } catch {
-      return DEFAULT_GAMES;
-    }
-  });
-
-  // Saved scripts per game
-  const [scripts, setScripts] = useState<ScriptEntry[]>(() => {
-    try {
-      const saved = localStorage.getItem("sotarium_user_scripts");
-      return saved ? JSON.parse(saved) : DEFAULT_SCRIPTS;
-    } catch {
-      return DEFAULT_SCRIPTS;
-    }
-  });
-
-  const [selectedGameId, setSelectedGameId] = useState<string>(() => {
-    return games[0] ? games[0].id : "game-1";
-  });
-
-  const [currentPayload, setCurrentPayload] = useState<string>("");
-  const [isUpdatingAll, setIsUpdatingAll] = useState<boolean>(false);
-  const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const [isIpChecking, setIsIpChecking] = useState(true);
+  const [isAllowed, setIsAllowed] = useState(false);
+  const [games, setGames] = useState<GameLoadstringEntry[]>(loadStoredGames);
+  const [draftName, setDraftName] = useState("");
+  const [draftPlaceId, setDraftPlaceId] = useState("");
+  const [draftLoadstring, setDraftLoadstring] = useState("");
+  const [copiedCode, setCopiedCode] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // IP Check
   useEffect(() => {
     const checkIp = async () => {
       try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        if (data && data.ip) {
-          const ip = String(data.ip).trim();
-          setUserIp(ip);
-          if (ip === ALLOWED_IP) setIsAllowed(true);
-        }
+        const response = await fetch("https://api.ipify.org?format=json");
+        const data = await response.json();
+        const ip = data?.ip ? String(data.ip).trim() : null;
+        setUserIp(ip);
+        setIsAllowed(ip === ALLOWED_IP);
       } catch {
         try {
-          const res = await fetch("https://ipapi.co/json/");
-          const data = await res.json();
-          if (data && data.ip) {
-            const ip = String(data.ip).trim();
-            setUserIp(ip);
-            if (ip === ALLOWED_IP) setIsAllowed(true);
-          }
+          const response = await fetch("https://ipapi.co/json/");
+          const data = await response.json();
+          const ip = data?.ip ? String(data.ip).trim() : null;
+          setUserIp(ip);
+          setIsAllowed(ip === ALLOWED_IP);
         } catch {
-          // fallback
+          setIsAllowed(false);
         }
+      } finally {
+        setIsIpChecking(false);
       }
-      setIsIpChecking(false);
     };
+
     checkIp();
   }, []);
 
-  // Sync payload when game selection changes
-  useEffect(() => {
-    const existing = scripts.find(s => s.gameId === selectedGameId);
-    if (existing) {
-      setCurrentPayload(existing.payloadCode);
-    } else {
-      const matchedGame = games.find(g => g.id === selectedGameId);
-      const name = matchedGame ? matchedGame.name : "Universal";
-      const scriptUrl = matchedGame?.scriptUrl?.trim() || "";
+  const showToast = (message: string) => {
+    setToastMsg(message);
+    window.setTimeout(() => setToastMsg(null), 2500);
+  };
 
-      if (scriptUrl) {
-        setCurrentPayload(`-- [Protected Payload for ${name}]
--- Loading script from /add:
-loadstring(game:HttpGet("${scriptUrl}"))()
+  const generatorGames = useMemo(
+    () =>
+      games.map((game) => ({
+        id: game.id,
+        name: game.name,
+        imageUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png",
+        placeId: game.placeId,
+        scriptUrl: game.loadstringUrl,
+      })),
+    [games]
+  );
 
--- Features unlocked notification
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Sotarium Hub",
-    Text = "${name} script loaded!",
-    Duration = 5
-})`);
-      } else {
-        setCurrentPayload(`-- [Protected Payload for ${name}]
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Sotarium Hub",
-    Text = "${name} features unlocked!",
-    Duration = 5
-})`);
-      }
-    }
-  }, [selectedGameId, scripts, games]);
+  const generatedScript = useMemo(
+    () => generateFullKeySystemScript(generatorGames, generatorGames[0], ""),
+    [generatorGames]
+  );
 
-  // Persist scripts
-  useEffect(() => {
+  const handleSave = () => {
     try {
-      localStorage.setItem("sotarium_user_scripts", JSON.stringify(scripts));
-    } catch (e) {
-      console.error(e);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
+      showToast("Game loadstring URLs saved");
+    } catch {
+      showToast("Could not save browser storage");
     }
-  }, [scripts]);
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 2500);
   };
 
-  const handleSavePayload = () => {
-    const matchedGame = games.find(g => g.id === selectedGameId);
-    const gameName = matchedGame ? matchedGame.name : "Custom Game";
-
-    const existingIdx = scripts.findIndex(s => s.gameId === selectedGameId);
-    let updated: ScriptEntry[];
-
-    if (existingIdx >= 0) {
-      updated = [...scripts];
-      updated[existingIdx] = {
-        ...updated[existingIdx],
-        payloadCode: currentPayload,
-        version: CURRENT_KEY_SYSTEM_VERSION,
-        lastUpdated: new Date().toLocaleDateString()
-      };
-    } else {
-      const newEntry: ScriptEntry = {
-        id: `script-${Date.now()}`,
-        gameId: selectedGameId,
-        gameName,
-        payloadCode: currentPayload,
-        version: CURRENT_KEY_SYSTEM_VERSION,
-        lastUpdated: new Date().toLocaleDateString()
-      };
-      updated = [...scripts, newEntry];
+  const handleAddGame = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!draftName.trim()) {
+      showToast("Enter a game name first");
+      return;
     }
 
-    setScripts(updated);
-    showToast(`Saved unlocked payload for ${gameName}!`);
+    const placeMatch = draftPlaceId.match(/\/games\/(\d+)/) || draftPlaceId.match(/(\d{5,})/);
+    setGames((current) => [
+      ...current,
+      {
+        id: `game-${Date.now()}`,
+        name: draftName.trim(),
+        placeId: placeMatch?.[1] || draftPlaceId.trim(),
+        loadstringUrl: draftLoadstring.trim(),
+      },
+    ]);
+    setDraftName("");
+    setDraftPlaceId("");
+    setDraftLoadstring("");
+    showToast("Game added — save when you are ready");
   };
 
-  // Update All Scripts: Scans all scripts, bumps version to latest, and syncs framework
-  const handleUpdateAllScripts = () => {
-    setIsUpdatingAll(true);
-    setTimeout(() => {
-      let count = 0;
-      const updated = scripts.map(s => {
-        if (s.version !== CURRENT_KEY_SYSTEM_VERSION) {
-          count++;
-        }
-        return {
-          ...s,
-          version: CURRENT_KEY_SYSTEM_VERSION,
-          lastUpdated: new Date().toLocaleDateString()
-        };
-      });
-
-      setScripts(updated);
-      setIsUpdatingAll(false);
-      showToast(`Updated ${count > 0 ? count : scripts.length} script(s) to latest key framework v${CURRENT_KEY_SYSTEM_VERSION}!`);
-    }, 900);
+  const updateGame = (id: string, patch: Partial<GameLoadstringEntry>) => {
+    setGames((current) => current.map((game) => (game.id === id ? { ...game, ...patch } : game)));
   };
 
-  // Compiles the entire final executable script with Key System + Injected Unlocked Payload
-  const generateFinalUnlockedScript = (): string => {
-    const matchedGame = games.find(g => g.id === selectedGameId) || games[0];
-    return generateFullKeySystemScript(games, matchedGame, currentPayload);
+  const removeGame = (id: string) => {
+    setGames((current) => current.filter((game) => game.id !== id));
+    showToast("Game removed — save to keep the change");
   };
 
-  const handleCopyScript = () => {
-    navigator.clipboard.writeText(generateFinalUnlockedScript());
-    setCopiedCode(true);
-    showToast("Full executable script with unlocked payload copied!");
-    setTimeout(() => setCopiedCode(false), 2000);
+  const handleCopyScript = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedScript);
+      setCopiedCode(true);
+      showToast("Full home GUI script copied");
+      window.setTimeout(() => setCopiedCode(false), 2000);
+    } catch {
+      showToast("Could not copy the generated script");
+    }
   };
 
-  // Access Denied Screen
-  if (!isIpChecking && !isAllowed) {
+  if (isIpChecking) {
     return (
-      <div className="min-h-screen bg-[#0a0a0c] text-white flex flex-col items-center justify-center p-6 select-none">
-        <div className="w-full max-w-md bg-[#131316] border border-red-500/20 rounded-2xl p-8 flex flex-col items-center text-center shadow-2xl space-y-6">
-          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400">
-            <ShieldAlert className="w-8 h-8" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-black tracking-tight text-white">Access Restricted</h2>
-            <p className="text-zinc-400 text-sm">
-              Your IP address <span className="text-red-400 font-mono font-bold">{userIp || "checking..."}</span> is not authorized to access the Scripts Studio.
-            </p>
-          </div>
-          <button
-            onClick={onBack}
-            className="w-full py-3 bg-[#1e1e24] hover:bg-[#282830] border border-zinc-700/60 rounded-xl font-bold text-sm transition-all"
-          >
-            Return to Home
-          </button>
+      <div className="flex min-h-screen items-center justify-center bg-[#0e0e11] text-white">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+          <span className="text-sm font-medium text-zinc-400">Verifying access rights...</span>
         </div>
       </div>
     );
   }
 
-  // Loading Screen
-  if (isIpChecking) {
+  if (!isAllowed) {
     return (
-      <div className="min-h-screen bg-[#0e0e11] text-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
-          <span className="text-sm font-medium text-zinc-400">Loading Scripts Studio...</span>
+      <div className="flex min-h-screen select-none flex-col items-center justify-center bg-[#0a0a0c] p-6 text-white">
+        <div className="flex w-full max-w-md flex-col items-center space-y-6 rounded-2xl border border-red-500/20 bg-[#131316] p-8 text-center shadow-2xl">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10 text-red-400">
+            <ShieldAlert className="h-8 w-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black tracking-tight">Access Restricted</h2>
+            <p className="text-sm text-zinc-400">Your IP address <span className="font-mono font-bold text-red-400">{userIp || "checking..."}</span> is not authorized to access Scripts.</p>
+          </div>
+          <button onClick={onBack} className="w-full rounded-xl border border-zinc-700/60 bg-[#1e1e24] py-3 text-sm font-bold transition-all hover:bg-[#282830]">Return to Home</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-[#09090b] text-white font-sans select-none">
+    <div className="relative isolate min-h-screen overflow-hidden bg-[#09090b] font-sans text-white select-none">
       <div className="pointer-events-none fixed inset-0 opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
       <div className="relative z-10 flex min-h-screen flex-col items-center px-4 py-8">
-      {/* Top Header */}
-      <header className="w-full max-w-6xl flex items-center justify-between pb-6 border-b border-zinc-800/80 mb-8">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 bg-[#16161a] hover:bg-[#202026] border border-zinc-800 rounded-xl text-zinc-300 hover:text-white font-bold text-xs transition-all cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </button>
-          <div className="h-4 w-px bg-zinc-800 mx-2" />
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
-            <span className="font-extrabold text-sm tracking-wide text-zinc-200">Sotarium Scripts Studio</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Update All Scripts Button */}
-          <button
-            onClick={handleUpdateAllScripts}
-            disabled={isUpdatingAll}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1b1b22] hover:bg-[#262632] border border-zinc-700/80 hover:border-emerald-500/50 text-white font-extrabold text-xs rounded-xl transition-all shadow-lg cursor-pointer active:scale-95"
-            title="Scan and upgrade all saved scripts to the latest /add framework"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isUpdatingAll ? "animate-spin" : ""}`} />
-            {isUpdatingAll ? "Updating..." : "Update All Scripts"}
-          </button>
-          <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold font-mono">
-            v{CURRENT_KEY_SYSTEM_VERSION}
-          </span>
-        </div>
-      </header>
-
-      {/* Studio Workspace */}
-      <main className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Game Target Selector & Payload Script Editor */}
-        <section className="lg:col-span-5 flex flex-col gap-6">
-          {/* Target Game Selector */}
-          <div className="bg-[#121215] border border-zinc-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-              <div className="flex items-center gap-2">
-                <Gamepad2 className="w-4 h-4 text-emerald-400" />
-                <h3 className="font-bold text-sm text-white">Target Game (from /add)</h3>
-              </div>
-              <span className="text-xs text-zinc-500">{games.length} Available</span>
-            </div>
-
-            <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
-              {games.map((g) => {
-                const isSelected = g.id === selectedGameId;
-                const scriptEntry = scripts.find(s => s.gameId === g.id);
-                const hasCustomPayload = scriptEntry && scriptEntry.payloadCode.trim().length > 0;
-
-                return (
-                  <div
-                    key={g.id}
-                    onClick={() => setSelectedGameId(g.id)}
-                    className={`group flex items-center justify-between rounded-xl border p-2.5 transition-all cursor-pointer ${
-                      isSelected 
-                        ? "bg-[#1e1e26] border-zinc-500 shadow-md" 
-                        : "bg-[#15161b] border-zinc-800/80 hover:bg-[#1a1a20] hover:border-zinc-700"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-white/[0.10] bg-black">
-                        <img src={g.imageUrl} alt={g.name} className="h-9 w-full object-cover transition-transform duration-200 group-hover:scale-105" />
-                        <div className="flex h-5 items-center bg-black px-1.5">
-                          <span className="w-full truncate text-center text-[8px] font-extrabold text-white">{g.name}</span>
-                        </div>
-                      </div>
-                      <div className="truncate">
-                        <p className="text-[10px] text-zinc-500 font-mono">
-                          {hasCustomPayload ? "Payload Configured" : "Default Payload"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {hasCustomPayload && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" title="Payload saved" />
-                      )}
-                      <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded">
-                        v{scriptEntry ? scriptEntry.version : CURRENT_KEY_SYSTEM_VERSION}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Protected Script Payload Box */}
-          <div className="bg-[#121215] border border-zinc-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-              <div className="flex items-center gap-2">
-                <FileCode className="w-4 h-4 text-emerald-400" />
-                <h3 className="font-bold text-sm text-white">Unlocked Payload Script</h3>
-              </div>
-              <span className="text-xs text-zinc-500">Executes on Key Success</span>
-            </div>
-
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Paste or write the Lua code below that will automatically run once the user completes the key system from <span className="text-emerald-400 font-mono font-bold">/add</span>:
-            </p>
-
-            <textarea
-              value={currentPayload}
-              onChange={(e) => setCurrentPayload(e.target.value)}
-              placeholder="-- Write or paste your Lua script here..."
-              rows={9}
-              className="w-full p-3.5 bg-[#0a0a0d] border border-zinc-800 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-zinc-500 transition-all resize-y leading-relaxed"
-              spellCheck={false}
-            />
-
-            <button
-              onClick={handleSavePayload}
-              className="w-full py-3 bg-white hover:bg-zinc-200 text-black font-extrabold rounded-xl text-sm transition-all shadow-lg active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Save className="w-4 h-4" />
-              Save Payload for Target Game
+        <header className="mb-8 flex w-full max-w-6xl items-center justify-between border-b border-white/[0.08] pb-5">
+          <div className="flex items-center gap-3">
+            <button onClick={onBack} className="flex items-center gap-2 rounded-lg border border-white/[0.10] bg-white/[0.035] px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:border-white/[0.20] hover:bg-white/[0.07] hover:text-white">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
             </button>
-          </div>
-        </section>
-
-        {/* Right Column: Full Compiled Output Script (Key System + Unlocked Payload) */}
-        <section className="lg:col-span-7 flex flex-col gap-6">
-          <div className="bg-[#121215] border border-zinc-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-800/60 pb-3">
-              <div className="flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-emerald-400" />
-                <h3 className="font-bold text-sm text-white">Final Standalone Executable Script</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleCopyScript}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-zinc-200 text-black font-extrabold rounded-lg text-xs transition-all shadow-md active:scale-95 cursor-pointer"
-                >
-                  {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copiedCode ? "Copied!" : "Copy Full Script"}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-zinc-400 bg-[#16161a] p-3 rounded-xl border border-zinc-800/60">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Protected with Key System + Instant Execution on Success</span>
-              </div>
-              <span className="font-mono text-zinc-500">v{CURRENT_KEY_SYSTEM_VERSION}</span>
-            </div>
-
-            <div className="relative">
-              <pre className="w-full h-[460px] bg-[#0a0a0d] border border-zinc-800/90 rounded-xl p-4 text-xs font-mono text-emerald-400/90 overflow-x-auto overflow-y-auto select-all leading-relaxed">
-                {generateFinalUnlockedScript()}
-              </pre>
+            <div className="hidden h-4 w-px bg-white/[0.10] sm:block" />
+            <div>
+              <span className="block text-sm font-extrabold tracking-wide text-zinc-100">Sotarium Scripts</span>
+              <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500 sm:block">Game loadstring registry</span>
             </div>
           </div>
-        </section>
-      </main>
+          <span className="hidden items-center gap-1.5 rounded-md border border-[#8DF2A3]/25 bg-[#8DF2A3]/[0.08] px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8DF2A3] sm:flex"><span className="h-1.5 w-1.5 rounded-full bg-[#8DF2A3]" />Authorized</span>
+        </header>
 
-      {/* Floating Toast Notification */}
-      {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-[#18181c] border border-zinc-700 text-white text-xs font-bold rounded-xl shadow-2xl flex items-center gap-2.5 animate-bounce">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          {toastMsg}
-        </div>
-      )}
+        <main className="grid w-full max-w-6xl grid-cols-1 items-start gap-6 lg:grid-cols-12">
+          <section className="space-y-6 lg:col-span-7">
+            <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-[#111217]/90 p-6 shadow-2xl shadow-black/25 backdrop-blur-md">
+              <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] pb-4">
+                <div className="flex gap-2.5"><Link2 className="mt-0.5 h-4 w-4 shrink-0 text-[#8DF2A3]" /><div><h2 className="text-sm font-bold text-white">Game Loadstring URLs</h2><p className="mt-1 max-w-xl text-xs leading-5 text-zinc-400">Store each game’s Roblox place ID and loadstring URL here. The generated key GUI stays on its home screen and matches the player’s place after successful key verification.</p></div></div>
+                <button onClick={handleSave} className="flex shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-extrabold text-black shadow-md transition-all hover:bg-zinc-200 active:scale-95"><Save className="h-3.5 w-3.5" />Save URLs</button>
+              </div>
+
+              <div className="space-y-3">
+                {games.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-zinc-700 bg-black/10 px-4 py-8 text-center text-sm text-zinc-500">No game URLs stored yet. Add a game below.</div>
+                ) : (
+                  games.map((game, index) => (
+                    <article key={game.id} className="rounded-xl border border-white/[0.08] bg-[#15161b] p-4">
+                      <div className="mb-3 flex items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-[#8DF2A3]/10 font-mono text-[10px] font-bold text-[#8DF2A3]">{index + 1}</span><input value={game.name} onChange={(event) => updateGame(game.id, { name: event.target.value })} aria-label="Game name" className="min-w-0 flex-1 bg-transparent text-sm font-bold text-white outline-none placeholder:text-zinc-600" placeholder="Game name" /></div><button onClick={() => removeGame(game.id)} className="rounded-lg p-2 text-zinc-500 transition-colors hover:bg-red-500/10 hover:text-red-400" aria-label={`Remove ${game.name || "game"}`}><Trash2 className="h-4 w-4" /></button></div>
+                      <div className="grid gap-3 md:grid-cols-[180px_1fr]">
+                        <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500"><MapPin className="h-3 w-3" />Place ID</span><input value={game.placeId} onChange={(event) => updateGame(game.id, { placeId: event.target.value })} placeholder="136020512003847" className="w-full rounded-lg border border-zinc-800 bg-[#0b0b0e] px-3 py-2 text-xs font-mono text-white outline-none transition-colors focus:border-zinc-600" /></label>
+                        <label className="block"><span className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500"><FileCode className="h-3 w-3" />Loadstring URL or expression</span><input value={game.loadstringUrl} onChange={(event) => updateGame(game.id, { loadstringUrl: event.target.value })} placeholder="https://raw.githubusercontent.com/.../script.lua" className="w-full rounded-lg border border-zinc-800 bg-[#0b0b0e] px-3 py-2 text-xs font-mono text-white outline-none transition-colors focus:border-zinc-600" /></label>
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <form onSubmit={handleAddGame} className="space-y-4 rounded-2xl border border-white/[0.08] bg-[#111217]/90 p-6 shadow-2xl shadow-black/25 backdrop-blur-md">
+              <div className="flex items-center gap-2 border-b border-white/[0.07] pb-3"><Plus className="h-4 w-4 text-[#8DF2A3]" /><h2 className="text-sm font-bold text-white">Add Game URL</h2></div>
+              <div className="grid gap-3 md:grid-cols-2"><input required value={draftName} onChange={(event) => setDraftName(event.target.value)} placeholder="Game name" className="rounded-lg border border-zinc-800 bg-[#0b0b0e] px-3 py-2.5 text-sm text-white outline-none focus:border-zinc-600" /><input value={draftPlaceId} onChange={(event) => setDraftPlaceId(event.target.value)} placeholder="Roblox place ID or game URL" className="rounded-lg border border-zinc-800 bg-[#0b0b0e] px-3 py-2.5 text-xs font-mono text-white outline-none focus:border-zinc-600" /></div>
+              <input value={draftLoadstring} onChange={(event) => setDraftLoadstring(event.target.value)} placeholder="Loadstring URL or loadstring(...)()" className="w-full rounded-lg border border-zinc-800 bg-[#0b0b0e] px-3 py-2.5 text-xs font-mono text-white outline-none focus:border-zinc-600" />
+              <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1e1f24] py-3 text-sm font-extrabold text-white transition-colors hover:bg-[#292a31]"><Plus className="h-4 w-4" />Add Game</button>
+            </form>
+          </section>
+
+          <section className="space-y-6 lg:col-span-5">
+            <div className="space-y-4 rounded-2xl border border-white/[0.08] bg-[#111217]/90 p-6 shadow-2xl shadow-black/25 backdrop-blur-md">
+              <div className="flex items-center justify-between border-b border-white/[0.07] pb-3"><div className="flex items-center gap-2"><Code2 className="h-4 w-4 text-[#8DF2A3]" /><h2 className="text-sm font-bold text-white">Generated Home GUI</h2></div><button onClick={handleCopyScript} className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-extrabold text-black shadow-md transition-all hover:bg-zinc-200 active:scale-95">{copiedCode ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}{copiedCode ? "Copied" : "Copy Script"}</button></div>
+              <div className="flex items-start gap-2 rounded-xl border border-[#8DF2A3]/20 bg-[#8DF2A3]/[0.06] p-3 text-xs leading-5 text-zinc-300"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#8DF2A3]" /><span>No Supported Games page is included. The GUI opens directly on the key home screen; saved URLs are used only for post-verification place matching.</span></div>
+              <pre className="h-[500px] overflow-auto rounded-xl border border-zinc-800/90 bg-[#0a0a0d] p-4 font-mono text-xs leading-relaxed text-[#8DF2A3]/90 select-all">{generatedScript}</pre>
+            </div>
+          </section>
+        </main>
+
+        {toastMsg && <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-xl border border-[#8DF2A3]/25 bg-[#16171c] px-4 py-3 text-xs font-bold text-white shadow-2xl"><div className="h-2 w-2 rounded-full bg-[#8DF2A3]" />{toastMsg}</div>}
       </div>
     </div>
   );
