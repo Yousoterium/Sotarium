@@ -7,11 +7,13 @@ import {
   Gamepad2,
   Layers3,
   Loader2,
+  Menu,
   Plus,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { generateFullKeySystemScript } from "../lib/scriptGenerator";
 
@@ -57,6 +59,12 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [newScriptUrl, setNewScriptUrl] = useState("");
   const [copiedCode, setCopiedCode] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setIsMobileMenuOpen(false);
+  };
 
   const resolvePreviewImageUrl = (url: string) => {
     if (!url) return DEFAULT_GAMES[0].imageUrl;
@@ -182,35 +190,63 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       <div className="pointer-events-none fixed inset-0 opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
 
       <div className="relative z-10 flex min-h-screen flex-col items-center px-4 py-8">
-        <header className="mb-7 flex w-full max-w-6xl items-center justify-between border-b border-white/[0.08] pb-5">
+        <header className="relative mb-7 flex w-full max-w-6xl items-center justify-between border-b border-white/[0.08] pb-5">
           <div className="flex items-center gap-3">
             <button
               onClick={onBack}
-              className="flex items-center gap-2 rounded-lg border border-white/[0.10] bg-white/[0.035] px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:border-white/[0.20] hover:bg-white/[0.07] hover:text-white active:scale-[0.97]"
+              className="hidden items-center gap-2 rounded-lg border border-white/[0.10] bg-white/[0.035] px-3.5 py-2 text-xs font-bold text-zinc-300 transition-all hover:border-white/[0.20] hover:bg-white/[0.07] hover:text-white active:scale-[0.97] sm:flex"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Home
             </button>
             <div className="mx-1 hidden h-4 w-px bg-white/[0.10] sm:block" />
-            <div className="hidden items-center gap-2 sm:flex">
+            <div className="flex items-center gap-2">
               <img src="/Sotarium.png" alt="" className="h-7 w-7 object-contain" />
               <div>
                 <span className="block text-sm font-extrabold tracking-wide text-zinc-100">Sotarium Game Manager</span>
-                <span className="block font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">Supported games index</span>
+                <span className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500 sm:block">Supported games index</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden font-mono text-xs text-zinc-500 md:block">IP: {userIp}</span>
-            <span className="flex items-center gap-1.5 rounded-md border border-[#8DF2A3]/25 bg-[#8DF2A3]/[0.08] px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8DF2A3]">
+            <span className="hidden items-center gap-1.5 rounded-md border border-[#8DF2A3]/25 bg-[#8DF2A3]/[0.08] px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8DF2A3] sm:flex">
               <span className="h-1.5 w-1.5 rounded-full bg-[#8DF2A3]" />
               Authorized
             </span>
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen((open) => !open)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.10] bg-white/[0.035] text-zinc-200 transition-colors hover:border-white/[0.20] hover:bg-white/[0.08] sm:hidden"
+              aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
           </div>
+
+          {isMobileMenuOpen && (
+            <nav className="absolute right-0 top-[calc(100%-0.5rem)] z-30 w-56 overflow-hidden rounded-xl border border-white/[0.10] bg-[#17181d] p-1.5 shadow-2xl shadow-black/50 sm:hidden" aria-label="Mobile navigation">
+              <button type="button" onClick={onBack} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-zinc-300 transition-colors hover:bg-white/[0.07] hover:text-white">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Home
+              </button>
+              <button type="button" onClick={() => scrollToSection("add-game")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-zinc-300 transition-colors hover:bg-white/[0.07] hover:text-white">
+                <Plus className="h-4 w-4" />
+                Add Game
+              </button>
+              <button type="button" onClick={() => scrollToSection("supported-games")} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-xs font-bold text-zinc-300 transition-colors hover:bg-white/[0.07] hover:text-white">
+                <Gamepad2 className="h-4 w-4" />
+                Supported Games
+              </button>
+              <div className="mx-2 my-1 h-px bg-white/[0.08]" />
+              <div className="flex items-center gap-2 px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#8DF2A3]"><span className="h-1.5 w-1.5 rounded-full bg-[#8DF2A3]" />Authorized</div>
+            </nav>
+          )}
         </header>
 
         <main className="grid w-full max-w-6xl grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          <section className="flex flex-col gap-6 lg:col-span-5">
+          <section id="add-game" className="flex scroll-mt-6 flex-col gap-6 lg:col-span-5">
             <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-[#111217]/90 p-6 shadow-2xl shadow-black/25 backdrop-blur-md">
               <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
                 <div className="flex items-center gap-2.5">
@@ -282,7 +318,7 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </div>
           </section>
 
-          <section className="flex flex-col gap-6 lg:col-span-7">
+          <section id="supported-games" className="flex scroll-mt-6 flex-col gap-6 lg:col-span-7">
             <div className="space-y-4 rounded-2xl border border-white/[0.08] bg-[#111217]/90 p-6 shadow-2xl shadow-black/25 backdrop-blur-md">
               <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
                 <div className="flex items-center gap-2">
@@ -299,20 +335,16 @@ export const AddGamePage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <span className="flex items-center gap-1.5 rounded-md border border-white/[0.10] bg-black/25 px-3 py-1 text-xs font-bold text-zinc-300"><ArrowLeft className="h-3 w-3 text-zinc-400" />Back</span>
                     <span className="hidden border-l border-white/[0.10] pl-3 font-mono text-[9px] uppercase tracking-[0.16em] text-zinc-500 sm:block">Supported titles</span>
                   </div>
-                  <div className="flex items-center gap-3 text-zinc-500"><div className="h-0.5 w-3 rounded-full bg-zinc-500" /><div className="h-3 w-3 rounded-[2px] border border-zinc-500" /><div className="text-xs font-bold">✕</div></div>
+                  <div className="flex items-center gap-3 text-zinc-500"><Menu className="h-3.5 w-3.5 sm:hidden" /><div className="hidden h-0.5 w-3 rounded-full bg-zinc-500 sm:block" /><div className="hidden h-3 w-3 rounded-[2px] border border-zinc-500 sm:block" /><div className="text-xs font-bold">✕</div></div>
                 </div>
 
-                <div className="grid flex-1 grid-cols-1 gap-3 overflow-y-auto px-4 py-4 sm:grid-cols-2 sm:px-5">
-                  {games.map((game, index) => (
-                    <article key={game.id} className="group relative min-h-[132px] overflow-hidden rounded-[10px] border border-white/[0.12] bg-black shadow-[0_16px_32px_rgba(0,0,0,0.30)] transition-all duration-200 hover:-translate-y-0.5 hover:border-white/[0.24] hover:shadow-[0_20px_36px_rgba(0,0,0,0.42)]">
-                      <div className="absolute inset-x-0 top-0 bottom-8 overflow-hidden bg-[#15161b]">
-                        <img src={resolvePreviewImageUrl(game.imageUrl)} alt={game.name} className="relative z-10 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.055]" onError={(event) => { event.currentTarget.style.opacity = "0"; }} />
+                <div className="grid flex-1 grid-cols-2 content-start gap-x-3 gap-y-4 overflow-y-auto px-4 py-4 sm:grid-cols-3 sm:gap-x-4 sm:px-5 md:grid-cols-4">
+                  {games.map((game) => (
+                    <article key={game.id} className="group min-w-0">
+                      <div className="aspect-square overflow-hidden rounded-[10px] border border-white/[0.12] bg-[#15161b] shadow-[0_12px_24px_rgba(0,0,0,0.30)] transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-white/[0.24] group-hover:shadow-[0_18px_30px_rgba(0,0,0,0.42)]">
+                        <img src={resolvePreviewImageUrl(game.imageUrl)} alt={game.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.055]" onError={(event) => { event.currentTarget.style.opacity = "0"; }} />
                       </div>
-                      <span className="absolute left-3 top-3 rounded border border-white/[0.13] bg-black/35 px-1.5 py-1 font-mono text-[9px] font-bold tracking-[0.12em] text-zinc-300">{String(index + 1).padStart(2, "0")}</span>
-                      <div className="absolute right-3 top-3 flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#8DF2A3]"><span className="h-1.5 w-1.5 rounded-full bg-[#8DF2A3]" />Supported</div>
-                      <div className="absolute inset-x-0 bottom-0 flex h-8 items-center bg-black px-3">
-                        <h4 className="w-full truncate text-center text-[11px] font-extrabold tracking-tight text-white">{game.name}</h4>
-                      </div>
+                      <h4 className="mt-2 line-clamp-2 min-h-8 text-center text-[11px] font-extrabold leading-4 tracking-tight text-white">{game.name}</h4>
                     </article>
                   ))}
                 </div>
