@@ -118,8 +118,10 @@ function App() {
       setEarnpasteAction(action);
       setEarnpasteSession(session);
       setIsKeyModalOpen(true);
-    } else if (path === "/workink" && (params.has("ok") || params.has("done"))) {
-      const step = params.has("done") ? 2 : 1;
+    } else if (path === "/workink" && (params.has("ok") || params.has("done") || params.has("good"))) {
+      // The existing first Work.ink link returns to ?ok. The second link returns to
+      // ?good, so treat only ?good (and the legacy ?done value) as checkpoint two.
+      const step = (params.has("done") || params.has("good")) ? 2 : 1;
       setSelectedProvider(PROVIDERS.find((provider) => provider.id === "workink") || PROVIDERS[0]);
       setWorkinkSession(null);
       setWorkinkStep(step);
