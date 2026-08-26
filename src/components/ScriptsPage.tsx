@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Trash2,
 } from "lucide-react";
-import { generateFullKeySystemScript } from "../lib/scriptGenerator";
+import { DEFAULT_VERIFIED_LOADSTRING_URL, generateFullKeySystemScript } from "../lib/scriptGenerator";
 
 const ALLOWED_IP = "24.49.252.230";
 const STORAGE_KEY = "sotarium_game_loadstrings";
@@ -32,7 +32,7 @@ const DEFAULT_GAMES: GameLoadstringEntry[] = [
     id: "game-1",
     name: "San Diego Border Roleplay",
     placeId: "136020512003847",
-    loadstringUrl: "",
+    loadstringUrl: DEFAULT_VERIFIED_LOADSTRING_URL,
   },
 ];
 

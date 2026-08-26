@@ -1,5 +1,7 @@
 import keySystemTemplate from "./templates/keySystemTemplate.lua?raw";
 
+export const DEFAULT_VERIFIED_LOADSTRING_URL = "https://pastebin.com/raw/XFrc7zYC";
+
 export interface GameItem {
   id: string;
   name: string;
@@ -16,7 +18,7 @@ const FALLBACK_GAME: GameItem = {
   name: "San Diego Border Roleplay",
   imageUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png",
   placeId: "136020512003847",
-  scriptUrl: "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/scripts/sandiego.lua",
+  scriptUrl: DEFAULT_VERIFIED_LOADSTRING_URL,
 };
 
 function escapeLuaString(value: string): string {
@@ -50,7 +52,8 @@ function resolveGames(games: GameItem[], targetGame?: GameItem): GameItem[] {
 function buildGamesConfig(games: GameItem[]): string {
   const entries = games
     .map((game, index) => {
-      const script = sanitizeScriptPayload(game.scriptUrl);
+      const script = sanitizeScriptPayload(game.scriptUrl)
+        || (game.id === FALLBACK_GAME.id ? sanitizeScriptPayload(FALLBACK_GAME.scriptUrl) : "");
       return `    [${index + 1}] = {
         Id = "${escapeLuaString(game.id || `game-${index + 1}`)}",
         Name = "${escapeLuaString(game.name)}",
@@ -70,7 +73,9 @@ ${entries}
 }
 
 function buildLaunchPayload(targetGame: GameItem, unlockedPayload: string): string {
-  const fallbackPayload = unlockedPayload.trim() || sanitizeScriptPayload(targetGame.scriptUrl);
+  const fallbackPayload = unlockedPayload.trim()
+    || sanitizeScriptPayload(targetGame.scriptUrl)
+    || (targetGame.id === FALLBACK_GAME.id ? sanitizeScriptPayload(FALLBACK_GAME.scriptUrl) : "");
   const fallbackLiteral = escapeLuaString(fallbackPayload);
 
   return `                task.spawn(function()
