@@ -8,10 +8,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Client-Info, Apikey");
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
-  }
-
+  if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST" && req.method !== "GET") {
     return res.status(405).json({ valid: false, message: "Method not allowed" });
   }
@@ -33,87 +30,41 @@ export default async function handler(req, res) {
     if (!key || typeof key !== "string") {
       return res.status(400).json({ valid: false, message: "Missing key" });
     }
-
     if (!robloxId || typeof robloxId !== "string" || !robloxId.trim()) {
       return res.status(400).json({ valid: false, message: "Missing Roblox account" });
     }
 
     const normalized = key.trim().toUpperCase();
-
-    if (!normalized.match(/^[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}$/)) {
+    if (!/^[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}$/.test(normalized)) {
       return res.status(200).json({ valid: false, message: "Key Invalid" });
     }
-
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return res.status(500).json({ valid: false, message: "Server not configured" });
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     const { data, error } = await supabase
-      .from("keys")
-      .select("id, key_string, expires_at, claimed, owner_roblox_id, owner_username")
-      .eq("key_string", normalized)
+      .rpc("verify_and_bind_key", {
+        p_key_string: normalized,
+        p_roblox_id: String(robloxId).trim(),
+        p_roblox_username: robloxUsername ? String(robloxUsername).trim() : null,
+      })
       .maybeSingle();
 
     if (error) {
-      console.error("Supabase query error:", error);
-      return res.status(500).json({ valid: false, message: "Key Invalid" });
+      console.error("Key verification RPC error:", error);
+      return res.status(500).json({ valid: false, message: "Key verification unavailable" });
     }
-
     if (!data) {
       return res.status(200).json({ valid: false, message: "Key Invalid" });
     }
 
-    if (data.claimed && data.owner_roblox_id) {
-      const ownerId = String(data.owner_roblox_id);
-      const incomingId = String(robloxId).trim();
-      if (ownerId !== incomingId) {
-        return res.status(200).json({ valid: false, message: "Key already assigned to another account" });
-      }
-    }
-
-    if (!data.claimed) {
-      const { error: updateError } = await supabase
-        .from("keys")
-        .update({
-          claimed: true,
-          owner_roblox_id: String(robloxId).trim(),
-          owner_username: robloxUsername ? String(robloxUsername).trim() : null,
-        })
-        .eq("id", data.id);
-
-      if (updateError) {
-        console.error("Supabase update error:", updateError);
-        return res.status(500).json({ valid: false, message: "Could not bind key to account" });
-      }
-    }
-
-    if (data.expires_at) {
-      const expiresAt = new Date(data.expires_at);
-      const now = new Date();
-      if (expiresAt <= now) {
-        return res.status(200).json({ valid: false, message: "Key Expired" });
-      }
-
-      const remainingMs = expiresAt.getTime() - now.getTime();
-      const remainingSeconds = Math.floor(remainingMs / 1000);
-
-      return res.status(200).json({
-        valid: true,
-        status: "success",
-        message: "Access granted.",
-        expires_at: data.expires_at,
-        remaining_seconds: remainingSeconds,
-      });
-    }
-
     return res.status(200).json({
-      valid: true,
-      status: "success",
-      message: "Access granted.",
-      expires_at: null,
-      remaining_seconds: null,
+      valid: Boolean(data.valid),
+      status: data.valid ? "success" : "error",
+      message: data.message || (data.valid ? "Access granted." : "Key Invalid"),
+      expires_at: data.expires_at || null,
+      remaining_seconds: data.remaining_seconds ?? null,
     });
   } catch (err) {
     console.error("Verify key handler error:", err);
