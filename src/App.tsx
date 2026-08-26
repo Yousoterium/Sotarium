@@ -64,14 +64,6 @@ function App() {
     window.setTimeout(() => setToastMsg(null), 2500);
   };
 
-  const handleJoinDiscord = async () => {
-    try {
-      await navigator.clipboard.writeText("https://discord.gg/3aghbJBybQ");
-      showToast("Link for Discord copied!");
-    } catch {
-      showToast("Could not copy the Discord link.");
-    }
-  };
 
   const closeKeyModal = () => {
     setIsKeyModalOpen(false);
@@ -197,7 +189,7 @@ function App() {
           </div>
           <div className="flex w-full max-w-xs flex-col gap-3">
             <button type="button" onClick={() => setIsProviderPickerOpen(true)} className="w-full rounded-full border border-white/[0.12] bg-[#141417] px-6 py-3 text-sm font-bold text-zinc-100 shadow-md transition-all hover:border-white/[0.24] hover:bg-[#1c1c20] hover:text-white active:scale-95">Get Key</button>
-            <button type="button" onClick={handleJoinDiscord} className="w-full rounded-full border border-white/[0.12] bg-white/[0.04] px-6 py-3 text-sm font-bold text-zinc-300 shadow-sm transition-all hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white active:scale-95">Join Discord</button>
+            <a href="https://discord.gg/3aghbJBybQ" className="w-full rounded-full border border-white/[0.12] bg-white/[0.04] px-6 py-3 text-sm font-bold text-zinc-300 shadow-sm transition-all hover:border-white/[0.24] hover:bg-white/[0.08] hover:text-white active:scale-95">Join Discord</a>
           </div>
         </main>
       )}
