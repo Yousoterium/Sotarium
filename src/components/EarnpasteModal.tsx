@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AlertCircle, Check, Clock, Copy, Loader2 } from "lucide-react";
 
-// Operator Glass: provider identity is centered above a thin progress rail; the only primary action is the active checkpoint.
+// Reference-matched glass key card: selected provider identity, a single quiet progress rail, and exactly one active step button.
 type ProviderKind = "lootlabs" | "earnpaste" | "workink" | "opera";
 type AdBlockerStatus = "checking" | "clear" | "detected";
 
@@ -136,7 +136,7 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [keyExpiry, setKeyExpiry] = useState<number | null>(null);
@@ -402,69 +402,41 @@ export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   const isUnlocked = generatedKey !== null;
   const isCheckingAdBlocker = isOpera && adBlockerStatus === "checking" && !isUnlocked;
   const showAdBlockerNotice = isOpera && adBlockerStatus === "detected" && !isUnlocked;
-  const checkpointDescription = isOpera
-    ? "Complete the Work.ink Opera Browser offer. After Work.ink verifies it, the Opera installer downloads and your 24-hour key unlocks."
-    : `Complete two ${providerName} checkpoints to receive your 24-hour key.`;
   const checkpointButtonText = isOpera
     ? "Open Work.ink Opera link (Step 1/1)"
     : isWorkink && currentStep === 2 && workinkNextUrl
-      ? `Open Work.ink (Step 2/${totalSteps})`
-      : `Open ${providerName} (Step ${currentStep}/${totalSteps})`;
+      ? "Step 2"
+      : `Step ${currentStep}`;
   const completedCount = isUnlocked ? totalSteps : Math.max(completedSteps.length, currentStep - 1);
   const progressPercent = Math.round((completedCount / totalSteps) * 100);
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b] text-white">
-      <div className="fixed inset-0 pointer-events-none opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black p-4 text-white">
+      <div className="fixed inset-0 pointer-events-none opacity-[0.62]" style={{ backgroundImage: "radial-gradient(rgba(28,140,246,0.78) 1px,transparent 1px)", backgroundSize: "17px 17px", maskImage: "radial-gradient(ellipse at center, transparent 0%, transparent 24%, black 43%, black 67%, transparent 92%)" }} />
       {!isUnlocked ? (
-        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[420px] max-w-full flex-col rounded-[24px] border border-white/[0.1] bg-[#101114]/82 p-7 shadow-[0_28px_90px_rgba(0,0,0,0.52)] backdrop-blur-2xl">
-          <button type="button" onClick={onClose} className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.035] text-zinc-500 transition hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white" aria-label="Close">✕</button>
-
-          <header className="flex flex-col items-center text-center">
-            <ProviderIcon name={providerName} iconUrl={providerIcon} className="h-[58px] w-[58px]" />
-            <h2 className="mt-4 text-2xl font-bold tracking-tight text-white">{providerName}</h2>
-            <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Key verification</p>
+        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[378px] max-w-full flex-col items-center overflow-hidden rounded-[19px] border border-white/[0.16] bg-[#0d141c]/[0.68] px-7 py-8 shadow-[0_28px_86px_rgba(0,0,0,0.68),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-[28px]">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,rgba(255,255,255,0.075),transparent_35%,rgba(7,13,21,0.2))]" />
+          <header className="relative z-10 flex flex-col items-center text-center">
+            <ProviderIcon name={providerName} iconUrl={providerIcon} className="h-[56px] w-[56px]" />
+            <h2 className="mt-4 text-[23px] font-bold tracking-tight text-white">{providerName}</h2>
           </header>
 
-          <section className="mt-8">
-            <div className="mb-3 flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-500">
-              <span>Progress</span>
-              <span className="text-zinc-300">{completedCount}/{totalSteps} steps</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full border border-white/[0.08] bg-black/35 p-[2px]" aria-label={`${progressPercent}% complete`}>
-              <div className="h-full rounded-full bg-[#00a37a] shadow-[0_0_18px_rgba(0,163,122,0.46)] transition-[width] duration-200" style={{ width: `${progressPercent}%` }} />
-            </div>
-            <div className="mt-3 flex justify-between px-0.5 text-xs font-semibold">
-              {Array.from({ length: totalSteps }, (_, index) => index + 1).map((step) => {
-                const complete = completedSteps.includes(step) || (isUnlocked && step <= totalSteps);
-                const active = currentStep === step && !complete;
-                return <span key={step} className={complete ? "text-[#6de2c4]" : active ? "text-white" : "text-zinc-600"}>{complete ? `Step ${step} ✓` : `Step ${step}`}</span>;
-              })}
+          <section className="relative z-10 mt-8 w-full">
+            <div className="h-[7px] overflow-hidden rounded-full border border-white/[0.09] bg-black/55 p-px" aria-label={`${progressPercent}% complete`}>
+              <div className="h-full rounded-full bg-[#128d72] transition-[width] duration-200" style={{ width: `${progressPercent}%` }} />
             </div>
           </section>
 
-          <div className="mt-7">
+          <div className="relative z-10 mt-5 w-full">
             {errorMessage && (
-              <div role="alert" className="mb-3 flex items-start gap-2.5 rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-3.5 py-3 text-left text-xs leading-5 text-rose-200">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{errorMessage}</span>
-              </div>
+              <p role="alert" className="mb-3 text-center text-xs text-rose-300">{errorMessage}</p>
             )}
-            {statusMessage && !isRedirecting && !isVerifying && (
-              <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-[#00a37a]/20 bg-[#00a37a]/[0.08] px-3.5 py-3 text-left text-xs font-medium text-[#a7f4df]">
-                <Check className="h-4 w-4 shrink-0" strokeWidth={3} />
-                <span>{statusMessage}</span>
-              </div>
-            )}
-            <button type="button" onClick={errorMessage ? resetProgress : startCheckpoint} disabled={isCheckingAdBlocker || isRedirecting || isVerifying} className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/[0.13] bg-white/[0.075] px-5 py-3.5 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_10px_28px_rgba(0,0,0,0.2)] transition duration-180 hover:border-[#00a37a]/45 hover:bg-[#00a37a]/[0.14] disabled:cursor-wait disabled:opacity-60 active:scale-[0.98]">
-              {isRedirecting || isVerifying ? <Loader2 className="h-4 w-4 animate-spin text-[#6de2c4]" /> : null}
-              {errorMessage ? "Start again" : isCheckingAdBlocker ? "Checking for ad blocker..." : isRedirecting ? `Opening ${providerName}...` : isVerifying ? "Verifying completed step..." : checkpointButtonText}
+            <button type="button" onClick={errorMessage ? resetProgress : startCheckpoint} disabled={isCheckingAdBlocker || isRedirecting || isVerifying} className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/[0.13] bg-white/[0.055] px-5 py-3 text-sm font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.055)] transition duration-180 hover:border-white/[0.24] hover:bg-white/[0.1] disabled:cursor-wait disabled:opacity-60 active:scale-[0.98]">
+              {isRedirecting || isVerifying ? <Loader2 className="h-4 w-4 animate-spin text-zinc-300" /> : null}
+              {errorMessage ? "Step 1" : isCheckingAdBlocker ? "Checking..." : isRedirecting ? "Opening..." : isVerifying ? "Verifying..." : checkpointButtonText}
             </button>
           </div>
-
-          <p className="mt-4 text-center text-xs leading-5 text-zinc-500">{checkpointDescription}</p>
-          <button type="button" onClick={onClose} disabled={isRedirecting || isVerifying} className="mt-5 text-sm font-semibold text-zinc-500 transition hover:text-white disabled:opacity-50">Cancel</button>
 
             {showAdBlockerNotice && (
               <div role="alertdialog" aria-modal="true" aria-labelledby="adblocker-title" className="absolute inset-0 z-30 flex flex-col justify-center rounded-[26px] bg-[#121215]/[0.98] p-7 text-center backdrop-blur-sm">
