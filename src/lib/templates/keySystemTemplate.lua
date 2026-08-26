@@ -851,403 +851,172 @@ local function setMenuControlsEnabled(enabled)
 end
 
 -- ===========================================
--- Supported Games Animated Diagonal Screen
+-- Supported Games Panel (opens only on demand)
 -- ===========================================
-local GamesOverlay = Instance.new("Frame")
-GamesOverlay.Name = "GamesOverlay"
-GamesOverlay.Size = UDim2.new(1, 0, 1, 0)
-GamesOverlay.Position = UDim2.new(0, 0, 0, 0)
-GamesOverlay.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-GamesOverlay.BackgroundTransparency = 1
-GamesOverlay.BorderSizePixel = 0
-GamesOverlay.ClipsDescendants = true
-GamesOverlay.Visible = false
-GamesOverlay.ZIndex = 30
-GamesOverlay.Parent = MainFrame
+local SupportedGamesPanel = Instance.new("Frame")
+SupportedGamesPanel.Name = "SupportedGamesPanel"
+SupportedGamesPanel.Size = UDim2.new(1, 0, 1, 0)
+SupportedGamesPanel.Position = UDim2.new(0, 0, 0, 0)
+SupportedGamesPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+SupportedGamesPanel.BorderSizePixel = 0
+SupportedGamesPanel.ClipsDescendants = true
+SupportedGamesPanel.Visible = false
+SupportedGamesPanel.ZIndex = 40
+SupportedGamesPanel.Parent = MainFrame
 
-local GamesOverlayCorner = Instance.new("UICorner")
-GamesOverlayCorner.CornerRadius = UDim.new(0, 14)
-GamesOverlayCorner.Parent = GamesOverlay
+local SupportedPanelCorner = Instance.new("UICorner")
+SupportedPanelCorner.CornerRadius = UDim.new(0, 14)
+SupportedPanelCorner.Parent = SupportedGamesPanel
 
--- Perfectly sized Background Image with matching UICorner directly on the ImageLabel
-local GamesImage = Instance.new("ImageLabel")
-GamesImage.Name = "GamesImage"
-GamesImage.Size = UDim2.new(1, 0, 1, 0)
-GamesImage.Position = UDim2.new(0, 0, 0, 0)
-GamesImage.BackgroundTransparency = 1
-GamesImage.Image = GamesAssetId
-GamesImage.ScaleType = Enum.ScaleType.Crop
-GamesImage.ImageTransparency = 0.45
-GamesImage.ZIndex = 31
-GamesImage.Parent = GamesOverlay
+local SupportedPanelHeader = Instance.new("Frame")
+SupportedPanelHeader.Name = "SupportedPanelHeader"
+SupportedPanelHeader.Size = UDim2.new(1, 0, 0, 46)
+SupportedPanelHeader.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+SupportedPanelHeader.BorderSizePixel = 0
+SupportedPanelHeader.ZIndex = 41
+SupportedPanelHeader.Parent = SupportedGamesPanel
 
-local GamesImageCorner = Instance.new("UICorner")
-GamesImageCorner.CornerRadius = UDim.new(0, 14)
-GamesImageCorner.Parent = GamesImage
+local SupportedHeaderDivider = Instance.new("Frame")
+SupportedHeaderDivider.Size = UDim2.new(1, 0, 0, 1)
+SupportedHeaderDivider.Position = UDim2.new(0, 0, 1, -1)
+SupportedHeaderDivider.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
+SupportedHeaderDivider.BorderSizePixel = 0
+SupportedHeaderDivider.ZIndex = 42
+SupportedHeaderDivider.Parent = SupportedPanelHeader
 
--- Dark Blur / Low Opacity Dark Overlay with matching CornerRadius
-local DarkTintOverlay = Instance.new("Frame")
-DarkTintOverlay.Name = "DarkTintOverlay"
-DarkTintOverlay.Size = UDim2.new(1, 0, 1, 0)
-DarkTintOverlay.Position = UDim2.new(0, 0, 0, 0)
-DarkTintOverlay.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-DarkTintOverlay.BackgroundTransparency = 0.45
-DarkTintOverlay.BorderSizePixel = 0
-DarkTintOverlay.ZIndex = 32
-DarkTintOverlay.Parent = GamesOverlay
+local SupportedPanelTitle = Instance.new("TextLabel")
+SupportedPanelTitle.Size = UDim2.new(1, -160, 1, 0)
+SupportedPanelTitle.Position = UDim2.new(0, 84, 0, 0)
+SupportedPanelTitle.BackgroundTransparency = 1
+SupportedPanelTitle.Font = Enum.Font.GothamBold
+SupportedPanelTitle.Text = "Supported Games"
+SupportedPanelTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+SupportedPanelTitle.TextSize = 15
+SupportedPanelTitle.TextXAlignment = Enum.TextXAlignment.Left
+SupportedPanelTitle.ZIndex = 42
+SupportedPanelTitle.Parent = SupportedPanelHeader
 
-local DarkTintCorner = Instance.new("UICorner")
-DarkTintCorner.CornerRadius = UDim.new(0, 14)
-DarkTintCorner.Parent = DarkTintOverlay
+local SupportedBackButton = Instance.new("TextButton")
+SupportedBackButton.Name = "SupportedBackButton"
+SupportedBackButton.Size = UDim2.new(0, 66, 0, 28)
+SupportedBackButton.Position = UDim2.new(0, 12, 0.5, -14)
+SupportedBackButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+SupportedBackButton.BorderSizePixel = 0
+SupportedBackButton.Font = Enum.Font.GothamBold
+SupportedBackButton.Text = "Back"
+SupportedBackButton.TextColor3 = Color3.fromRGB(230, 230, 230)
+SupportedBackButton.TextSize = 12
+SupportedBackButton.AutoButtonColor = false
+SupportedBackButton.ZIndex = 43
+SupportedBackButton.Parent = SupportedPanelHeader
 
--- Top-Left Back Button with Arrow and Text
-local BackButton = Instance.new("TextButton")
-BackButton.Name = "BackButton"
-BackButton.Size = UDim2.new(0, 84, 0, 32)
-BackButton.Position = UDim2.new(0, 14, 0, 12)
-BackButton.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-BackButton.BorderSizePixel = 0
-BackButton.Text = ""
-BackButton.AutoButtonColor = false
-BackButton.ZIndex = 36
-BackButton.Parent = GamesOverlay
+local SupportedBackCorner = Instance.new("UICorner")
+SupportedBackCorner.CornerRadius = UDim.new(0, 7)
+SupportedBackCorner.Parent = SupportedBackButton
 
-local BackCorner = Instance.new("UICorner")
-BackCorner.CornerRadius = UDim.new(0, 8)
-BackCorner.Parent = BackButton
+local SupportedGrid = Instance.new("ScrollingFrame")
+SupportedGrid.Name = "SupportedGrid"
+SupportedGrid.Size = UDim2.new(1, -32, 1, -68)
+SupportedGrid.Position = UDim2.new(0, 16, 0, 54)
+SupportedGrid.BackgroundTransparency = 1
+SupportedGrid.BorderSizePixel = 0
+SupportedGrid.ScrollBarThickness = 4
+SupportedGrid.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 70)
+SupportedGrid.AutomaticCanvasSize = Enum.AutomaticSize.Y
+SupportedGrid.CanvasSize = UDim2.new(0, 0, 0, 0)
+SupportedGrid.ZIndex = 41
+SupportedGrid.Parent = SupportedGamesPanel
 
-local BackStroke = Instance.new("UIStroke")
-BackStroke.Color = Color3.fromRGB(38, 38, 38)
-BackStroke.Thickness = 1
-BackStroke.Parent = BackButton
+local SupportedGridLayout = Instance.new("UIGridLayout")
+SupportedGridLayout.CellSize = UDim2.new(0, 170, 0, 148)
+SupportedGridLayout.CellPadding = UDim2.new(0, 14, 0, 14)
+SupportedGridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+SupportedGridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+SupportedGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SupportedGridLayout.Parent = SupportedGrid
 
-local BackArrow = Instance.new("ImageLabel")
-BackArrow.Name = "BackArrow"
-BackArrow.Size = UDim2.new(0, 16, 0, 16)
-BackArrow.Position = UDim2.new(0, 10, 0.5, -8)
-BackArrow.BackgroundTransparency = 1
-BackArrow.Image = LucideArrowLeftAssetId
-BackArrow.ImageColor3 = Color3.fromRGB(220, 220, 220)
-BackArrow.ZIndex = 37
-BackArrow.Parent = BackButton
+local SupportedGridPadding = Instance.new("UIPadding")
+SupportedGridPadding.PaddingLeft = UDim.new(0, 4)
+SupportedGridPadding.PaddingRight = UDim.new(0, 4)
+SupportedGridPadding.PaddingTop = UDim.new(0, 4)
+SupportedGridPadding.PaddingBottom = UDim.new(0, 14)
+SupportedGridPadding.Parent = SupportedGrid
 
-local BackText = Instance.new("TextLabel")
-BackText.Name = "BackText"
-BackText.Size = UDim2.new(1, -34, 1, 0)
-BackText.Position = UDim2.new(0, 30, 0, 0)
-BackText.BackgroundTransparency = 1
-BackText.Font = Enum.Font.GothamBold
-BackText.Text = "Back"
-BackText.TextColor3 = Color3.fromRGB(220, 220, 220)
-BackText.TextSize = 13
-BackText.TextXAlignment = Enum.TextXAlignment.Left
-BackText.ZIndex = 37
-BackText.Parent = BackButton
+local function makeSupportedGameCard(gameData, order)
+    local card = Instance.new("Frame")
+    card.Name = "SupportedGame_" .. tostring(order)
+    card.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    card.BorderSizePixel = 0
+    card.ClipsDescendants = true
+    card.LayoutOrder = order
+    card.ZIndex = 42
+    card.Parent = SupportedGrid
 
-BackButton.MouseEnter:Connect(function()
-    TweenService:Create(BackButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(30, 30, 30)}):Play()
-    TweenService:Create(BackArrow, TweenInfo.new(0.15), {ImageColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-    TweenService:Create(BackText, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-end)
-BackButton.MouseLeave:Connect(function()
-    TweenService:Create(BackButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(22, 22, 22)}):Play()
-    TweenService:Create(BackArrow, TweenInfo.new(0.15), {ImageColor3 = Color3.fromRGB(220, 220, 220)}):Play()
-    TweenService:Create(BackText, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(220, 220, 220)}):Play()
-end)
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 10)
+    cardCorner.Parent = card
 
--- 1. Loading Phase Container (Loader on top of Text)
-local LoadingCenter = Instance.new("Frame")
-LoadingCenter.Name = "LoadingCenter"
-LoadingCenter.Size = UDim2.new(0, 260, 0, 70)
-LoadingCenter.Position = UDim2.new(0.5, -130, 0.5, -35)
-LoadingCenter.BackgroundTransparency = 1
-LoadingCenter.ZIndex = 33
-LoadingCenter.Parent = GamesOverlay
+    local cardStroke = Instance.new("UIStroke")
+    cardStroke.Color = Color3.fromRGB(45, 45, 45)
+    cardStroke.Thickness = 1
+    cardStroke.Parent = card
 
-local LoadingLayout = Instance.new("UIListLayout")
-LoadingLayout.FillDirection = Enum.FillDirection.Vertical
-LoadingLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-LoadingLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-LoadingLayout.SortOrder = Enum.SortOrder.LayoutOrder
-LoadingLayout.Padding = UDim.new(0, 10)
-LoadingLayout.Parent = LoadingCenter
+    local thumbnail = Instance.new("ImageLabel")
+    thumbnail.Size = UDim2.new(1, 0, 1, -34)
+    thumbnail.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+    thumbnail.BorderSizePixel = 0
+    thumbnail.ScaleType = Enum.ScaleType.Crop
+    thumbnail.ZIndex = 43
+    thumbnail.Parent = card
+    thumbnail.Image = loadRemoteAsset("supported_game_" .. tostring(order) .. ".png", gameData.Image, "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png")
 
-local LoaderHolder = Instance.new("Frame")
-LoaderHolder.Name = "LoaderHolder"
-LoaderHolder.Size = UDim2.new(0, 34, 0, 34)
-LoaderHolder.BackgroundTransparency = 1
-LoaderHolder.LayoutOrder = 1
-LoaderHolder.ZIndex = 34
-LoaderHolder.Parent = LoadingCenter
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1, 0, 0, 34)
+    titleBar.Position = UDim2.new(0, 0, 1, -34)
+    titleBar.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+    titleBar.BorderSizePixel = 0
+    titleBar.ZIndex = 44
+    titleBar.Parent = card
 
-local LoaderImage = Instance.new("ImageLabel")
-LoaderImage.Name = "LoaderImage"
-LoaderImage.Size = UDim2.new(1, 0, 1, 0)
-LoaderImage.Position = UDim2.new(0.5, 0, 0.5, 0)
-LoaderImage.AnchorPoint = Vector2.new(0.5, 0.5)
-LoaderImage.BackgroundTransparency = 1
-LoaderImage.Image = LucideLoaderAssetId
-LoaderImage.ImageColor3 = Color3.fromRGB(255, 255, 255)
-LoaderImage.ZIndex = 35
-LoaderImage.Parent = LoaderHolder
-
-local LoadingText = Instance.new("TextLabel")
-LoadingText.Name = "LoadingText"
-LoadingText.Size = UDim2.new(1, 0, 0, 22)
-LoadingText.BackgroundTransparency = 1
-LoadingText.Font = Enum.Font.GothamBold
-LoadingText.Text = "Loading supported games..."
-LoadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
-LoadingText.TextSize = 14
-LoadingText.TextXAlignment = Enum.TextXAlignment.Center
-LoadingText.LayoutOrder = 2
-LoadingText.ZIndex = 34
-LoadingText.Parent = LoadingCenter
-
--- 2. Loaded Games Showcase Container (3 Columns Grid, Vertical/Horizontal Scroll)
-local GamesShowcase = Instance.new("ScrollingFrame")
-GamesShowcase.Name = "GamesShowcase"
-GamesShowcase.Size = UDim2.new(1, -40, 1, -70)
-GamesShowcase.Position = UDim2.new(0, 20, 0, 56)
-GamesShowcase.BackgroundTransparency = 1
-GamesShowcase.BorderSizePixel = 0
-GamesShowcase.ScrollBarThickness = 4
-GamesShowcase.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 60)
-GamesShowcase.AutomaticCanvasSize = Enum.AutomaticSize.Y
-GamesShowcase.CanvasSize = UDim2.new(0, 0, 0, 0)
-GamesShowcase.ElasticBehavior = Enum.ElasticBehavior.Always
-GamesShowcase.ScrollingDirection = Enum.ScrollingDirection.Y
-GamesShowcase.Visible = false
-GamesShowcase.ZIndex = 38
-GamesShowcase.Parent = GamesOverlay
-
-local ShowcaseLayout = Instance.new("UIGridLayout")
-ShowcaseLayout.CellSize = UDim2.new(0, 208, 0, 150)
-ShowcaseLayout.CellPadding = UDim2.new(0, 16, 0, 16)
-ShowcaseLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-ShowcaseLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-ShowcaseLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ShowcaseLayout.Parent = GamesShowcase
-
-local ShowcasePadding = Instance.new("UIPadding")
-ShowcasePadding.PaddingLeft = UDim.new(0, 8)
-ShowcasePadding.PaddingRight = UDim.new(0, 8)
-ShowcasePadding.PaddingTop = UDim.new(0, 6)
-ShowcasePadding.PaddingBottom = UDim.new(0, 16)
-ShowcasePadding.Parent = GamesShowcase
-
--- Attached Game Card Outer Container (Left-to-Right 3-column item)
-local GameCard = Instance.new("Frame")
-GameCard.Name = "GameCard"
-GameCard.BackgroundColor3 = Color3.fromRGB(16, 16, 16)
-GameCard.BackgroundTransparency = 1
-GameCard.BorderSizePixel = 0
-GameCard.ClipsDescendants = true
-GameCard.LayoutOrder = 1
-GameCard.ZIndex = 39
-GameCard.Parent = GamesShowcase
-
-local CardCorner = Instance.new("UICorner")
-CardCorner.CornerRadius = UDim.new(0, 10)
-CardCorner.Parent = GameCard
-
-local CardStroke = Instance.new("UIStroke")
-CardStroke.Color = Color3.fromRGB(38, 38, 38)
-CardStroke.Thickness = 1
-CardStroke.Transparency = 1
-CardStroke.Parent = GameCard
-
--- San Diego Border Roleplay thumbnail with a dedicated black title rectangle beneath it.
-local GameThumbImage = Instance.new("ImageLabel")
-GameThumbImage.Name = "GameThumbImage"
-GameThumbImage.Size = UDim2.new(1, 0, 1, -34)
-GameThumbImage.Position = UDim2.new(0, 0, 0, 0)
-GameThumbImage.BackgroundTransparency = 1
-local PrimaryGame = SupportedGamesList[1]
-GameThumbImage.Image = PrimaryGame and loadRemoteAsset("primary_game.png", PrimaryGame.Image, "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png") or SanDiegoAssetId
-GameThumbImage.ScaleType = Enum.ScaleType.Crop
-GameThumbImage.ImageTransparency = 1
-GameThumbImage.BorderSizePixel = 0
-GameThumbImage.ClipsDescendants = true
-GameThumbImage.ZIndex = 40
-GameThumbImage.Parent = GameCard
-
-local ThumbCorner = Instance.new("UICorner")
-ThumbCorner.CornerRadius = UDim.new(0, 10)
-ThumbCorner.Parent = GameThumbImage
-
-local TitleBar = Instance.new("Frame")
-TitleBar.Name = "TitleBar"
-TitleBar.Size = UDim2.new(1, 0, 0, 34)
-TitleBar.Position = UDim2.new(0, 0, 1, -34)
-TitleBar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-TitleBar.BackgroundTransparency = 1
-TitleBar.BorderSizePixel = 0
-TitleBar.ZIndex = 41
-TitleBar.Parent = GameCard
-
-local GameTitleLabel = Instance.new("TextLabel")
-GameTitleLabel.Name = "GameTitleLabel"
-GameTitleLabel.Size = UDim2.new(1, -16, 1, 0)
-GameTitleLabel.Position = UDim2.new(0, 8, 0, 0)
-GameTitleLabel.BackgroundTransparency = 1
-GameTitleLabel.Font = Enum.Font.GothamBold
-GameTitleLabel.Text = PrimaryGame and PrimaryGame.Name or "No supported games configured"
-GameTitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-GameTitleLabel.TextSize = 12
-GameTitleLabel.TextTruncate = Enum.TextTruncate.AtEnd
-GameTitleLabel.TextXAlignment = Enum.TextXAlignment.Center
-GameTitleLabel.TextTransparency = 1
-GameTitleLabel.ZIndex = 42
-GameTitleLabel.Parent = TitleBar
-
--- Supported Games Control Handlers
-local isShowingGames = false
-local isPanning = false
-local panConnection = nil
-local spinConnection = nil
-
-local function closeSupportedGames()
-    if not isShowingGames then return end
-    isPanning = false
-    if panConnection then
-        panConnection:Disconnect()
-        panConnection = nil
-    end
-    if spinConnection then
-        spinConnection:Disconnect()
-        spinConnection = nil
-    end
-    
-    local fadeOut = TweenService:Create(GamesOverlay, TweenInfo.new(0.3), {BackgroundTransparency = 1})
-    TweenService:Create(DarkTintOverlay, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(LoadingText, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
-    TweenService:Create(LoaderImage, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
-    TweenService:Create(GamesImage, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
-    TweenService:Create(BackButton, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(BackArrow, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
-    TweenService:Create(BackText, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
-    
-    -- Fade out Showcase
-    TweenService:Create(GameCard, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(CardStroke, TweenInfo.new(0.3), {Transparency = 1}):Play()
-    TweenService:Create(GameThumbImage, TweenInfo.new(0.3), {ImageTransparency = 1}):Play()
-    TweenService:Create(TitleBar, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-    TweenService:Create(GameTitleLabel, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
-    
-    fadeOut:Play()
-    fadeOut.Completed:Connect(function()
-        GamesOverlay.Visible = false
-        GamesShowcase.Visible = false
-        LoadingCenter.Visible = true
-        isShowingGames = false
-        
-        -- Re-enable menu controls
-        setMenuControlsEnabled(true)
-    end)
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -12, 1, 0)
+    title.Position = UDim2.new(0, 6, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBold
+    title.Text = gameData.Name
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextSize = 11
+    title.TextTruncate = Enum.TextTruncate.AtEnd
+    title.TextXAlignment = Enum.TextXAlignment.Center
+    title.ZIndex = 45
+    title.Parent = titleBar
 end
 
-BackButton.MouseButton1Click:Connect(closeSupportedGames)
+for index, gameData in ipairs(SupportedGamesList) do
+    makeSupportedGameCard(gameData, index)
+end
+
+local isSupportedGamesOpen = false
+local function closeSupportedGames()
+    if not isSupportedGamesOpen then return end
+    isSupportedGamesOpen = false
+    SupportedGamesPanel.Visible = false
+    setMenuControlsEnabled(true)
+end
+
+SupportedBackButton.MouseEnter:Connect(function()
+    TweenService:Create(SupportedBackButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(38, 38, 38)}):Play()
+end)
+SupportedBackButton.MouseLeave:Connect(function()
+    TweenService:Create(SupportedBackButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(28, 28, 28)}):Play()
+end)
+SupportedBackButton.MouseButton1Click:Connect(closeSupportedGames)
 
 SupportedGamesButton.MouseButton1Click:Connect(function()
-    if isShowingGames then return end
-    isShowingGames = true
-    
-    -- Disable menu buttons immediately while supported games is open
+    if isSupportedGamesOpen then return end
+    isSupportedGamesOpen = true
     setMenuControlsEnabled(false)
-    
-    -- Ensure images are loaded from GitHub / failover
-    if GamesImage.Image == "" or GamesImage.Image == "rbxassetid://13543208759" then
-        GamesImage.Image = loadRemoteAsset("games.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/games.png")
-    end
-    if GameThumbImage.Image == "" or GameThumbImage.Image == "rbxassetid://13543208759" then
-        GameThumbImage.Image = loadRemoteAsset("sandiego_v2.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png", "https://tr.rbxcdn.com/180DAY-a8e7148123010ced8bdce8c0542cc662/768/432/Image/Webp/noFilter")
-    end
-    if LoaderImage.Image == "" or LoaderImage.Image == "rbxassetid://13543208759" then
-        LoaderImage.Image = loadRemoteAsset("loader_256.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/loader.png")
-    end
-    if BackArrow.Image == "" or BackArrow.Image == "rbxassetid://13543208759" then
-        BackArrow.Image = loadRemoteAsset("arrow_left_256.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/arrow-left.png")
-    end
-    
-    GamesOverlay.Visible = true
-    GamesOverlay.BackgroundTransparency = 1
-    LoadingCenter.Visible = true
-    GamesShowcase.Visible = false
-    
-    LoadingText.TextTransparency = 1
-    LoaderImage.ImageTransparency = 1
-    GamesImage.ImageTransparency = 1
-    DarkTintOverlay.BackgroundTransparency = 1
-    BackButton.BackgroundTransparency = 1
-    BackArrow.ImageTransparency = 1
-    BackText.TextTransparency = 1
-    
-    TweenService:Create(GamesOverlay, TweenInfo.new(0.25), {BackgroundTransparency = 0}):Play()
-    TweenService:Create(DarkTintOverlay, TweenInfo.new(0.25), {BackgroundTransparency = 0.45}):Play()
-    TweenService:Create(LoadingText, TweenInfo.new(0.25), {TextTransparency = 0}):Play()
-    TweenService:Create(LoaderImage, TweenInfo.new(0.25), {ImageTransparency = 0}):Play()
-    TweenService:Create(GamesImage, TweenInfo.new(0.25), {ImageTransparency = 0.45}):Play()
-    TweenService:Create(BackButton, TweenInfo.new(0.25), {BackgroundTransparency = 0}):Play()
-    TweenService:Create(BackArrow, TweenInfo.new(0.25), {ImageTransparency = 0}):Play()
-    TweenService:Create(BackText, TweenInfo.new(0.25), {TextTransparency = 0}):Play()
-    
-    -- Seamless Internal Pan (Position never shifts outside the 14px rounded boundaries)
-    isPanning = true
-    local startTime = os.clock()
-    
-    panConnection = RunService.RenderStepped:Connect(function(dt)
-        if not isPanning then return end
-        local t = os.clock() - startTime
-        -- Smooth harmonic shift of internal rect offset from top-right to bottom-left
-        local offsetX = (math.sin(t * 0.45) * 80) + 120
-        local offsetY = (math.cos(t * 0.38) * 60) + 80
-        GamesImage.ImageRectOffset = Vector2.new(offsetX, offsetY)
-        GamesImage.ImageRectSize = Vector2.new(900, 550)
-    end)
-    
-    -- Smooth 60 FPS Hardware RenderStepped Loader rotation
-    spinConnection = RunService.RenderStepped:Connect(function(dt)
-        if isPanning and LoaderImage and LoaderImage.Parent then
-            LoaderImage.Rotation = (LoaderImage.Rotation + (dt * 260)) % 360
-        end
-    end)
-    
-    -- Looping animated dots (. .. ... .. .) with Capital "Loading supported games"
-    local dotsRunning = true
-    task.spawn(function()
-        local dotsList = {".", "..", "...", ".."}
-        local dotIdx = 1
-        while dotsRunning and isShowingGames do
-            LoadingText.Text = "Loading supported games" .. dotsList[dotIdx]
-            dotIdx = (dotIdx % #dotsList) + 1
-            task.wait(0.35)
-        end
-    end)
-    
-    -- After loading period, reveal San Diego Border Roleplay game card
-    task.spawn(function()
-        task.wait(2.2)
-        if not isShowingGames then return end
-        dotsRunning = false
-        
-        -- Fade out loader text & spinner
-        local fadeOutLoader = TweenService:Create(LoadingText, TweenInfo.new(0.25), {TextTransparency = 1})
-        TweenService:Create(LoaderImage, TweenInfo.new(0.25), {ImageTransparency = 1}):Play()
-        fadeOutLoader:Play()
-        fadeOutLoader.Completed:Connect(function()
-            LoadingCenter.Visible = false
-            if not isShowingGames then return end
-            
-            -- Fade in Game Card
-            GamesShowcase.Visible = true
-            TweenService:Create(GameCard, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
-            TweenService:Create(CardStroke, TweenInfo.new(0.3), {Transparency = 0}):Play()
-            TweenService:Create(GameThumbImage, TweenInfo.new(0.3), {ImageTransparency = 0}):Play()
-            TweenService:Create(TitleBar, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
-            TweenService:Create(GameTitleLabel, TweenInfo.new(0.3), {TextTransparency = 0}):Play()
-        end)
-    end)
+    SupportedGamesPanel.Visible = true
 end)
 
 -- ===========================================
