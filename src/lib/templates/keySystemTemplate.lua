@@ -627,8 +627,8 @@ end)
 -- ===========================================
 local ContentFrame = Instance.new("Frame")
 ContentFrame.Name = "Content"
-ContentFrame.Size = UDim2.new(0, 320, 0, 174)
-ContentFrame.Position = UDim2.new(0.5, -160, 0.5, -87)
+ContentFrame.Size = UDim2.new(0, 320, 0, 198)
+ContentFrame.Position = UDim2.new(0.5, -160, 0.5, -99)
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Parent = MainFrame
 
@@ -744,10 +744,10 @@ GetKeyStroke.Parent = GetKeyButton
 GetKeyButton.MouseEnter:Connect(function() TweenService:Create(GetKeyButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(26, 26, 26)}):Play() end)
 GetKeyButton.MouseLeave:Connect(function() TweenService:Create(GetKeyButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(20, 20, 20)}):Play() end)
 
--- 3. Discord Button (Full-width pill, copy-only action)
+-- 3. Discord Button (Full-width rounded rectangle replacing Supported Games)
 local JoinDiscordButton = Instance.new("TextButton")
 JoinDiscordButton.Name = "JoinDiscordButton"
-JoinDiscordButton.Size = UDim2.new(1, 0, 0, 42)
+JoinDiscordButton.Size = UDim2.new(1, 0, 0, 44)
 JoinDiscordButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 JoinDiscordButton.BorderSizePixel = 0
 JoinDiscordButton.Font = Enum.Font.GothamBold
@@ -759,7 +759,7 @@ JoinDiscordButton.LayoutOrder = 4
 JoinDiscordButton.Parent = ContentFrame
 
 local DiscordCorner = Instance.new("UICorner")
-DiscordCorner.CornerRadius = UDim.new(1, 0)
+DiscordCorner.CornerRadius = UDim.new(0, 10)
 DiscordCorner.Parent = JoinDiscordButton
 
 local DiscordStroke = Instance.new("UIStroke")

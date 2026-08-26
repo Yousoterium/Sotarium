@@ -1,5 +1,12 @@
-import type { GameItem } from "../components/AddGamePage";
 import keySystemTemplate from "./templates/keySystemTemplate.lua?raw";
+
+export interface GameItem {
+  id: string;
+  name: string;
+  imageUrl: string;
+  placeId?: string;
+  scriptUrl?: string;
+}
 
 const GAME_CONFIG_MARKER = "-- __SOTARIUM_GENERATED_GAME_CONFIG__";
 const LAUNCH_PAYLOAD_MARKER = "-- __SOTARIUM_GENERATED_LAUNCH_PAYLOAD__";
