@@ -627,8 +627,8 @@ end)
 -- ===========================================
 local ContentFrame = Instance.new("Frame")
 ContentFrame.Name = "Content"
-ContentFrame.Size = UDim2.new(0, 320, 0, 230)
-ContentFrame.Position = UDim2.new(0.5, -160, 0.5, -100)
+ContentFrame.Size = UDim2.new(0, 320, 0, 174)
+ContentFrame.Position = UDim2.new(0.5, -160, 0.5, -87)
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Parent = MainFrame
 
@@ -744,43 +744,7 @@ GetKeyStroke.Parent = GetKeyButton
 GetKeyButton.MouseEnter:Connect(function() TweenService:Create(GetKeyButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(26, 26, 26)}):Play() end)
 GetKeyButton.MouseLeave:Connect(function() TweenService:Create(GetKeyButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(20, 20, 20)}):Play() end)
 
--- 3. Supported Games Button (Full Width Underneath)
-local SupportedGamesButton = Instance.new("TextButton")
-SupportedGamesButton.Name = "SupportedGamesButton"
-SupportedGamesButton.Size = UDim2.new(1, 0, 0, 44)
-SupportedGamesButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-SupportedGamesButton.BorderSizePixel = 0
-SupportedGamesButton.Font = Enum.Font.GothamBold
-SupportedGamesButton.Text = "Supported Games"
-SupportedGamesButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-SupportedGamesButton.TextSize = 14
-SupportedGamesButton.AutoButtonColor = false
-SupportedGamesButton.LayoutOrder = 4
-SupportedGamesButton.Parent = ContentFrame
-
-local GamesCorner = Instance.new("UICorner")
-GamesCorner.CornerRadius = UDim.new(0, 10)
-GamesCorner.Parent = SupportedGamesButton
-
-local GamesStroke = Instance.new("UIStroke")
-GamesStroke.Color = Color3.fromRGB(34, 34, 34)
-GamesStroke.Thickness = 1
-GamesStroke.Parent = SupportedGamesButton
-
-SupportedGamesButton.MouseEnter:Connect(function()
-    TweenService:Create(SupportedGamesButton, TweenInfo.new(0.15), {
-        BackgroundColor3 = Color3.fromRGB(26, 26, 26),
-        TextColor3 = Color3.fromRGB(255, 255, 255)
-    }):Play()
-end)
-SupportedGamesButton.MouseLeave:Connect(function()
-    TweenService:Create(SupportedGamesButton, TweenInfo.new(0.15), {
-        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-        TextColor3 = Color3.fromRGB(220, 220, 220)
-    }):Play()
-end)
-
--- 4. Discord Button (Full-width pill, copy-only action)
+-- 3. Discord Button (Full-width pill, copy-only action)
 local JoinDiscordButton = Instance.new("TextButton")
 JoinDiscordButton.Name = "JoinDiscordButton"
 JoinDiscordButton.Size = UDim2.new(1, 0, 0, 42)
@@ -791,7 +755,7 @@ JoinDiscordButton.Text = "Join Discord"
 JoinDiscordButton.TextColor3 = Color3.fromRGB(220, 220, 220)
 JoinDiscordButton.TextSize = 14
 JoinDiscordButton.AutoButtonColor = false
-JoinDiscordButton.LayoutOrder = 5
+JoinDiscordButton.LayoutOrder = 4
 JoinDiscordButton.Parent = ContentFrame
 
 local DiscordCorner = Instance.new("UICorner")
@@ -838,185 +802,6 @@ KeyTextBox:GetPropertyChangedSignal("Text"):Connect(function()
             TextColor3 = Color3.fromRGB(18, 18, 18)
         }):Play()
     end
-end)
-
--- Function to Enable/Disable Menu Controls
-local function setMenuControlsEnabled(enabled)
-    SubmitButton.Active = enabled
-    GetKeyButton.Active = enabled
-    SupportedGamesButton.Active = enabled
-    JoinDiscordButton.Active = enabled
-    KeyTextBox.TextEditable = enabled
-    KeyTextBox.Active = enabled
-end
-
--- ===========================================
--- Supported Games Panel (opens only on demand)
--- ===========================================
-local SupportedGamesPanel = Instance.new("Frame")
-SupportedGamesPanel.Name = "SupportedGamesPanel"
-SupportedGamesPanel.Size = UDim2.new(1, 0, 1, 0)
-SupportedGamesPanel.Position = UDim2.new(0, 0, 0, 0)
-SupportedGamesPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-SupportedGamesPanel.BorderSizePixel = 0
-SupportedGamesPanel.ClipsDescendants = true
-SupportedGamesPanel.Visible = false
-SupportedGamesPanel.ZIndex = 40
-SupportedGamesPanel.Parent = MainFrame
-
-local SupportedPanelCorner = Instance.new("UICorner")
-SupportedPanelCorner.CornerRadius = UDim.new(0, 14)
-SupportedPanelCorner.Parent = SupportedGamesPanel
-
-local SupportedPanelHeader = Instance.new("Frame")
-SupportedPanelHeader.Name = "SupportedPanelHeader"
-SupportedPanelHeader.Size = UDim2.new(1, 0, 0, 46)
-SupportedPanelHeader.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-SupportedPanelHeader.BorderSizePixel = 0
-SupportedPanelHeader.ZIndex = 41
-SupportedPanelHeader.Parent = SupportedGamesPanel
-
-local SupportedHeaderDivider = Instance.new("Frame")
-SupportedHeaderDivider.Size = UDim2.new(1, 0, 0, 1)
-SupportedHeaderDivider.Position = UDim2.new(0, 0, 1, -1)
-SupportedHeaderDivider.BackgroundColor3 = Color3.fromRGB(36, 36, 36)
-SupportedHeaderDivider.BorderSizePixel = 0
-SupportedHeaderDivider.ZIndex = 42
-SupportedHeaderDivider.Parent = SupportedPanelHeader
-
-local SupportedPanelTitle = Instance.new("TextLabel")
-SupportedPanelTitle.Size = UDim2.new(1, -160, 1, 0)
-SupportedPanelTitle.Position = UDim2.new(0, 84, 0, 0)
-SupportedPanelTitle.BackgroundTransparency = 1
-SupportedPanelTitle.Font = Enum.Font.GothamBold
-SupportedPanelTitle.Text = "Supported Games"
-SupportedPanelTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-SupportedPanelTitle.TextSize = 15
-SupportedPanelTitle.TextXAlignment = Enum.TextXAlignment.Left
-SupportedPanelTitle.ZIndex = 42
-SupportedPanelTitle.Parent = SupportedPanelHeader
-
-local SupportedBackButton = Instance.new("TextButton")
-SupportedBackButton.Name = "SupportedBackButton"
-SupportedBackButton.Size = UDim2.new(0, 66, 0, 28)
-SupportedBackButton.Position = UDim2.new(0, 12, 0.5, -14)
-SupportedBackButton.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
-SupportedBackButton.BorderSizePixel = 0
-SupportedBackButton.Font = Enum.Font.GothamBold
-SupportedBackButton.Text = "Back"
-SupportedBackButton.TextColor3 = Color3.fromRGB(230, 230, 230)
-SupportedBackButton.TextSize = 12
-SupportedBackButton.AutoButtonColor = false
-SupportedBackButton.ZIndex = 43
-SupportedBackButton.Parent = SupportedPanelHeader
-
-local SupportedBackCorner = Instance.new("UICorner")
-SupportedBackCorner.CornerRadius = UDim.new(0, 7)
-SupportedBackCorner.Parent = SupportedBackButton
-
-local SupportedGrid = Instance.new("ScrollingFrame")
-SupportedGrid.Name = "SupportedGrid"
-SupportedGrid.Size = UDim2.new(1, -32, 1, -68)
-SupportedGrid.Position = UDim2.new(0, 16, 0, 54)
-SupportedGrid.BackgroundTransparency = 1
-SupportedGrid.BorderSizePixel = 0
-SupportedGrid.ScrollBarThickness = 4
-SupportedGrid.ScrollBarImageColor3 = Color3.fromRGB(70, 70, 70)
-SupportedGrid.AutomaticCanvasSize = Enum.AutomaticSize.Y
-SupportedGrid.CanvasSize = UDim2.new(0, 0, 0, 0)
-SupportedGrid.ZIndex = 41
-SupportedGrid.Parent = SupportedGamesPanel
-
-local SupportedGridLayout = Instance.new("UIGridLayout")
-SupportedGridLayout.CellSize = UDim2.new(0, 170, 0, 148)
-SupportedGridLayout.CellPadding = UDim2.new(0, 14, 0, 14)
-SupportedGridLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-SupportedGridLayout.VerticalAlignment = Enum.VerticalAlignment.Top
-SupportedGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-SupportedGridLayout.Parent = SupportedGrid
-
-local SupportedGridPadding = Instance.new("UIPadding")
-SupportedGridPadding.PaddingLeft = UDim.new(0, 4)
-SupportedGridPadding.PaddingRight = UDim.new(0, 4)
-SupportedGridPadding.PaddingTop = UDim.new(0, 4)
-SupportedGridPadding.PaddingBottom = UDim.new(0, 14)
-SupportedGridPadding.Parent = SupportedGrid
-
-local function makeSupportedGameCard(gameData, order)
-    local card = Instance.new("Frame")
-    card.Name = "SupportedGame_" .. tostring(order)
-    card.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-    card.BorderSizePixel = 0
-    card.ClipsDescendants = true
-    card.LayoutOrder = order
-    card.ZIndex = 42
-    card.Parent = SupportedGrid
-
-    local cardCorner = Instance.new("UICorner")
-    cardCorner.CornerRadius = UDim.new(0, 10)
-    cardCorner.Parent = card
-
-    local cardStroke = Instance.new("UIStroke")
-    cardStroke.Color = Color3.fromRGB(45, 45, 45)
-    cardStroke.Thickness = 1
-    cardStroke.Parent = card
-
-    local thumbnail = Instance.new("ImageLabel")
-    thumbnail.Size = UDim2.new(1, 0, 1, -34)
-    thumbnail.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-    thumbnail.BorderSizePixel = 0
-    thumbnail.ScaleType = Enum.ScaleType.Crop
-    thumbnail.ZIndex = 43
-    thumbnail.Parent = card
-    thumbnail.Image = loadRemoteAsset("supported_game_" .. tostring(order) .. ".png", gameData.Image, "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/images/game1.png")
-
-    local titleBar = Instance.new("Frame")
-    titleBar.Size = UDim2.new(1, 0, 0, 34)
-    titleBar.Position = UDim2.new(0, 0, 1, -34)
-    titleBar.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
-    titleBar.BorderSizePixel = 0
-    titleBar.ZIndex = 44
-    titleBar.Parent = card
-
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -12, 1, 0)
-    title.Position = UDim2.new(0, 6, 0, 0)
-    title.BackgroundTransparency = 1
-    title.Font = Enum.Font.GothamBold
-    title.Text = gameData.Name
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 11
-    title.TextTruncate = Enum.TextTruncate.AtEnd
-    title.TextXAlignment = Enum.TextXAlignment.Center
-    title.ZIndex = 45
-    title.Parent = titleBar
-end
-
-for index, gameData in ipairs(SupportedGamesList) do
-    makeSupportedGameCard(gameData, index)
-end
-
-local isSupportedGamesOpen = false
-local function closeSupportedGames()
-    if not isSupportedGamesOpen then return end
-    isSupportedGamesOpen = false
-    SupportedGamesPanel.Visible = false
-    setMenuControlsEnabled(true)
-end
-
-SupportedBackButton.MouseEnter:Connect(function()
-    TweenService:Create(SupportedBackButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(38, 38, 38)}):Play()
-end)
-SupportedBackButton.MouseLeave:Connect(function()
-    TweenService:Create(SupportedBackButton, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(28, 28, 28)}):Play()
-end)
-SupportedBackButton.MouseButton1Click:Connect(closeSupportedGames)
-
-SupportedGamesButton.MouseButton1Click:Connect(function()
-    if isSupportedGamesOpen then return end
-    isSupportedGamesOpen = true
-    setMenuControlsEnabled(false)
-    SupportedGamesPanel.Visible = true
 end)
 
 -- ===========================================
