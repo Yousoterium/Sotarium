@@ -355,6 +355,8 @@ local function loadRemoteAsset(fileName, primaryUrl, fallbackUrl)
     return fallbackUrl or "rbxassetid://10709752035"
 end
 
+local SotariumIconAsset = loadRemoteAsset("sotarium_icon.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/assets/icon.png", "https://i.imgur.com/sZZvbs8.png")
+local SotariumTransitionAsset = loadRemoteAsset("sotarium_transition.mp4", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/assets/transition.mp4")
 local LucideClockAsset = loadRemoteAsset("lucide_clock.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/clock.png", "rbxassetid://10709790397")
 local LucideTimerOffAsset = loadRemoteAsset("lucide_timer_off.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/timer-off.png", "rbxassetid://10747366304")
 
@@ -1187,10 +1189,176 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- ===========================================
+-- Animated Liquid Wave Loading Transition Screen
+-- ===========================================
+local LoadingOverlay = Instance.new("Frame")
+LoadingOverlay.Name = "LoadingOverlay"
+LoadingOverlay.Size = UDim2.new(1, 0, 1, 0)
+LoadingOverlay.Position = UDim2.new(0, 0, 0, 0)
+LoadingOverlay.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+LoadingOverlay.BorderSizePixel = 0
+LoadingOverlay.ZIndex = 90
+LoadingOverlay.Parent = MainFrame
+
+local LoadingCorner = Instance.new("UICorner")
+LoadingCorner.CornerRadius = UDim.new(0, 14)
+LoadingCorner.Parent = LoadingOverlay
+
+-- Wave / Liquid Background Layer (Animated liquid gradient wave)
+local WaveContainer = Instance.new("Frame")
+WaveContainer.Name = "WaveContainer"
+WaveContainer.Size = UDim2.new(1.6, 0, 1.6, 0)
+WaveContainer.Position = UDim2.new(-0.3, 0, 0.4, 0)
+WaveContainer.BackgroundTransparency = 1
+WaveContainer.ZIndex = 91
+WaveContainer.Parent = LoadingOverlay
+
+local WaveGrad = Instance.new("UIGradient")
+WaveGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 144, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 194, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
+})
+WaveGrad.Transparency = NumberSequence.new({
+    NumberSequenceKeypoint.new(0, 0.3),
+    NumberSequenceKeypoint.new(0.6, 0.7),
+    NumberSequenceKeypoint.new(1, 1)
+})
+WaveGrad.Rotation = -35
+WaveGrad.Parent = WaveContainer
+
+local WaveGraphic = Instance.new("Frame")
+WaveGraphic.Size = UDim2.new(1, 0, 1, 0)
+WaveGraphic.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+WaveGraphic.BorderSizePixel = 0
+WaveGraphic.ZIndex = 91
+WaveGraphic.Parent = WaveContainer
+
+local WaveGraphicCorner = Instance.new("UICorner")
+WaveGraphicCorner.CornerRadius = UDim.new(0.4, 0)
+WaveGraphicCorner.Parent = WaveGraphic
+
+-- Mascot Icon (Starts with 0 opacity / transparent and fades in)
+local LoadingIcon = Instance.new("ImageLabel")
+LoadingIcon.Name = "LoadingIcon"
+LoadingIcon.Size = UDim2.new(0, 65, 0, 65)
+LoadingIcon.Position = UDim2.new(0.5, -32.5, 0.42, -50)
+LoadingIcon.BackgroundTransparency = 1
+LoadingIcon.Image = SotariumIconAsset
+LoadingIcon.ImageTransparency = 1
+LoadingIcon.ScaleType = Enum.ScaleType.Fit
+LoadingIcon.ZIndex = 95
+LoadingIcon.Parent = LoadingOverlay
+
+-- Loading Title
+local LoadingTitle = Instance.new("TextLabel")
+LoadingTitle.Name = "LoadingTitle"
+LoadingTitle.Size = UDim2.new(1, 0, 0, 28)
+LoadingTitle.Position = UDim2.new(0, 0, 0.42, 28)
+LoadingTitle.BackgroundTransparency = 1
+LoadingTitle.Font = Enum.Font.GothamBold
+LoadingTitle.Text = "Sotarium"
+LoadingTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+LoadingTitle.TextSize = 22
+LoadingTitle.TextTransparency = 1
+LoadingTitle.ZIndex = 95
+LoadingTitle.Parent = LoadingOverlay
+
+-- Subtitle / Status
+local LoadingSubtitle = Instance.new("TextLabel")
+LoadingSubtitle.Name = "LoadingSubtitle"
+LoadingSubtitle.Size = UDim2.new(1, 0, 0, 18)
+LoadingSubtitle.Position = UDim2.new(0, 0, 0.42, 56)
+LoadingSubtitle.BackgroundTransparency = 1
+LoadingSubtitle.Font = Enum.Font.Gotham
+LoadingSubtitle.Text = "Initializing Sotarium..."
+LoadingSubtitle.TextColor3 = Color3.fromRGB(150, 150, 160)
+LoadingSubtitle.TextSize = 12
+LoadingSubtitle.TextTransparency = 1
+LoadingSubtitle.ZIndex = 95
+LoadingSubtitle.Parent = LoadingOverlay
+
+-- Subtle Progress Line
+local ProgressBarTrack = Instance.new("Frame")
+ProgressBarTrack.Name = "ProgressBarTrack"
+ProgressBarTrack.Size = UDim2.new(0, 160, 0, 3)
+ProgressBarTrack.Position = UDim2.new(0.5, -80, 0.42, 82)
+ProgressBarTrack.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+ProgressBarTrack.BorderSizePixel = 0
+ProgressBarTrack.BackgroundTransparency = 1
+ProgressBarTrack.ZIndex = 95
+ProgressBarTrack.Parent = LoadingOverlay
+
+local TrackCorner = Instance.new("UICorner")
+TrackCorner.CornerRadius = UDim.new(1, 0)
+TrackCorner.Parent = ProgressBarTrack
+
+local ProgressBarFill = Instance.new("Frame")
+ProgressBarFill.Name = "ProgressBarFill"
+ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+ProgressBarFill.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
+ProgressBarFill.BorderSizePixel = 0
+ProgressBarFill.BackgroundTransparency = 1
+ProgressBarFill.ZIndex = 96
+ProgressBarFill.Parent = ProgressBarTrack
+
+local FillCorner = Instance.new("UICorner")
+FillCorner.CornerRadius = UDim.new(1, 0)
+FillCorner.Parent = ProgressBarFill
+
+-- Play Startup Liquid Wave & Icon Fade-In Animation
+task.spawn(function()
+    -- 1. Wave rises from bottom
+    TweenService:Create(WaveContainer, TweenInfo.new(1.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(-0.2, 0, -0.2, 0)
+    }):Play()
+
+    -- 2. Icon fades in & scales up with spring bounce
+    TweenService:Create(LoadingIcon, TweenInfo.new(0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        ImageTransparency = 0,
+        Size = UDim2.new(0, 88, 0, 88),
+        Position = UDim2.new(0.5, -44, 0.42, -58)
+    }):Play()
+
+    -- 3. Title & Subtitle fade in
+    TweenService:Create(LoadingTitle, TweenInfo.new(0.6, Enum.EasingStyle.Sine), { TextTransparency = 0 }):Play()
+    TweenService:Create(LoadingSubtitle, TweenInfo.new(0.6, Enum.EasingStyle.Sine), { TextTransparency = 0 }):Play()
+    TweenService:Create(ProgressBarTrack, TweenInfo.new(0.5), { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(ProgressBarFill, TweenInfo.new(0.5), { BackgroundTransparency = 0 }):Play()
+
+    -- 4. Progress bar fills smoothly
+    local fillTween = TweenService:Create(ProgressBarFill, TweenInfo.new(1.1, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
+        Size = UDim2.new(1, 0, 1, 0)
+    })
+    fillTween:Play()
+    fillTween.Completed:Wait()
+    task.wait(0.25)
+
+    -- 5. Smooth Liquid Wave Transition Out
+    TweenService:Create(WaveContainer, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+        Position = UDim2.new(-0.3, 0, -1.5, 0)
+    }):Play()
+
+    TweenService:Create(LoadingIcon, TweenInfo.new(0.4), { ImageTransparency = 1 }):Play()
+    TweenService:Create(LoadingTitle, TweenInfo.new(0.35), { TextTransparency = 1 }):Play()
+    TweenService:Create(LoadingSubtitle, TweenInfo.new(0.35), { TextTransparency = 1 }):Play()
+    TweenService:Create(ProgressBarTrack, TweenInfo.new(0.35), { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(ProgressBarFill, TweenInfo.new(0.35), { BackgroundTransparency = 1 }):Play()
+
+    local overlayFade = TweenService:Create(LoadingOverlay, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {
+        BackgroundTransparency = 1
+    })
+    overlayFade:Play()
+    overlayFade.Completed:Connect(function()
+        LoadingOverlay:Destroy()
+    end)
+end)
+
+-- ===========================================
 -- Trigger Launched Notification & Saved Key Auto-Check
 -- ===========================================
 task.spawn(function()
-    task.wait(0.1)
+    task.wait(1.5)
     showNotification("Launched", "rocket", 2.5)
 
     local savedKey = getSavedKey()
