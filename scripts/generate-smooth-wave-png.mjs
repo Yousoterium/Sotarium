@@ -1,39 +1,37 @@
 import fs from "fs";
 import zlib from "zlib";
 
-function createWavePNG(width = 1440, height = 900) {
+function createWavePNG(width = 1440, height = 1000) {
   const w = width;
   const h = height;
 
   const rawData = Buffer.alloc(h * (1 + w * 4));
 
-  const waveHeight = 65; // Wave peak to trough amplitude
-  const baseline = 75; // Top margin where wave starts
+  const waveAmplitude = 18; // Height of wave crests
+  const baseline = 24; // Top offset
 
   let pos = 0;
   for (let y = 0; y < h; y++) {
     rawData[pos++] = 0; // Filter type: None
 
     for (let x = 0; x < w; x++) {
-      // Smooth continuous double sine wave (repeating seamlessly at width)
-      const rad = (x / w) * Math.PI * 4; // 2 full wave cycles
-      const waveY = baseline + Math.sin(rad) * (waveHeight / 2);
+      // 5 complete smooth wave cycles across the width
+      const rad = (x / w) * Math.PI * 10;
+      const waveY = baseline + Math.sin(rad) * waveAmplitude;
 
       if (y >= waveY) {
-        // Pure uniform solid vibrant cyan color (no seam, no dark block)
+        // Pure uniform vibrant cyan liquid
         rawData[pos++] = 0;   // R
         rawData[pos++] = 195; // G
         rawData[pos++] = 255; // B
         rawData[pos++] = 255; // A
       } else if (y >= waveY - 1.5) {
-        // Smooth antialiased edge
         const alphaFraction = 1 - (waveY - y) / 1.5;
         rawData[pos++] = 0;
         rawData[pos++] = 195;
         rawData[pos++] = 255;
         rawData[pos++] = Math.round(alphaFraction * 255);
       } else {
-        // Transparent above wave
         rawData[pos++] = 0;
         rawData[pos++] = 0;
         rawData[pos++] = 0;
@@ -52,11 +50,11 @@ function createWavePNG(width = 1440, height = 900) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(w, 0);
   ihdr.writeUInt32BE(h, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // color type: RGBA
-  ihdr[10] = 0; // compression method
-  ihdr[11] = 0; // filter method
-  ihdr[12] = 0; // interlace method
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  ihdr[10] = 0;
+  ihdr[11] = 0;
+  ihdr[12] = 0;
 
   const ihdrChunk = makeChunk("IHDR", ihdr);
   const idatChunk = makeChunk("IDAT", compressed);
@@ -79,7 +77,6 @@ function makeChunk(type, data) {
   return chunk;
 }
 
-// Standard CRC32 table & function
 const crcTable = new Int32Array(256);
 for (let n = 0; n < 256; n++) {
   let c = n;
@@ -98,9 +95,9 @@ function crc32(buf) {
   return crc ^ -1;
 }
 
-const pngData = createWavePNG(1440, 900);
+const pngData = createWavePNG(1440, 1000);
 if (!fs.existsSync("assets")) fs.mkdirSync("assets");
 if (!fs.existsSync("public")) fs.mkdirSync("public");
 fs.writeFileSync("assets/wave.png", pngData);
 fs.writeFileSync("public/wave.png", pngData);
-console.log("Full-height solid smooth wave PNG created (" + pngData.length + " bytes)");
+console.log("Multi-wave PNG created (" + pngData.length + " bytes)");

@@ -1213,16 +1213,16 @@ local LoadingCorner = Instance.new("UICorner")
 LoadingCorner.CornerRadius = UDim.new(0, 16)
 LoadingCorner.Parent = LoadingOverlay
 
--- Wave Container (Rises slowly from bottom to top)
+-- Wave Container (Starts below frame and rises slowly to fully engulf the screen)
 local WaveContainer = Instance.new("Frame")
 WaveContainer.Name = "WaveContainer"
-WaveContainer.Size = UDim2.new(2.5, 0, 1.9, 0)
-WaveContainer.Position = UDim2.new(-0.75, 0, 0.95, 0)
+WaveContainer.Size = UDim2.new(1.8, 0, 2.4, 0)
+WaveContainer.Position = UDim2.new(-0.4, 0, 1.05, 0)
 WaveContainer.BackgroundTransparency = 1
 WaveContainer.ZIndex = 91
 WaveContainer.Parent = LoadingOverlay
 
--- Smooth Sine Wave Image Layer (Single seamless full-height liquid wave)
+-- Smooth Sine Wave Image Layer (Single seamless multi-wave liquid texture)
 local WaveImage = Instance.new("ImageLabel")
 WaveImage.Name = "WaveImage"
 WaveImage.Size = UDim2.new(1, 0, 1, 0)
@@ -1262,37 +1262,37 @@ LoadingTitle.Parent = LoadingOverlay
 -- Play Slow Bottom-to-Up Liquid Wave Transition with Horizontal Rolling Movement
 task.spawn(function()
     -- Smooth horizontal rolling wave animation
-    local rollLeft = TweenService:Create(WaveImage, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+    local rollLeft = TweenService:Create(WaveImage, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
         Position = UDim2.new(-0.15, 0, 0, 0)
     })
     rollLeft:Play()
 
-    -- 1. Wave fills slowly from bottom to top (over 2.6 seconds)
+    -- 1. Wave fills slowly from bottom to top (rising completely past the top over 2.6s)
     local waveFill = TweenService:Create(WaveContainer, TweenInfo.new(2.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-        Position = UDim2.new(-0.75, 0, -0.65, 0)
+        Position = UDim2.new(-0.4, 0, -1.2, 0)
     })
     waveFill:Play()
 
     -- 2. Icon & Text slowly fade in (taking opacity)
-    TweenService:Create(LoadingIcon, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+    TweenService:Create(LoadingIcon, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
         ImageTransparency = 0,
         Size = UDim2.new(0, 96, 0, 96),
         Position = UDim2.new(0.5, -48, 0.5, -68)
     }):Play()
 
-    TweenService:Create(LoadingTitle, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+    TweenService:Create(LoadingTitle, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
         TextTransparency = 0
     }):Play()
 
     waveFill.Completed:Wait()
-    task.wait(0.35)
+    task.wait(0.2)
 
     -- 3. Smooth Outro Fade into Main GUI
-    TweenService:Create(LoadingIcon, TweenInfo.new(0.5, Enum.EasingStyle.Quad), { ImageTransparency = 1 }):Play()
-    TweenService:Create(LoadingTitle, TweenInfo.new(0.4, Enum.EasingStyle.Quad), { TextTransparency = 1 }):Play()
-    TweenService:Create(WaveContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad), { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(LoadingIcon, TweenInfo.new(0.4, Enum.EasingStyle.Quad), { ImageTransparency = 1 }):Play()
+    TweenService:Create(LoadingTitle, TweenInfo.new(0.35, Enum.EasingStyle.Quad), { TextTransparency = 1 }):Play()
+    TweenService:Create(WaveContainer, TweenInfo.new(0.4, Enum.EasingStyle.Quad), { BackgroundTransparency = 1 }):Play()
 
-    local overlayFade = TweenService:Create(LoadingOverlay, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {
+    local overlayFade = TweenService:Create(LoadingOverlay, TweenInfo.new(0.5, Enum.EasingStyle.Sine), {
         GroupTransparency = 1
     })
     overlayFade:Play()
