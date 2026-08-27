@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import { EarnpasteModal } from "./components/EarnpasteModal";
-import { ProductsPage } from "./components/ProductsPage";
 import { ScriptsPage } from "./components/ScriptsPage";
 import { InfosPage } from "./components/InfosPage";
 import { ProviderPage } from "./components/ProviderPage";
@@ -8,12 +6,11 @@ import { KeyProviderPage } from "./components/KeyProviderPage";
 
 function App() {
   const [currentRoute, setCurrentRoute] = useState<{
-    page: "home" | "products" | "scripts" | "infos" | "provider" | "key";
+    page: "home" | "scripts" | "infos" | "provider" | "key";
     providerId?: string;
   }>(() => {
     const p = window.location.pathname;
     if (p === "/scripts") return { page: "scripts" };
-    if (p === "/products") return { page: "products" };
     if (p === "/infos") return { page: "infos" };
     if (p === "/provider") return { page: "provider" };
     if (p.startsWith("/key/")) {
@@ -24,7 +21,7 @@ function App() {
   });
 
   const navigateTo = (
-    newPage: "home" | "products" | "scripts" | "infos" | "provider" | "key",
+    newPage: "home" | "scripts" | "infos" | "provider" | "key",
     providerId?: string
   ) => {
     setCurrentRoute({ page: newPage, providerId });
@@ -39,12 +36,10 @@ function App() {
       title =
         newPage === "scripts"
           ? "Scripts Studio"
-          : newPage === "products"
-          ? "Products"
           : newPage === "infos"
           ? "Infos · Sotarium"
           : newPage === "provider"
-          ? "Choose Provider · Sotarium"
+          ? "Select Provider · Sotarium"
           : "Sotarium";
     }
 
@@ -56,7 +51,6 @@ function App() {
     const handlePopState = () => {
       const p = window.location.pathname;
       if (p === "/scripts") setCurrentRoute({ page: "scripts" });
-      else if (p === "/products") setCurrentRoute({ page: "products" });
       else if (p === "/infos") setCurrentRoute({ page: "infos" });
       else if (p === "/provider") setCurrentRoute({ page: "provider" });
       else if (p.startsWith("/key/")) {
@@ -71,7 +65,6 @@ function App() {
     const search = window.location.search;
     const params = new URLSearchParams(search);
 
-    // Support legacy lootlabs callback redirect
     if (path === "/lootlabs" && (params.has("verify") || params.has("verify1") || params.has("verify2"))) {
       navigateTo("key", "lootlabs");
     }
@@ -105,13 +98,9 @@ function App() {
     return <ScriptsPage onBack={() => navigateTo("home")} />;
   }
 
-  if (currentRoute.page === "products") {
-    return <ProductsPage onBack={() => navigateTo("home")} />;
-  }
-
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased">
-      {/* Clean Subtle Dot Grid Background */}
+      {/* Dot Grid Background */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -135,7 +124,7 @@ function App() {
           </h1>
         </div>
 
-        {/* Action Buttons: Get Key navigates to /provider */}
+        {/* Action Buttons: Get Key + Join Discord */}
         <div className="flex items-center gap-3 w-full max-w-xs">
           {/* Get Key Button */}
           <a
@@ -149,16 +138,14 @@ function App() {
             Get Key
           </a>
 
-          {/* Buy key Button */}
+          {/* Join Discord Button */}
           <a
-            href="/products"
-            onClick={(e) => {
-              e.preventDefault();
-              navigateTo("products");
-            }}
+            href="https://discord.gg/3aghbJBybQ"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex-1 py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline"
           >
-            Buy key
+            Join Discord
           </a>
         </div>
       </main>
