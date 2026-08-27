@@ -126,18 +126,21 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const isStep1Done = completedSteps.includes(1);
+  const isStep2Done = completedSteps.includes(2);
+
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Soft Gray Dot Grid Background (Reverted, No Planet) */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
+      {/* Bright Pure White Dot Grid Background */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-[0.28]"
+        className="fixed inset-0 pointer-events-none opacity-90"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.75) 1.25px, transparent 1.25px)",
           backgroundSize: "28px 28px",
         }}
       />
 
-      {/* Fully See-Through Transparent Glass Container (Shows background dots directly) */}
+      {/* Transparent Glass Container */}
       <div
         className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
         style={{
@@ -147,6 +150,43 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
         }}
       >
+        {/* Progress Step Bar on Top (Exact image layout) */}
+        {!generatedKey && (
+          <div className="w-full flex items-center justify-between px-6 mb-6 relative">
+            {/* Connecting Line Track */}
+            <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-[1.5px] bg-white/[0.12] z-0">
+              <div
+                className="h-full bg-white transition-all duration-500"
+                style={{ width: isStep1Done ? "100%" : "0%" }}
+              />
+            </div>
+
+            {/* Step 1 Circle */}
+            <div
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 transition-all duration-300 ${
+                !isStep1Done
+                  ? "bg-white text-black shadow-md scale-105"
+                  : "bg-white text-black"
+              }`}
+            >
+              1
+            </div>
+
+            {/* Step 2 Circle */}
+            <div
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 transition-all duration-300 ${
+                isStep1Done && !isStep2Done
+                  ? "bg-white text-black shadow-md scale-105"
+                  : isStep2Done
+                  ? "bg-white text-black"
+                  : "bg-[#18181b] text-neutral-500 border border-white/[0.08]"
+              }`}
+            >
+              2
+            </div>
+          </div>
+        )}
+
         {/* Floating Work.ink Icon */}
         <div className="mb-3.5 flex items-center justify-center">
           <img
@@ -168,7 +208,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </div>
         )}
 
-        {/* Steps Section with See-Through Buttons and Crisp Gray Outline */}
+        {/* Single Step Section (Only 1 Step shown at a time) */}
         <div className="w-full flex flex-col gap-2.5">
           {generatedKey ? (
             /* Key Ready Box */
@@ -218,61 +258,40 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             >
               <span className="text-xs font-medium text-neutral-300">Generating key...</span>
             </div>
+          ) : !isStep1Done ? (
+            /* Only Checkpoint 1 Visible Initially */
+            <button
+              type="button"
+              disabled={stepLoading !== null}
+              onClick={() => handleStartStep(1)}
+              className="w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
+              style={{
+                background: "rgba(0, 0, 0, 0.2)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              <span className="font-semibold">Checkpoint 1</span>
+              <span className="text-xs text-neutral-300 font-medium">
+                {stepLoading === 1 ? "Loading..." : "Start"}
+              </span>
+            </button>
           ) : (
-            /* Steps Rectangular Buttons */
-            <>
-              {/* Checkpoint 1 */}
-              <button
-                type="button"
-                disabled={completedSteps.includes(1) || stepLoading !== null}
-                onClick={() => handleStartStep(1)}
-                className={`w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 ${
-                  completedSteps.includes(1)
-                    ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 cursor-default"
-                    : currentStep === 1
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
-                    : "text-neutral-500 cursor-not-allowed"
-                }`}
-                style={{
-                  background: completedSteps.includes(1) ? undefined : "rgba(0, 0, 0, 0.2)",
-                  border: completedSteps.includes(1) ? undefined : "1px solid rgba(255, 255, 255, 0.2)",
-                }}
-              >
-                <span className="font-semibold">Checkpoint 1</span>
-                <span className="text-xs text-neutral-300 font-medium">
-                  {completedSteps.includes(1) ? "Done" : stepLoading === 1 ? "Loading..." : "Start"}
-                </span>
-              </button>
-
-              {/* Checkpoint 2 */}
-              <button
-                type="button"
-                disabled={!completedSteps.includes(1) || completedSteps.includes(2) || stepLoading !== null}
-                onClick={() => handleStartStep(2)}
-                className={`w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 ${
-                  completedSteps.includes(2)
-                    ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 cursor-default"
-                    : completedSteps.includes(1)
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
-                    : "text-neutral-500 cursor-not-allowed"
-                }`}
-                style={{
-                  background: completedSteps.includes(2) ? undefined : "rgba(0, 0, 0, 0.2)",
-                  border: completedSteps.includes(2) ? undefined : "1px solid rgba(255, 255, 255, 0.2)",
-                }}
-              >
-                <span className="font-semibold">Checkpoint 2</span>
-                <span className="text-xs text-neutral-300 font-medium">
-                  {completedSteps.includes(2)
-                    ? "Done"
-                    : stepLoading === 2
-                    ? "Loading..."
-                    : completedSteps.includes(1)
-                    ? "Start"
-                    : "Locked"}
-                </span>
-              </button>
-            </>
+            /* Checkpoint 2 Appears and Takes Placement When Step 1 Done */
+            <button
+              type="button"
+              disabled={stepLoading !== null}
+              onClick={() => handleStartStep(2)}
+              className="w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35] animate-in fade-in zoom-in-95 duration-200"
+              style={{
+                background: "rgba(0, 0, 0, 0.2)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              <span className="font-semibold">Checkpoint 2</span>
+              <span className="text-xs text-neutral-300 font-medium">
+                {stepLoading === 2 ? "Loading..." : "Start"}
+              </span>
+            </button>
           )}
         </div>
 
