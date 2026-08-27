@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { AVAILABLE_PROVIDERS, ProviderItem, WORKINK_SQUARE_ICON } from "./ProviderPage";
-import { ParticleGlobe } from "./ParticleGlobe";
 import { saveKeyToDatabase } from "../lib/supabase";
 
 const WORKINK_STEP_1 = "https://work.ink/2dbK/sotarium-step-1";
@@ -128,29 +127,24 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#08090a] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* 3D Spinning Particle Globe in Background */}
-      <ParticleGlobe dotColor="#71717a" particleCount={5000} rotationSpeed={0.0018} />
-
-      {/* Subtle Background Radial Grid (Muted Gray Dots) */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
+      {/* Bright Pure White Dot Grid Background */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-20"
+        className="fixed inset-0 pointer-events-none opacity-90"
         style={{
-          backgroundImage: "radial-gradient(rgba(160, 165, 185, 0.4) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.75) 1.25px, transparent 1.25px)",
           backgroundSize: "28px 28px",
         }}
       />
 
-      {/* Transparent Glass Container */}
+      {/* Fully See-Through Transparent Glass Container (Shows background dots directly) */}
       <div
         className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
         style={{
-          background: "rgba(10, 10, 14, 0.35)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          background: "rgba(0, 0, 0, 0.25)",
+          border: "1px solid rgba(255, 255, 255, 0.22)",
           borderRadius: "20px",
-          backdropFilter: "blur(14px) saturate(1.2)",
-          WebkitBackdropFilter: "blur(14px) saturate(1.2)",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
         }}
       >
         {/* Floating Work.ink Icon */}
@@ -174,16 +168,16 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </div>
         )}
 
-        {/* Steps Section in Glass Rectangles */}
+        {/* Steps Section with See-Through Buttons and Crisp Gray Outline */}
         <div className="w-full flex flex-col gap-2.5">
           {generatedKey ? (
             /* Key Ready Box */
             <div
               className="w-full flex flex-col items-center gap-2.5 p-4 rounded-[14px]"
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
-                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+                background: "rgba(0, 0, 0, 0.2)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08)",
               }}
             >
               <span className="text-xs font-bold text-emerald-400">
@@ -193,8 +187,8 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
               <div
                 className="w-full flex items-center justify-between rounded-xl px-3 py-2"
                 style={{
-                  background: "rgba(0, 0, 0, 0.45)",
-                  border: "1px solid rgba(255, 255, 255, 0.12)",
+                  background: "rgba(0, 0, 0, 0.5)",
+                  border: "1px solid rgba(255, 255, 255, 0.18)",
                 }}
               >
                 <code className="text-sm font-mono font-bold text-amber-300 truncate mr-2 select-all">
@@ -203,7 +197,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                 <button
                   type="button"
                   onClick={handleCopyKey}
-                  className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.16] text-xs font-bold text-white transition-all cursor-pointer shrink-0"
+                  className="px-3 py-1 rounded-lg bg-white/[0.1] hover:bg-white/[0.2] text-xs font-bold text-white transition-all cursor-pointer shrink-0"
                 >
                   {copied ? "Copied!" : "Copy"}
                 </button>
@@ -218,8 +212,8 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             <div
               className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-[14px]"
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
+                background: "rgba(0, 0, 0, 0.2)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
               }}
             >
               <span className="text-xs font-medium text-neutral-300">Generating key...</span>
@@ -236,12 +230,12 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                   completedSteps.includes(1)
                     ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 cursor-default"
                     : currentStep === 1
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.06] hover:border-white/[0.25]"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
                     : "text-neutral-500 cursor-not-allowed"
                 }`}
                 style={{
-                  background: completedSteps.includes(1) ? undefined : "rgba(255, 255, 255, 0.035)",
-                  border: completedSteps.includes(1) ? undefined : "1px solid rgba(255, 255, 255, 0.12)",
+                  background: completedSteps.includes(1) ? undefined : "rgba(0, 0, 0, 0.2)",
+                  border: completedSteps.includes(1) ? undefined : "1px solid rgba(255, 255, 255, 0.2)",
                 }}
               >
                 <span className="font-semibold">Checkpoint 1</span>
@@ -259,12 +253,12 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                   completedSteps.includes(2)
                     ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 cursor-default"
                     : completedSteps.includes(1)
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.06] hover:border-white/[0.25]"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
                     : "text-neutral-500 cursor-not-allowed"
                 }`}
                 style={{
-                  background: completedSteps.includes(2) ? undefined : "rgba(255, 255, 255, 0.035)",
-                  border: completedSteps.includes(2) ? undefined : "1px solid rgba(255, 255, 255, 0.12)",
+                  background: completedSteps.includes(2) ? undefined : "rgba(0, 0, 0, 0.2)",
+                  border: completedSteps.includes(2) ? undefined : "1px solid rgba(255, 255, 255, 0.2)",
                 }}
               >
                 <span className="font-semibold">Checkpoint 2</span>
@@ -286,10 +280,10 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         <button
           type="button"
           onClick={onGoHome}
-          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.06] hover:border-white/[0.25]"
+          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
           style={{
-            background: "rgba(255, 255, 255, 0.035)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
+            background: "rgba(0, 0, 0, 0.2)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
           }}
         >
           Go home

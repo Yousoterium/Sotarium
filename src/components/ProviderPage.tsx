@@ -1,5 +1,4 @@
 import React from "react";
-import { ParticleGlobe } from "./ParticleGlobe";
 
 export const WORKINK_SQUARE_ICON = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%2300B27A"/><path fill-rule="evenodd" clip-rule="evenodd" d="M26 34h9.8l5.2 18.2 5.3-18.2h7.4l5.3 18.2L64.2 34H74l-9.8 32H54.4L49 48.5 43.6 66H33.8L26 34z" fill="%23FFFFFF"/></svg>`;
 
@@ -24,29 +23,24 @@ interface ProviderPageProps {
 
 export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, onBack }) => {
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#08090a] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* 3D Spinning Particle Globe in Background */}
-      <ParticleGlobe dotColor="#71717a" particleCount={5000} rotationSpeed={0.0018} />
-
-      {/* Subtle Background Radial Grid (Muted Gray Dots) */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
+      {/* Bright Pure White Dot Grid Background */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-20"
+        className="fixed inset-0 pointer-events-none opacity-90"
         style={{
-          backgroundImage: "radial-gradient(rgba(160, 165, 185, 0.4) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.75) 1.25px, transparent 1.25px)",
           backgroundSize: "28px 28px",
         }}
       />
 
-      {/* Transparent Glass Container */}
+      {/* Fully See-Through Transparent Glass Container (Shows background dots directly) */}
       <div
         className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
         style={{
-          background: "rgba(10, 10, 14, 0.35)",
-          border: "1px solid rgba(255, 255, 255, 0.14)",
+          background: "rgba(0, 0, 0, 0.25)",
+          border: "1px solid rgba(255, 255, 255, 0.22)",
           borderRadius: "20px",
-          backdropFilter: "blur(14px) saturate(1.2)",
-          WebkitBackdropFilter: "blur(14px) saturate(1.2)",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
         }}
       >
         {/* Title */}
@@ -64,10 +58,10 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
                 e.preventDefault();
                 onSelectProvider(provider.id);
               }}
-              className="w-full py-3.5 px-4 rounded-[14px] transition-all duration-150 flex items-center justify-between text-left cursor-pointer active:scale-[0.99] no-underline text-white group hover:bg-white/[0.06] hover:border-white/[0.25]"
+              className="w-full py-3.5 px-4 rounded-[14px] transition-all duration-150 flex items-center justify-between text-left cursor-pointer active:scale-[0.99] no-underline text-white group hover:bg-white/[0.08] hover:border-white/[0.35]"
               style={{
-                background: "rgba(255, 255, 255, 0.035)",
-                border: "1px solid rgba(255, 255, 255, 0.12)",
+                background: "rgba(0, 0, 0, 0.2)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
               }}
             >
               <div className="flex items-center gap-3">
@@ -95,10 +89,10 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
         <button
           type="button"
           onClick={onBack}
-          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.06] hover:border-white/[0.25]"
+          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
           style={{
-            background: "rgba(255, 255, 255, 0.035)",
-            border: "1px solid rgba(255, 255, 255, 0.12)",
+            background: "rgba(0, 0, 0, 0.2)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
           }}
         >
           Go home
