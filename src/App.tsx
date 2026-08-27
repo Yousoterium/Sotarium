@@ -99,12 +99,12 @@ function App() {
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased">
-      {/* Bright Pure White Dot Grid Background */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#08090a] text-white flex flex-col items-center justify-center font-sans select-none antialiased">
+      {/* Soft Muted Gray Dot Grid Background (Non-flashy) */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-90"
+        className="fixed inset-0 pointer-events-none opacity-25"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.75) 1.25px, transparent 1.25px)",
+          backgroundImage: "radial-gradient(rgba(160, 165, 185, 0.5) 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }}
       />
