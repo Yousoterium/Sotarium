@@ -7,20 +7,19 @@ function createWavePNG(width = 1440, height = 1000) {
 
   const rawData = Buffer.alloc(h * (1 + w * 4));
 
-  const waveAmplitude = 18; // Height of wave crests
-  const baseline = 24; // Top offset
+  const waveAmplitude = 14; // Compact crisp ripple height
+  const baseline = 20;
 
   let pos = 0;
   for (let y = 0; y < h; y++) {
-    rawData[pos++] = 0; // Filter type: None
+    rawData[pos++] = 0;
 
     for (let x = 0; x < w; x++) {
-      // 5 complete smooth wave cycles across the width
-      const rad = (x / w) * Math.PI * 10;
+      // 12 complete distinct ripples across the width
+      const rad = (x / w) * Math.PI * 24;
       const waveY = baseline + Math.sin(rad) * waveAmplitude;
 
       if (y >= waveY) {
-        // Pure uniform vibrant cyan liquid
         rawData[pos++] = 0;   // R
         rawData[pos++] = 195; // G
         rawData[pos++] = 255; // B
@@ -40,13 +39,9 @@ function createWavePNG(width = 1440, height = 1000) {
     }
   }
 
-  // Compress IDAT payload with zlib
   const compressed = zlib.deflateSync(rawData);
-
-  // PNG Signature
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
-  // IHDR chunk
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(w, 0);
   ihdr.writeUInt32BE(h, 4);
@@ -60,8 +55,7 @@ function createWavePNG(width = 1440, height = 1000) {
   const idatChunk = makeChunk("IDAT", compressed);
   const iendChunk = makeChunk("IEND", Buffer.alloc(0));
 
-  const png = Buffer.concat([signature, ihdrChunk, idatChunk, iendChunk]);
-  return png;
+  return Buffer.concat([signature, ihdrChunk, idatChunk, iendChunk]);
 }
 
 function makeChunk(type, data) {
@@ -100,4 +94,4 @@ if (!fs.existsSync("assets")) fs.mkdirSync("assets");
 if (!fs.existsSync("public")) fs.mkdirSync("public");
 fs.writeFileSync("assets/wave.png", pngData);
 fs.writeFileSync("public/wave.png", pngData);
-console.log("Multi-wave PNG created (" + pngData.length + " bytes)");
+console.log("High-frequency multi-wave PNG created (" + pngData.length + " bytes)");

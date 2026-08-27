@@ -356,7 +356,7 @@ local function loadRemoteAsset(fileName, primaryUrl, fallbackUrl)
 end
 
 local SotariumIconAsset = loadRemoteAsset("sotarium_icon.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/assets/icon.png", "https://i.imgur.com/sZZvbs8.png")
-local SotariumWaveAsset = loadRemoteAsset("sotarium_wave.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/assets/wave.png", "https://i.imgur.com/8Qp4Vw7.png")
+local SotariumWaveAsset = loadRemoteAsset("sotarium_wave_v4.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/assets/wave.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/public/wave.png")
 local SotariumTransitionAsset = loadRemoteAsset("sotarium_transition.mp4", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/assets/transition.mp4")
 local LucideClockAsset = loadRemoteAsset("lucide_clock.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/clock.png", "rbxassetid://10709790397")
 local LucideTimerOffAsset = loadRemoteAsset("lucide_timer_off.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/timer-off.png", "rbxassetid://10747366304")
@@ -1216,8 +1216,8 @@ LoadingCorner.Parent = LoadingOverlay
 -- Wave Container (Starts below frame and rises slowly to fully engulf the screen)
 local WaveContainer = Instance.new("Frame")
 WaveContainer.Name = "WaveContainer"
-WaveContainer.Size = UDim2.new(1.8, 0, 2.4, 0)
-WaveContainer.Position = UDim2.new(-0.4, 0, 1.05, 0)
+WaveContainer.Size = UDim2.new(1.3, 0, 2.5, 0)
+WaveContainer.Position = UDim2.new(-0.15, 0, 1.05, 0)
 WaveContainer.BackgroundTransparency = 1
 WaveContainer.ZIndex = 91
 WaveContainer.Parent = LoadingOverlay
@@ -1263,13 +1263,13 @@ LoadingTitle.Parent = LoadingOverlay
 task.spawn(function()
     -- Smooth horizontal rolling wave animation
     local rollLeft = TweenService:Create(WaveImage, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-        Position = UDim2.new(-0.15, 0, 0, 0)
+        Position = UDim2.new(-0.08, 0, 0, 0)
     })
     rollLeft:Play()
 
     -- 1. Wave fills slowly from bottom to top (rising completely past the top over 2.6s)
     local waveFill = TweenService:Create(WaveContainer, TweenInfo.new(2.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-        Position = UDim2.new(-0.4, 0, -1.2, 0)
+        Position = UDim2.new(-0.15, 0, -1.35, 0)
     })
     waveFill:Play()
 
