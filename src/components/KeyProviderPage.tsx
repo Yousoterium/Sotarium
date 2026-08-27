@@ -9,15 +9,53 @@ import {
   AlertCircle
 } from "lucide-react";
 import { AVAILABLE_PROVIDERS, ProviderItem } from "./ProviderPage";
-import {
-  createLootlabsUrl,
-  createEarnpasteUrl,
-  generateFinalKeyString,
-  validateTokenSignature,
-  isTokenAlreadyUsed,
-  markTokenAsUsed
-} from "./EarnpasteModal";
 import { saveKeyToDatabase } from "../lib/supabase";
+
+function computeKeySignature(g1: string, g2: string): string {
+  const salt = "SOTARIUM_2026";
+  const full = `${g1}${g2}${salt}`;
+  const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let h1 = 17, h2 = 37, h3 = 79;
+  for (let i = 0; i < full.length; i++) {
+    const code = full.charCodeAt(i);
+    h1 = (h1 * 31 + code) % chars.length;
+    h2 = (h2 * 37 + code * (i + 1)) % chars.length;
+    h3 = (h3 * 41 + code * (i + 3)) % chars.length;
+  }
+  return `${chars[h1]}${chars[h2]}${chars[h3]}`;
+}
+
+function generateFinalKeyString(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const genGroup = () =>
+    Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  const g1 = genGroup();
+  const g2 = genGroup();
+  const g3 = computeKeySignature(g1, g2);
+  return `${g1}-${g2}-${g3}`;
+}
+
+async function createLootlabsUrl(targetUrl: string, step: number): Promise<string | null> {
+  try {
+    const response = await fetch("/api/lootlabs-proxy?action=create_link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: `Sotarium Checkpoint ${step}`,
+        destinationUrl: targetUrl,
+        tierId: 1,
+        numberOfTasks: 1,
+      }),
+    });
+    const data = await response.json();
+    if (data && data.lootUrl && typeof data.lootUrl === "string" && data.lootUrl.startsWith("http")) {
+      return data.lootUrl;
+    }
+  } catch (err) {
+    console.error("Lootlabs API Error:", err);
+  }
+  return null;
+}
 
 interface KeyProviderPageProps {
   providerId: string;

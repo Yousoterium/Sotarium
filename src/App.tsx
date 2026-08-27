@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { EarnpasteModal } from "./components/EarnpasteModal";
 import { ProductsPage } from "./components/ProductsPage";
 import { ScriptsPage } from "./components/ScriptsPage";
@@ -6,18 +6,13 @@ import { InfosPage } from "./components/InfosPage";
 import { ProviderPage } from "./components/ProviderPage";
 import { KeyProviderPage } from "./components/KeyProviderPage";
 
-// Temporary picker configuration: keep all provider definitions intact, but only show Work.ink.
-const VISIBLE_PROVIDER_IDS: ProviderId[] = ["workink"];
-const VISIBLE_PROVIDERS = PROVIDERS.filter((provider) => VISIBLE_PROVIDER_IDS.includes(provider.id));
-
 function App() {
   const [currentRoute, setCurrentRoute] = useState<{
-    page: "home" | "products" | "add" | "scripts" | "infos" | "provider" | "key";
+    page: "home" | "products" | "scripts" | "infos" | "provider" | "key";
     providerId?: string;
   }>(() => {
     const p = window.location.pathname;
     if (p === "/scripts") return { page: "scripts" };
-    if (p === "/add") return { page: "add" };
     if (p === "/products") return { page: "products" };
     if (p === "/infos") return { page: "infos" };
     if (p === "/provider") return { page: "provider" };
@@ -27,21 +22,9 @@ function App() {
     }
     return { page: "home" };
   });
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [isProviderPickerOpen, setIsProviderPickerOpen] = useState(false);
-  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS.find((provider) => provider.id === "workink") || PROVIDERS[0]);
-  const [lootlabsSession, setLootlabsSession] = useState<string | null>(null);
-  const [lootlabsStep, setLootlabsStep] = useState<number | null>(null);
-  const [earnpasteAction, setEarnpasteAction] = useState<"upgrade" | "completed" | null>(null);
-  const [earnpasteSession, setEarnpasteSession] = useState<string | null>(null);
-  const [workinkSession, setWorkinkSession] = useState<string | null>(null);
-  const [workinkStep, setWorkinkStep] = useState<number | null>(null);
-  const [workinkToken, setWorkinkToken] = useState<string | null>(null);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const navigateTo = (
-    newPage: "home" | "products" | "add" | "scripts" | "infos" | "provider" | "key",
+    newPage: "home" | "products" | "scripts" | "infos" | "provider" | "key",
     providerId?: string
   ) => {
     setCurrentRoute({ page: newPage, providerId });
@@ -56,8 +39,6 @@ function App() {
       title =
         newPage === "scripts"
           ? "Scripts Studio"
-          : newPage === "add"
-          ? "Add Game"
           : newPage === "products"
           ? "Products"
           : newPage === "infos"
@@ -75,7 +56,6 @@ function App() {
     const handlePopState = () => {
       const p = window.location.pathname;
       if (p === "/scripts") setCurrentRoute({ page: "scripts" });
-      else if (p === "/add") setCurrentRoute({ page: "add" });
       else if (p === "/products") setCurrentRoute({ page: "products" });
       else if (p === "/infos") setCurrentRoute({ page: "infos" });
       else if (p === "/provider") setCurrentRoute({ page: "provider" });
@@ -84,6 +64,7 @@ function App() {
         setCurrentRoute({ page: "key", providerId: prov });
       } else setCurrentRoute({ page: "home" });
     };
+
     window.addEventListener("popstate", handlePopState);
 
     const path = window.location.pathname;
@@ -124,10 +105,6 @@ function App() {
     return <ScriptsPage onBack={() => navigateTo("home")} />;
   }
 
-  if (currentRoute.page === "add") {
-    return <AddGamePage onBack={() => navigateTo("home")} />;
-  }
-
   if (currentRoute.page === "products") {
     return <ProductsPage onBack={() => navigateTo("home")} />;
   }
@@ -157,7 +134,6 @@ function App() {
             Sotarium
           </h1>
         </div>
-      )}
 
         {/* Action Buttons: Get Key navigates to /provider */}
         <div className="flex items-center gap-3 w-full max-w-xs">
