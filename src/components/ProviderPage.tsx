@@ -8,24 +8,9 @@ export interface ProviderItem {
 
 export const AVAILABLE_PROVIDERS: ProviderItem[] = [
   {
-    id: "lootlabs",
-    name: "Lootlabs",
-    icon: "https://i.imgur.com/hmJCWhI.png",
-  },
-  {
-    id: "linkvertise",
-    name: "Linkvertise",
-    icon: "https://i.imgur.com/hmJCWhI.png",
-  },
-  {
     id: "workink",
     name: "Work.ink",
-    icon: "https://i.imgur.com/hmJCWhI.png",
-  },
-  {
-    id: "platoboost",
-    name: "Platoboost",
-    icon: "https://i.imgur.com/hmJCWhI.png",
+    icon: "https://favicon.pub/api/work.ink?s=64",
   },
 ];
 
@@ -37,7 +22,7 @@ interface ProviderPageProps {
 export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, onBack }) => {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Background Dot Grid (Same as homepage) */}
+      {/* Background Dot Grid */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -46,14 +31,14 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
         }}
       />
 
-      {/* Glass Card Container (Matching screenshot style) */}
-      <div className="relative z-10 w-full max-w-[380px] sm:max-w-[400px] rounded-2xl bg-[#121215]/60 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
+      {/* Glass Card Container */}
+      <div className="relative z-10 w-full max-w-[360px] sm:max-w-[390px] rounded-2xl bg-[#121215]/60 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
         {/* Title */}
         <h1 className="text-2xl font-bold text-white tracking-tight mb-5">
           Select Provider
         </h1>
 
-        {/* Provider List (Glass rectangle buttons, no SVG icons) */}
+        {/* Single Provider Option: Work.ink */}
         <div className="w-full flex flex-col gap-2.5">
           {AVAILABLE_PROVIDERS.map((provider) => (
             <a
@@ -88,7 +73,7 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
           ))}
         </div>
 
-        {/* Go Home / Back Button */}
+        {/* Go Home Button */}
         <button
           type="button"
           onClick={onBack}

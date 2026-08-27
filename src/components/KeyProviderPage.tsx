@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { AVAILABLE_PROVIDERS, ProviderItem } from "./ProviderPage";
 import { saveKeyToDatabase } from "../lib/supabase";
 
+const WORKINK_STEP_1 = "https://work.ink/2dbK/sotarium-step-1";
+const WORKINK_STEP_2 = "https://work.ink/2dbK/sotarium-step-2";
+
 function computeKeySignature(g1: string, g2: string): string {
   const salt = "SOTARIUM_2026";
   const full = `${g1}${g2}${salt}`;
@@ -26,28 +29,6 @@ function generateFinalKeyString(): string {
   return `${g1}-${g2}-${g3}`;
 }
 
-async function createLootlabsUrl(targetUrl: string, step: number): Promise<string | null> {
-  try {
-    const response = await fetch("/api/lootlabs-proxy?action=create_link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: `Sotarium Checkpoint ${step}`,
-        destinationUrl: targetUrl,
-        tierId: 1,
-        numberOfTasks: 1,
-      }),
-    });
-    const data = await response.json();
-    if (data && data.lootUrl && typeof data.lootUrl === "string" && data.lootUrl.startsWith("http")) {
-      return data.lootUrl;
-    }
-  } catch (err) {
-    console.error("Lootlabs API Error:", err);
-  }
-  return null;
-}
-
 interface KeyProviderPageProps {
   providerId: string;
   onGoHome: () => void;
@@ -56,11 +37,7 @@ interface KeyProviderPageProps {
 export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, onGoHome }) => {
   const provider: ProviderItem = AVAILABLE_PROVIDERS.find(
     (p) => p.id.toLowerCase() === providerId.toLowerCase()
-  ) || {
-    id: providerId,
-    name: providerId.charAt(0).toUpperCase() + providerId.slice(1),
-    icon: "https://i.imgur.com/hmJCWhI.png",
-  };
+  ) || AVAILABLE_PROVIDERS[0];
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -75,9 +52,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     const search = window.location.search;
     const params = new URLSearchParams(search);
 
-    if (params.has("verify") || params.has("verify1") || params.has("verify2") || params.has("step2") || params.has("complete")) {
+    if (params.has("verify") || params.has("verify1") || params.has("verify2") || params.has("step2") || params.has("complete") || params.has("t")) {
       const isComplete = params.has("verify2") || params.has("complete");
-      const isStep1Done = params.has("verify1") || params.has("step2");
+      const isStep1Done = params.has("verify1") || params.has("step2") || params.has("t");
 
       if (isComplete) {
         setCompletedSteps([1, 2]);
@@ -124,22 +101,14 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     }
   };
 
-  const handleStartStep = async (stepNumber: number) => {
+  const handleStartStep = (stepNumber: number) => {
     setErrorMessage("");
     setStepLoading(stepNumber);
 
     try {
-      const baseUrl = window.location.origin;
-      const nextStepParam = stepNumber === 1 ? "verify1=true" : "verify2=true";
-      const targetUrl = `${baseUrl}/key/${provider.id}?${nextStepParam}`;
-
-      let destinationUrl: string | null = null;
-      if (provider.id === "lootlabs") {
-        destinationUrl = await createLootlabsUrl(targetUrl, stepNumber);
-      }
-
-      if (destinationUrl) {
-        window.location.href = destinationUrl;
+      if (provider.id === "workink") {
+        const dest = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
+        window.location.href = dest;
       } else {
         setTimeout(() => {
           setCompletedSteps((prev) => [...prev, stepNumber]);
@@ -153,8 +122,8 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         }, 1000);
       }
     } catch (err) {
-      console.error("Step execution error:", err);
-      setErrorMessage("Could not load checkpoint. Please try again.");
+      console.error("Step error:", err);
+      setErrorMessage("Could not launch checkpoint. Please try again.");
       setStepLoading(null);
     }
   };
@@ -168,7 +137,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Background Dot Grid (Same as homepage) */}
+      {/* Background Dot Grid */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -177,9 +146,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         }}
       />
 
-      {/* Main Glass Card Container (Exact replica of reference screenshot) */}
+      {/* Main Glass Card Container (Exact screenshot replica) */}
       <div className="relative z-10 w-full max-w-[360px] sm:max-w-[390px] rounded-2xl bg-[#121215]/60 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
-        {/* Top Circular Badge containing Provider Icon */}
+        {/* Top Circular Badge containing Work.ink Icon */}
         <div className="w-16 h-16 rounded-full bg-black/60 border border-white/[0.1] flex items-center justify-center p-3.5 mb-4 shadow-lg">
           <img
             src={provider.icon}
@@ -203,7 +172,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </div>
         )}
 
-        {/* Steps Section in Glass Rectangles (Where red box is in reference image) */}
+        {/* Steps Section in Glass Rectangles */}
         <div className="w-full flex flex-col gap-2.5">
           {generatedKey ? (
             /* Key Ready Glass Box */
@@ -284,7 +253,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           )}
         </div>
 
-        {/* "Go home" Button (Exact style from screenshot) */}
+        {/* Go Home Button */}
         <button
           type="button"
           onClick={onGoHome}
