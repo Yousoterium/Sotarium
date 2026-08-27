@@ -114,9 +114,9 @@ function App() {
         {/* Mascot & Title */}
         <div className="flex flex-col items-center gap-4">
           <img
-            src="https://i.imgur.com/qye2L7M.png"
+            src="https://i.imgur.com/sZZvbs8.png"
             alt="Sotarium"
-            className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-md"
+            className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-md rounded-full"
           />
 
           <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-white">
