@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AVAILABLE_PROVIDERS, ProviderItem } from "./ProviderPage";
+import { AVAILABLE_PROVIDERS, ProviderItem, WORKINK_SQUARE_ICON } from "./ProviderPage";
 import { saveKeyToDatabase } from "../lib/supabase";
 
 const WORKINK_STEP_1 = "https://work.ink/2dbK/sotarium-step-1";
@@ -37,7 +37,11 @@ interface KeyProviderPageProps {
 export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, onGoHome }) => {
   const provider: ProviderItem = AVAILABLE_PROVIDERS.find(
     (p) => p.id.toLowerCase() === providerId.toLowerCase()
-  ) || AVAILABLE_PROVIDERS[0];
+  ) || {
+    id: "workink",
+    name: "Work.ink",
+    icon: WORKINK_SQUARE_ICON,
+  };
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -106,21 +110,8 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     setStepLoading(stepNumber);
 
     try {
-      if (provider.id === "workink") {
-        const dest = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
-        window.location.href = dest;
-      } else {
-        setTimeout(() => {
-          setCompletedSteps((prev) => [...prev, stepNumber]);
-          if (stepNumber === 1) {
-            setCurrentStep(2);
-          } else {
-            setCurrentStep(3);
-            handleKeyGeneration();
-          }
-          setStepLoading(null);
-        }, 1000);
-      }
+      const dest = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
+      window.location.href = dest;
     } catch (err) {
       console.error("Step error:", err);
       setErrorMessage("Could not launch checkpoint. Please try again.");
@@ -136,8 +127,8 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Background Dot Grid */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
+      {/* Background Dot Grid (Identical to Homepage) */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -146,26 +137,24 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         }}
       />
 
-      {/* True Glassmorphism Card (Translucent glass with backdrop-blur & inner glow) */}
+      {/* Obscura Transparent Glass Container */}
       <div
-        className="relative z-10 w-full max-w-[360px] sm:max-w-[390px] rounded-2xl p-7 sm:p-8 flex flex-col items-center text-center"
+        className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
         style={{
-          background: "rgba(18, 18, 22, 0.4)",
-          backdropFilter: "blur(24px) saturate(1.4)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.4)",
+          background: "rgba(13, 13, 13, 0.4)",
           border: "1px solid rgba(255, 255, 255, 0.08)",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 70px -30px rgba(0, 0, 0, 0.85)",
+          borderRadius: "20px",
+          WebkitBackdropFilter: "blur(18px) saturate(1.3)",
+          backdropFilter: "blur(18px) saturate(1.3)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
         }}
       >
-        {/* Floating Work.ink Icon (No circle holder around it) */}
-        <div className="mb-3 flex items-center justify-center">
+        {/* Floating Work.ink Icon (Directly on GUI with no holder/circle) */}
+        <div className="mb-3.5 flex items-center justify-center">
           <img
             src={provider.icon}
             alt={provider.name}
-            className="w-12 h-12 object-contain drop-shadow-lg"
-            onError={(e) => {
-              (e.target as HTMLElement).style.display = "none";
-            }}
+            className="w-12 h-12 rounded-[12px] object-cover drop-shadow-md"
           />
         </div>
 
@@ -181,16 +170,18 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </div>
         )}
 
-        {/* Steps Section in Pure Glass Rectangles */}
+        {/* Steps Section in Obscura Glass Rectangles */}
         <div className="w-full flex flex-col gap-2.5">
           {generatedKey ? (
             /* Key Ready Glass Box */
             <div
-              className="w-full flex flex-col items-center gap-2.5 p-4 rounded-xl"
+              className="w-full flex flex-col items-center gap-2.5 p-4 rounded-[14px]"
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
+                background: "rgba(13, 13, 13, 0.5)",
                 border: "1px solid rgba(255, 255, 255, 0.08)",
-                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(16px) saturate(1.35)",
+                backdropFilter: "blur(16px) saturate(1.35)",
+                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
               }}
             >
               <span className="text-xs font-bold text-emerald-400">
@@ -200,7 +191,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
               <div
                 className="w-full flex items-center justify-between rounded-xl px-3 py-2"
                 style={{
-                  background: "rgba(0, 0, 0, 0.4)",
+                  background: "rgba(0, 0, 0, 0.5)",
                   border: "1px solid rgba(255, 255, 255, 0.08)",
                 }}
               >
@@ -223,9 +214,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           ) : isGenerating ? (
             /* Generating State */
             <div
-              className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-xl"
+              className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-[14px]"
               style={{
-                background: "rgba(255, 255, 255, 0.03)",
+                background: "rgba(13, 13, 13, 0.5)",
                 border: "1px solid rgba(255, 255, 255, 0.08)",
               }}
             >
@@ -239,20 +230,22 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                 type="button"
                 disabled={completedSteps.includes(1) || stepLoading !== null}
                 onClick={() => handleStartStep(1)}
-                className={`w-full py-3.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-150 ${
+                className={`w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 ${
                   completedSteps.includes(1)
                     ? "bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 cursor-default"
                     : currentStep === 1
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.07]"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:border-white/[0.18]"
                     : "text-neutral-500 cursor-not-allowed"
                 }`}
                 style={{
-                  background: completedSteps.includes(1) ? undefined : "rgba(255, 255, 255, 0.035)",
+                  background: completedSteps.includes(1) ? undefined : "rgba(13, 13, 13, 0.5)",
                   border: completedSteps.includes(1) ? undefined : "1px solid rgba(255, 255, 255, 0.08)",
-                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(16px) saturate(1.35)",
+                  backdropFilter: "blur(16px) saturate(1.35)",
+                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
                 }}
               >
-                <span>Checkpoint 1</span>
+                <span className="font-semibold">Checkpoint 1</span>
                 <span className="text-xs text-neutral-400 font-medium">
                   {completedSteps.includes(1) ? "Done" : stepLoading === 1 ? "Loading..." : "Start"}
                 </span>
@@ -263,20 +256,22 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                 type="button"
                 disabled={!completedSteps.includes(1) || completedSteps.includes(2) || stepLoading !== null}
                 onClick={() => handleStartStep(2)}
-                className={`w-full py-3.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-150 ${
+                className={`w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 ${
                   completedSteps.includes(2)
                     ? "bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 cursor-default"
                     : completedSteps.includes(1)
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.07]"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:border-white/[0.18]"
                     : "text-neutral-500 cursor-not-allowed"
                 }`}
                 style={{
-                  background: completedSteps.includes(2) ? undefined : "rgba(255, 255, 255, 0.035)",
+                  background: completedSteps.includes(2) ? undefined : "rgba(13, 13, 13, 0.5)",
                   border: completedSteps.includes(2) ? undefined : "1px solid rgba(255, 255, 255, 0.08)",
-                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(16px) saturate(1.35)",
+                  backdropFilter: "blur(16px) saturate(1.35)",
+                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
                 }}
               >
-                <span>Checkpoint 2</span>
+                <span className="font-semibold">Checkpoint 2</span>
                 <span className="text-xs text-neutral-400 font-medium">
                   {completedSteps.includes(2)
                     ? "Done"
@@ -291,15 +286,17 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           )}
         </div>
 
-        {/* "Go home" Button (Glass style matching Obscura / screenshot) */}
+        {/* Go home Button */}
         <button
           type="button"
           onClick={onGoHome}
-          className="w-full mt-4 py-3 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
+          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
           style={{
-            background: "rgba(255, 255, 255, 0.035)",
+            background: "rgba(13, 13, 13, 0.5)",
             border: "1px solid rgba(255, 255, 255, 0.08)",
-            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(16px) saturate(1.35)",
+            backdropFilter: "blur(16px) saturate(1.35)",
+            boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
           }}
         >
           Go home

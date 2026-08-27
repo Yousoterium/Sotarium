@@ -1,5 +1,7 @@
 import React from "react";
 
+export const WORKINK_SQUARE_ICON = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%2300B27A"/><path fill-rule="evenodd" clip-rule="evenodd" d="M26 34h9.8l5.2 18.2 5.3-18.2h7.4l5.3 18.2L64.2 34H74l-9.8 32H54.4L49 48.5 43.6 66H33.8L26 34z" fill="%23FFFFFF"/></svg>`;
+
 export interface ProviderItem {
   id: string;
   name: string;
@@ -10,7 +12,7 @@ export const AVAILABLE_PROVIDERS: ProviderItem[] = [
   {
     id: "workink",
     name: "Work.ink",
-    icon: "https://favicon.pub/api/work.ink?s=128",
+    icon: WORKINK_SQUARE_ICON,
   },
 ];
 
@@ -21,8 +23,8 @@ interface ProviderPageProps {
 
 export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, onBack }) => {
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Background Dot Grid */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
+      {/* Background Dot Grid (Identical to Homepage) */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -31,15 +33,16 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
         }}
       />
 
-      {/* True Glass Container */}
+      {/* Obscura Transparent Glass Container */}
       <div
-        className="relative z-10 w-full max-w-[360px] sm:max-w-[390px] rounded-2xl p-7 sm:p-8 flex flex-col items-center text-center"
+        className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
         style={{
-          background: "rgba(18, 18, 22, 0.4)",
-          backdropFilter: "blur(24px) saturate(1.4)",
-          WebkitBackdropFilter: "blur(24px) saturate(1.4)",
+          background: "rgba(13, 13, 13, 0.4)",
           border: "1px solid rgba(255, 255, 255, 0.08)",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 70px -30px rgba(0, 0, 0, 0.85)",
+          borderRadius: "20px",
+          WebkitBackdropFilter: "blur(18px) saturate(1.3)",
+          backdropFilter: "blur(18px) saturate(1.3)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
         }}
       >
         {/* Title */}
@@ -47,7 +50,7 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
           Select Provider
         </h1>
 
-        {/* Single Provider Option: Work.ink with full square icon holder */}
+        {/* Work.ink with full square icon fitting placeholder */}
         <div className="w-full flex flex-col gap-2.5">
           {AVAILABLE_PROVIDERS.map((provider) => (
             <a
@@ -57,23 +60,22 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
                 e.preventDefault();
                 onSelectProvider(provider.id);
               }}
-              className="w-full py-3 px-4 rounded-xl transition-all duration-150 flex items-center justify-between text-left cursor-pointer active:scale-[0.99] no-underline text-white group hover:bg-white/[0.07]"
+              className="w-full py-3.5 px-4 rounded-[14px] transition-all duration-150 flex items-center justify-between text-left cursor-pointer active:scale-[0.99] no-underline text-white group"
               style={{
-                background: "rgba(255, 255, 255, 0.035)",
+                background: "rgba(13, 13, 13, 0.5)",
                 border: "1px solid rgba(255, 255, 255, 0.08)",
-                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(16px) saturate(1.35)",
+                backdropFilter: "blur(16px) saturate(1.35)",
+                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
               }}
             >
               <div className="flex items-center gap-3">
-                {/* Square Holder fully fitted with Work.ink Icon */}
-                <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/[0.1] overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                {/* Full Square Work.ink App Icon (fills placeholder completely) */}
+                <div className="w-8 h-8 rounded-[8px] overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
                   <img
                     src={provider.icon}
                     alt={provider.name}
-                    className="w-full h-full object-cover rounded-lg"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = "none";
-                    }}
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 <span className="font-semibold text-sm text-neutral-100 group-hover:text-white transition-colors">
@@ -92,11 +94,13 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
         <button
           type="button"
           onClick={onBack}
-          className="w-full mt-4 py-3 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
+          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
           style={{
-            background: "rgba(255, 255, 255, 0.035)",
+            background: "rgba(13, 13, 13, 0.5)",
             border: "1px solid rgba(255, 255, 255, 0.08)",
-            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(16px) saturate(1.35)",
+            backdropFilter: "blur(16px) saturate(1.35)",
+            boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
           }}
         >
           Go home
