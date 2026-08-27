@@ -99,12 +99,12 @@ function App() {
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased">
-      {/* Background Dot Grid */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased">
+      {/* Bright Pure White Dot Grid Background */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-[0.28]"
+        className="fixed inset-0 pointer-events-none opacity-90"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.75) 1.25px, transparent 1.25px)",
           backgroundSize: "28px 28px",
         }}
       />
@@ -124,7 +124,7 @@ function App() {
           </h1>
         </div>
 
-        {/* Action Buttons: Get Key + Join Discord (Equal 1-line pill buttons) */}
+        {/* Action Buttons: Get Key + Join Discord */}
         <div className="flex items-center justify-center gap-3 w-full max-w-sm">
           {/* Get Key Button */}
           <a
@@ -133,17 +133,17 @@ function App() {
               e.preventDefault();
               navigateTo("provider");
             }}
-            className="w-36 h-11 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline whitespace-nowrap"
+            className="w-36 h-11 rounded-full border border-white/[0.18] bg-[#141417]/80 hover:bg-[#1c1c20] hover:border-white/[0.3] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline whitespace-nowrap"
           >
             Get Key
           </a>
 
-          {/* Join Discord Button (Exact same height/width, single line) */}
+          {/* Join Discord Button */}
           <a
             href="https://discord.gg/3aghbJBybQ"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-36 h-11 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline whitespace-nowrap"
+            className="w-36 h-11 rounded-full border border-white/[0.18] bg-[#141417]/80 hover:bg-[#1c1c20] hover:border-white/[0.3] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline whitespace-nowrap"
           >
             Join Discord
           </a>

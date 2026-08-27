@@ -128,25 +128,23 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Background Dot Grid */}
+      {/* Bright Pure White Dot Grid Background */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-[0.35]"
+        className="fixed inset-0 pointer-events-none opacity-90"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.75) 1.25px, transparent 1.25px)",
           backgroundSize: "28px 28px",
         }}
       />
 
-      {/* Ultra-Transparent Glass Container (High transparency + Solid gray outline) */}
+      {/* Fully See-Through Transparent Glass Container (Shows background dots directly) */}
       <div
         className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
         style={{
-          background: "rgba(255, 255, 255, 0.015)",
-          border: "1px solid rgba(255, 255, 255, 0.16)",
+          background: "rgba(0, 0, 0, 0.25)",
+          border: "1px solid rgba(255, 255, 255, 0.22)",
           borderRadius: "20px",
-          WebkitBackdropFilter: "blur(12px) saturate(1.2)",
-          backdropFilter: "blur(12px) saturate(1.2)",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
         }}
       >
         {/* Floating Work.ink Icon */}
@@ -165,23 +163,21 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
         {/* Error Message if any */}
         {errorMessage && (
-          <div className="w-full mb-3 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+          <div className="w-full mb-3 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
             {errorMessage}
           </div>
         )}
 
-        {/* Steps Section in Ultra-Transparent Glass Rectangles with Gray Outline */}
+        {/* Steps Section with See-Through Buttons and Crisp Gray Outline */}
         <div className="w-full flex flex-col gap-2.5">
           {generatedKey ? (
-            /* Key Ready Glass Box */
+            /* Key Ready Box */
             <div
               className="w-full flex flex-col items-center gap-2.5 p-4 rounded-[14px]"
               style={{
-                background: "rgba(255, 255, 255, 0.02)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
-                WebkitBackdropFilter: "blur(10px)",
-                backdropFilter: "blur(10px)",
-                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+                background: "rgba(0, 0, 0, 0.2)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08)",
               }}
             >
               <span className="text-xs font-bold text-emerald-400">
@@ -191,8 +187,8 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
               <div
                 className="w-full flex items-center justify-between rounded-xl px-3 py-2"
                 style={{
-                  background: "rgba(0, 0, 0, 0.35)",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
+                  background: "rgba(0, 0, 0, 0.5)",
+                  border: "1px solid rgba(255, 255, 255, 0.18)",
                 }}
               >
                 <code className="text-sm font-mono font-bold text-amber-300 truncate mr-2 select-all">
@@ -201,7 +197,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                 <button
                   type="button"
                   onClick={handleCopyKey}
-                  className="px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.16] text-xs font-bold text-white transition-all cursor-pointer shrink-0"
+                  className="px-3 py-1 rounded-lg bg-white/[0.1] hover:bg-white/[0.2] text-xs font-bold text-white transition-all cursor-pointer shrink-0"
                 >
                   {copied ? "Copied!" : "Copy"}
                 </button>
@@ -216,8 +212,8 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             <div
               className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-[14px]"
               style={{
-                background: "rgba(255, 255, 255, 0.02)",
-                border: "1px solid rgba(255, 255, 255, 0.15)",
+                background: "rgba(0, 0, 0, 0.2)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
               }}
             >
               <span className="text-xs font-medium text-neutral-300">Generating key...</span>
@@ -234,18 +230,16 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                   completedSteps.includes(1)
                     ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 cursor-default"
                     : currentStep === 1
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.05] hover:border-white/[0.24]"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
                     : "text-neutral-500 cursor-not-allowed"
                 }`}
                 style={{
-                  background: completedSteps.includes(1) ? undefined : "rgba(255, 255, 255, 0.025)",
-                  border: completedSteps.includes(1) ? undefined : "1px solid rgba(255, 255, 255, 0.15)",
-                  WebkitBackdropFilter: "blur(10px)",
-                  backdropFilter: "blur(10px)",
+                  background: completedSteps.includes(1) ? undefined : "rgba(0, 0, 0, 0.2)",
+                  border: completedSteps.includes(1) ? undefined : "1px solid rgba(255, 255, 255, 0.2)",
                 }}
               >
                 <span className="font-semibold">Checkpoint 1</span>
-                <span className="text-xs text-neutral-400 font-medium">
+                <span className="text-xs text-neutral-300 font-medium">
                   {completedSteps.includes(1) ? "Done" : stepLoading === 1 ? "Loading..." : "Start"}
                 </span>
               </button>
@@ -259,18 +253,16 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                   completedSteps.includes(2)
                     ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 cursor-default"
                     : completedSteps.includes(1)
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.05] hover:border-white/[0.24]"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
                     : "text-neutral-500 cursor-not-allowed"
                 }`}
                 style={{
-                  background: completedSteps.includes(2) ? undefined : "rgba(255, 255, 255, 0.025)",
-                  border: completedSteps.includes(2) ? undefined : "1px solid rgba(255, 255, 255, 0.15)",
-                  WebkitBackdropFilter: "blur(10px)",
-                  backdropFilter: "blur(10px)",
+                  background: completedSteps.includes(2) ? undefined : "rgba(0, 0, 0, 0.2)",
+                  border: completedSteps.includes(2) ? undefined : "1px solid rgba(255, 255, 255, 0.2)",
                 }}
               >
                 <span className="font-semibold">Checkpoint 2</span>
-                <span className="text-xs text-neutral-400 font-medium">
+                <span className="text-xs text-neutral-300 font-medium">
                   {completedSteps.includes(2)
                     ? "Done"
                     : stepLoading === 2
@@ -288,12 +280,10 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         <button
           type="button"
           onClick={onGoHome}
-          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.05] hover:border-white/[0.24]"
+          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
           style={{
-            background: "rgba(255, 255, 255, 0.025)",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
-            WebkitBackdropFilter: "blur(10px)",
-            backdropFilter: "blur(10px)",
+            background: "rgba(0, 0, 0, 0.2)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
           }}
         >
           Go home
