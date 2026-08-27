@@ -127,12 +127,12 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Bright Pure White Dot Grid Background */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
+      {/* Soft Gray Dot Grid Background (Reverted, No Planet) */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-90"
+        className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.75) 1.25px, transparent 1.25px)",
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }}
       />
