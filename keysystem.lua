@@ -1189,7 +1189,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- ===========================================
--- Animated Liquid Wave Loading Transition Screen (Bottom-to-Up Wave)
+-- Animated Liquid Wave Loading Transition Screen (Realistic Curved Waves)
 -- ===========================================
 local LoadingOverlay = Instance.new("Frame")
 LoadingOverlay.Name = "LoadingOverlay"
@@ -1202,48 +1202,67 @@ LoadingOverlay.ZIndex = 90
 LoadingOverlay.Parent = MainFrame
 
 local LoadingCorner = Instance.new("UICorner")
-LoadingCorner.CornerRadius = UDim.new(0, 14)
+LoadingCorner.CornerRadius = UDim.new(0, 16)
 LoadingCorner.Parent = LoadingOverlay
 
--- Liquid Cyan Wave Layer (Fills slowly from bottom to top)
+-- Wave Container (Rises slowly from bottom to top)
 local WaveContainer = Instance.new("Frame")
 WaveContainer.Name = "WaveContainer"
-WaveContainer.Size = UDim2.new(1.8, 0, 1.8, 0)
-WaveContainer.Position = UDim2.new(-0.4, 0, 1.15, 0)
+WaveContainer.Size = UDim2.new(2.4, 0, 2.0, 0)
+WaveContainer.Position = UDim2.new(-0.7, 0, 1.15, 0)
 WaveContainer.BackgroundTransparency = 1
 WaveContainer.ZIndex = 91
 WaveContainer.Parent = LoadingOverlay
 
-local WaveGraphic = Instance.new("Frame")
-WaveGraphic.Size = UDim2.new(1, 0, 1, 0)
-WaveGraphic.BackgroundColor3 = Color3.fromRGB(0, 210, 255)
-WaveGraphic.BorderSizePixel = 0
-WaveGraphic.ZIndex = 91
-WaveGraphic.Parent = WaveContainer
+-- Solid Liquid Body underneath wave crests
+local WaveBody = Instance.new("Frame")
+WaveBody.Name = "WaveBody"
+WaveBody.Size = UDim2.new(1, 0, 0.85, 0)
+WaveBody.Position = UDim2.new(0, 0, 0.15, 0)
+WaveBody.BackgroundColor3 = Color3.fromRGB(0, 180, 240)
+WaveBody.BorderSizePixel = 0
+WaveBody.ZIndex = 91
+WaveBody.Parent = WaveContainer
 
-local WaveCorner = Instance.new("UICorner")
-WaveCorner.CornerRadius = UDim.new(0.48, 0)
-WaveCorner.Parent = WaveGraphic
+local WaveBodyGrad = Instance.new("UIGradient")
+WaveBodyGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 235, 255)),
+    ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0, 185, 245)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 80, 140))
+})
+WaveBodyGrad.Rotation = 90
+WaveBodyGrad.Parent = WaveBody
 
-local WaveGrad = Instance.new("UIGradient")
-WaveGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 240, 255)),
-    ColorSequenceKeypoint.new(0.45, Color3.fromRGB(0, 195, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 15, 15))
-})
-WaveGrad.Transparency = NumberSequence.new({
-    NumberSequenceKeypoint.new(0, 0.15),
-    NumberSequenceKeypoint.new(0.6, 0.45),
-    NumberSequenceKeypoint.new(1, 0.95)
-})
-WaveGrad.Rotation = -15
-WaveGrad.Parent = WaveGraphic
+-- Wave Crests (Multiple overlapping sinusoidal curved bubbles forming realistic rolling wave curves)
+local CrestsRow = Instance.new("Frame")
+CrestsRow.Name = "CrestsRow"
+CrestsRow.Size = UDim2.new(1, 0, 0.28, 0)
+CrestsRow.Position = UDim2.new(0, 0, 0, 0)
+CrestsRow.BackgroundTransparency = 1
+CrestsRow.ZIndex = 92
+CrestsRow.Parent = WaveContainer
+
+local NUM_CRESTS = 10
+for i = 1, NUM_CRESTS do
+    local crest = Instance.new("Frame")
+    crest.Name = "Crest_" .. i
+    crest.Size = UDim2.new(1 / (NUM_CRESTS - 1.5), 0, 1, 0)
+    crest.Position = UDim2.new((i - 1) * (1 / (NUM_CRESTS - 1.5)) - 0.05, 0, (i % 2 == 0) and 0.08 or -0.05, 0)
+    crest.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(0, 235, 255) or Color3.fromRGB(0, 205, 250)
+    crest.BorderSizePixel = 0
+    crest.ZIndex = 92
+    crest.Parent = CrestsRow
+
+    local cCorner = Instance.new("UICorner")
+    cCorner.CornerRadius = UDim.new(0.5, 0)
+    cCorner.Parent = crest
+end
 
 -- Mascot Icon (Starts transparent and smoothly takes opacity)
 local LoadingIcon = Instance.new("ImageLabel")
 LoadingIcon.Name = "LoadingIcon"
-LoadingIcon.Size = UDim2.new(0, 80, 0, 80)
-LoadingIcon.Position = UDim2.new(0.5, -40, 0.5, -60)
+LoadingIcon.Size = UDim2.new(0, 82, 0, 82)
+LoadingIcon.Position = UDim2.new(0.5, -41, 0.5, -60)
 LoadingIcon.BackgroundTransparency = 1
 LoadingIcon.Image = SotariumIconAsset
 LoadingIcon.ImageTransparency = 1
@@ -1265,19 +1284,25 @@ LoadingTitle.TextTransparency = 1
 LoadingTitle.ZIndex = 95
 LoadingTitle.Parent = LoadingOverlay
 
--- Play Slow Bottom-to-Up Liquid Wave Transition
+-- Play Slow Bottom-to-Up Liquid Wave Transition with Horizontal Rolling Movement
 task.spawn(function()
-    -- 1. Wave fills slowly from bottom to top (over 2.4 seconds)
-    local waveFill = TweenService:Create(WaveContainer, TweenInfo.new(2.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-        Position = UDim2.new(-0.4, 0, -0.45, 0)
+    -- Horizontal rolling wave animation
+    local rollLeft = TweenService:Create(CrestsRow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+        Position = UDim2.new(-0.08, 0, 0, 0)
+    })
+    rollLeft:Play()
+
+    -- 1. Wave fills slowly from bottom to top (over 2.6 seconds)
+    local waveFill = TweenService:Create(WaveContainer, TweenInfo.new(2.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+        Position = UDim2.new(-0.7, 0, -0.6, 0)
     })
     waveFill:Play()
 
     -- 2. Icon & Text slowly fade in (taking opacity)
     TweenService:Create(LoadingIcon, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
         ImageTransparency = 0,
-        Size = UDim2.new(0, 94, 0, 94),
-        Position = UDim2.new(0.5, -47, 0.5, -67)
+        Size = UDim2.new(0, 96, 0, 96),
+        Position = UDim2.new(0.5, -48, 0.5, -68)
     }):Play()
 
     TweenService:Create(LoadingTitle, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
@@ -1290,13 +1315,14 @@ task.spawn(function()
     -- 3. Smooth Outro Fade into Main GUI
     TweenService:Create(LoadingIcon, TweenInfo.new(0.5, Enum.EasingStyle.Quad), { ImageTransparency = 1 }):Play()
     TweenService:Create(LoadingTitle, TweenInfo.new(0.4, Enum.EasingStyle.Quad), { TextTransparency = 1 }):Play()
-    TweenService:Create(WaveGraphic, TweenInfo.new(0.5, Enum.EasingStyle.Quad), { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(WaveContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad), { BackgroundTransparency = 1 }):Play()
 
     local overlayFade = TweenService:Create(LoadingOverlay, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {
         BackgroundTransparency = 1
     })
     overlayFade:Play()
     overlayFade.Completed:Connect(function()
+        rollLeft:Cancel()
         LoadingOverlay:Destroy()
     end)
 end)
