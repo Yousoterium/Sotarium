@@ -1222,35 +1222,16 @@ WaveContainer.BackgroundTransparency = 1
 WaveContainer.ZIndex = 91
 WaveContainer.Parent = LoadingOverlay
 
--- Smooth Sine Wave Image Layer (Exact smooth continuous wave)
+-- Smooth Sine Wave Image Layer (Single seamless full-height liquid wave)
 local WaveImage = Instance.new("ImageLabel")
 WaveImage.Name = "WaveImage"
-WaveImage.Size = UDim2.new(1, 0, 0.45, 0)
+WaveImage.Size = UDim2.new(1, 0, 1, 0)
 WaveImage.Position = UDim2.new(0, 0, 0, 0)
 WaveImage.BackgroundTransparency = 1
 WaveImage.Image = SotariumWaveAsset
 WaveImage.ScaleType = Enum.ScaleType.Stretch
 WaveImage.ZIndex = 92
 WaveImage.Parent = WaveContainer
-
--- Solid Liquid Body underneath the wave crest
-local WaveBody = Instance.new("Frame")
-WaveBody.Name = "WaveBody"
-WaveBody.Size = UDim2.new(1, 0, 0.65, 0)
-WaveBody.Position = UDim2.new(0, 0, 0.35, 0)
-WaveBody.BackgroundColor3 = Color3.fromRGB(0, 185, 235)
-WaveBody.BorderSizePixel = 0
-WaveBody.ZIndex = 91
-WaveBody.Parent = WaveContainer
-
-local WaveBodyGrad = Instance.new("UIGradient")
-WaveBodyGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 210, 255)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 175, 235)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 90, 160))
-})
-WaveBodyGrad.Rotation = 90
-WaveBodyGrad.Parent = WaveBody
 
 -- Mascot Icon (Starts transparent and smoothly takes opacity)
 local LoadingIcon = Instance.new("ImageLabel")

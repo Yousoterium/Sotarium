@@ -1,17 +1,14 @@
 import fs from "fs";
 import zlib from "zlib";
 
-function createWavePNG(width = 1440, height = 360) {
-  // Width and height in big-endian
+function createWavePNG(width = 1440, height = 900) {
   const w = width;
   const h = height;
 
-  // We will build a truecolor + alpha (RGBA, 8 bits per channel) PNG
-  // Raw image data: for each scanline, 1 filter byte (0) + 4 * w bytes
   const rawData = Buffer.alloc(h * (1 + w * 4));
 
-  const waveHeight = 70; // Wave peak to trough amplitude
-  const baseline = 90; // Top margin where wave starts
+  const waveHeight = 65; // Wave peak to trough amplitude
+  const baseline = 75; // Top margin where wave starts
 
   let pos = 0;
   for (let y = 0; y < h; y++) {
@@ -23,22 +20,16 @@ function createWavePNG(width = 1440, height = 360) {
       const waveY = baseline + Math.sin(rad) * (waveHeight / 2);
 
       if (y >= waveY) {
-        // Cyan / Blue liquid fill with subtle gradient
-        const depth = (y - waveY) / (h - waveY);
-        const r = Math.round(0 + depth * 0);
-        const g = Math.round(210 - depth * 40);
-        const b = Math.round(255 - depth * 30);
-        const a = 255;
-
-        rawData[pos++] = r;
-        rawData[pos++] = g;
-        rawData[pos++] = b;
-        rawData[pos++] = a;
+        // Pure uniform solid vibrant cyan color (no seam, no dark block)
+        rawData[pos++] = 0;   // R
+        rawData[pos++] = 195; // G
+        rawData[pos++] = 255; // B
+        rawData[pos++] = 255; // A
       } else if (y >= waveY - 1.5) {
         // Smooth antialiased edge
         const alphaFraction = 1 - (waveY - y) / 1.5;
         rawData[pos++] = 0;
-        rawData[pos++] = 225;
+        rawData[pos++] = 195;
         rawData[pos++] = 255;
         rawData[pos++] = Math.round(alphaFraction * 255);
       } else {
@@ -107,9 +98,9 @@ function crc32(buf) {
   return crc ^ -1;
 }
 
-const pngData = createWavePNG(1440, 360);
+const pngData = createWavePNG(1440, 900);
 if (!fs.existsSync("assets")) fs.mkdirSync("assets");
 if (!fs.existsSync("public")) fs.mkdirSync("public");
 fs.writeFileSync("assets/wave.png", pngData);
 fs.writeFileSync("public/wave.png", pngData);
-console.log("Smooth wave PNG created successfully (" + pngData.length + " bytes)");
+console.log("Full-height solid smooth wave PNG created (" + pngData.length + " bytes)");
