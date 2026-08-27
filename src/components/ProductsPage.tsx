@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Copy, Loader2, Clock } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { saveKeyToDatabase } from "../lib/supabase";
 
 const POLAR_PRODUCT_ID = "1b890555-420e-4ca2-9d00-c59f3b38d67a";
@@ -33,7 +32,7 @@ const clearStoredKey = (): void => {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {
-    // Ignore
+    // Ignore storage errors
   }
 };
 
@@ -53,32 +52,30 @@ export function computeKeySignature(g1: string, g2: string): string {
 
 const generateKey = (): string => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const genGroup = () =>
+  const generateGroup = () =>
     Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  const g1 = genGroup();
-  const g2 = genGroup();
-  const g3 = computeKeySignature(g1, g2);
-  return `${g1}-${g2}-${g3}`;
+  const firstGroup = generateGroup();
+  const secondGroup = generateGroup();
+  const signature = computeKeySignature(firstGroup, secondGroup);
+  return `${firstGroup}-${secondGroup}-${signature}`;
 };
 
 async function createCheckoutSession(productId: string): Promise<string> {
-  const res = await fetch(`/api/polar-checkout`, {
+  const response = await fetch("/api/polar-checkout", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       productId,
       successUrl: `${window.location.origin}/products?checkout_success=1`,
     }),
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: "Request failed" }));
-    throw new Error((err as { error?: string }).error ?? "Checkout failed");
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Request failed" }));
+    throw new Error((error as { error?: string }).error ?? "Checkout failed");
   }
 
-  const data = await res.json() as { url?: string; error?: string };
+  const data = await response.json() as { url?: string; error?: string };
   if (data.error) throw new Error(data.error);
   if (!data.url) throw new Error("No checkout URL returned");
   return data.url;
@@ -92,9 +89,10 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [storedKey, setStoredKey] = useState<StoredKey | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
   const [keyExpired, setKeyExpired] = useState(false);
-  const [copied, setCopied] = useState<boolean>(false);
+  const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -103,36 +101,30 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
       const expiry = Date.now() + KEY_DURATION_MS;
       saveStoredKey(key, expiry);
       setStoredKey({ key, expiry });
-      setTimeLeft(KEY_DURATION_MS);
       void saveKeyToDatabase(key, "polar");
       window.history.replaceState({}, "", "/products");
-    } else {
-      const existing = loadStoredKey();
-      if (existing) {
-        const remaining = existing.expiry - Date.now();
-        if (remaining <= 0) {
-          setKeyExpired(true);
-          setStoredKey(existing);
-        } else {
-          setStoredKey(existing);
-          setTimeLeft(remaining);
-        }
-      }
+      return;
     }
+
+    const existing = loadStoredKey();
+    if (!existing) return;
+
+    if (existing.expiry <= Date.now()) {
+      setKeyExpired(true);
+    }
+    setStoredKey(existing);
   }, []);
 
   useEffect(() => {
     if (!storedKey || keyExpired) return;
+
     const interval = setInterval(() => {
-      const remaining = storedKey.expiry - Date.now();
-      if (remaining <= 0) {
-        setTimeLeft(0);
+      if (storedKey.expiry <= Date.now()) {
         setKeyExpired(true);
         clearInterval(interval);
-      } else {
-        setTimeLeft(remaining);
       }
     }, 1000);
+
     return () => clearInterval(interval);
   }, [storedKey, keyExpired]);
 
@@ -142,28 +134,44 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
     try {
       const url = await createCheckoutSession(POLAR_PRODUCT_ID);
       window.location.href = url;
-    } catch (err) {
-      setError((err as Error).message ?? "Something went wrong. Please try again.");
+    } catch (checkoutError) {
+      setError((checkoutError as Error).message ?? "Something went wrong. Please try again.");
       setLoading(false);
     }
   };
 
   const handleCopyKey = () => {
-    if (storedKey) {
-      navigator.clipboard.writeText(storedKey.key).catch(() => {});
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    if (!storedKey) return;
+    navigator.clipboard.writeText(storedKey.key).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleGetNewKey = () => {
     clearStoredKey();
     setStoredKey(null);
     setKeyExpired(false);
-    setTimeLeft(0);
   };
 
-  const hasActiveKey = storedKey !== null && !keyExpired;
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width;
+    const y = (event.clientY - bounds.top) / bounds.height;
+    setTilt({
+      rotateX: (0.5 - y) * 4,
+      rotateY: (x - 0.5) * 5,
+    });
+  };
+
+  const resetHover = () => {
+    setHovered(false);
+    setTilt({ rotateX: 0, rotateY: 0 });
+  };
+
+  const activeKey = storedKey !== null && !keyExpired;
+  const transform = `perspective(1000px) rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg) translateY(${hovered ? -6 : 0}px)`;
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center p-6 font-sans select-none antialiased">
@@ -172,8 +180,8 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
-          backgroundSize: "28px 28px"
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.16) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
         }}
       />
 
@@ -262,7 +270,6 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
         )}
 
       </main>
-
     </div>
   );
 };

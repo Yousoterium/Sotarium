@@ -1,285 +1,109 @@
-import React, { useState, useEffect } from "react";
-import { Copy, AlertCircle, Clock, Loader2 } from "lucide-react";
-import { saveKeyToDatabase } from "../lib/supabase";
-import type { LogEntry } from "./LogsPage";
+import React, { useEffect, useRef, useState } from "react";
+import { AlertCircle, Check, Clock, Copy, Loader2 } from "lucide-react";
+
+type ProviderKind = "lootlabs" | "earnpaste" | "workink" | "opera";
+type AdBlockerStatus = "checking" | "clear" | "detected";
 
 interface EarnpasteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCaught: () => void;
-  onLog?: (entry: Omit<LogEntry, "id" | "time">) => void;
   providerName?: string;
   providerIcon?: string;
+  providerKind?: ProviderKind;
   initialStep?: number;
-  comebackStep?: number;
+  lootlabsSession?: string | null;
+  lootlabsStep?: number | null;
+  earnpasteAction?: "upgrade" | "completed" | null;
+  earnpasteSession?: string | null;
+  workinkSession?: string | null;
+  workinkStep?: number | null;
+  workinkToken?: string | null;
 }
 
-const TOTAL_STEPS = 2;
-
-// Earnpaste API URL Creator
-export const createEarnpasteUrl = async (targetUrl: string): Promise<string> => {
-  const apiKey = "ep_1fc0807b695b99c7f244b4d0dd6ac65bd49085dc6a6a2cd2";
-  const timer = 15;
-  const revenueModel = "view";
-  const endpoint = "https://us-central1-earnpaste-3cd5a.cloudfunctions.net/apiCreatePaste";
-
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": apiKey,
-      },
-      body: JSON.stringify({
-        targetUrl,
-        timer,
-        revenueModel,
-      }),
-    });
-
-    const data = await response.json();
-    if (data && data.url) {
-      return data.url;
-    }
-  } catch (err) {
-    console.error("Earnpaste API Error:", err);
-  }
-  return targetUrl;
-};
-
-// Lootlabs API URL Creator
-export const createLootlabsUrl = async (targetUrl: string, step: number): Promise<string | null> => {
-  try {
-    const response = await fetch("/api/lootlabs-proxy?action=create_link", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title: `Sotarium Checkpoint ${step}`,
-        destinationUrl: targetUrl,
-        tierId: 1,
-        numberOfTasks: 1,
-      }),
-    });
-
-    const data = await response.json();
-    if (data && data.lootUrl && typeof data.lootUrl === "string" && data.lootUrl.startsWith("http")) {
-      return data.lootUrl;
-    }
-  } catch (err) {
-    console.error("Lootlabs API Error:", err);
-  }
-  return null;
-};
-
-// Lockr AES-GCM Encrypted Link Creator
-export const createLockrUrl = async (targetUrl: string, step: number = 1): Promise<string> => {
-  const magicKeyHex = "abbfcc5aa889f0c35a760c7aff5e907a0280918d8abb36d2c5fdffb460d16df0";
-  
-  const stepLockerId = step === 2 
-    ? (import.meta.env.VITE_LOCKR_ID_STEP2 as string)
-    : (import.meta.env.VITE_LOCKR_ID_STEP1 as string);
-
-  const lockerId = stepLockerId || (import.meta.env.VITE_LOCKR_ID as string) || "YOUR_LOCKER_ID";
-
-  try {
-    const keyBytes = new Uint8Array(
-      magicKeyHex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16))
-    );
-
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw",
-      keyBytes,
-      { name: "AES-GCM" },
-      false,
-      ["encrypt"]
-    );
-
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const payload = new TextEncoder().encode(JSON.stringify({ targetUrl }));
-
-    const ciphertextBuffer = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv, tagLength: 128 },
-      cryptoKey,
-      payload
-    );
-
-    const toHex = (buf: Uint8Array) =>
-      Array.from(buf)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-
-    const ivHex = toHex(iv);
-    const encryptedHex = toHex(new Uint8Array(ciphertextBuffer));
-    const r = ivHex + encryptedHex;
-
-    return `https://lockr.net/${lockerId}?r=${r}`;
-  } catch (err) {
-    console.error("Lockr Encryption Error:", err);
-    return targetUrl;
-  }
-};
-
-// Internal secret salt for cryptographic token signature verification
-const SECURITY_SALT = "SOTERIA_V2_SECURE_SALT_99421";
-
-// Hash function for token checksum
-const hashString = (str: string): string => {
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash * 33) ^ str.charCodeAt(i);
-  }
-  return (hash >>> 0).toString(36).padStart(4, "0").slice(0, 4);
-};
-
-// Generate cryptographically signed 4-4-4-4 token
-export const generateCheckpointToken = (): string => {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  const genGroup = () =>
-    Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-
-  const g1 = genGroup();
-  const g2 = genGroup();
-  const g3 = genGroup();
-  const g4 = hashString(`${g1}-${g2}-${g3}-${SECURITY_SALT}`);
-  return `${g1}-${g2}-${g3}-${g4}`;
-};
-
-// Validate token cryptographic signature
-export const validateTokenSignature = (token: string): boolean => {
-  if (!token || typeof token !== "string") return false;
-  const parts = token.split("-");
-  if (parts.length !== 4) return false;
-  const [g1, g2, g3, g4] = parts;
-  const expectedHash = hashString(`${g1}-${g2}-${g3}-${SECURITY_SALT}`);
-  return g4 === expectedHash;
-};
-
-// Single-use token tracking in sessionStorage
-export const isTokenAlreadyUsed = (token: string): boolean => {
-  try {
-    const raw = sessionStorage.getItem("soteria_used_tokens");
-    const used = raw ? JSON.parse(raw) : [];
-    return used.includes(token);
-  } catch {
-    return false;
-  }
-};
-
-export const markTokenAsUsed = (token: string): void => {
-  try {
-    const raw = sessionStorage.getItem("soteria_used_tokens");
-    const used: string[] = raw ? JSON.parse(raw) : [];
-    if (!used.includes(token)) {
-      used.push(token);
-      sessionStorage.setItem("soteria_used_tokens", JSON.stringify(used));
-    }
-  } catch {
-    // Ignore storage errors
-  }
-};
-
-// Auto-detect user browser language
-export const getBrowserLanguage = (): string => {
-  if (typeof window !== "undefined" && window.navigator) {
-    const lang = (
-      navigator.language ||
-      (navigator.languages && navigator.languages[0]) ||
-      "en"
-    ).toLowerCase();
-
-    if (lang.startsWith("fr")) return "fr";
-    if (lang.startsWith("es")) return "es";
-    if (lang.startsWith("de")) return "de";
-    if (lang.startsWith("pt")) return "pt";
-    if (lang.startsWith("ru")) return "ru";
-    if (lang.startsWith("zh")) return "zh";
-  }
-  return "en";
-};
-
-// Multilingual Translations Dictionary
-export const translations: Record<string, Record<string, string>> = {
-  en: {
-    unlockKey: "Unlock your key",
-    startCheckpoint: "Start checkpoint",
-    cancel: "Cancel",
-    verified: "Verified!",
-    freeKeyReady: "Your Free Key Is Ready",
-    yourKey: "Your key",
-    close: "Close",
-    obtainNewKey: "Obtain a new key",
-    copied: "Copied!",
-    copy: "Copy",
-    closeLabel: "Close",
-    invalidToken: "Security Error: Invalid token.",
-    tokenUsed: "URL Expired: Token already used.",
-  },
-};
-
-// Cryptographic key signing for zero-downtime verification
-export function computeKeySignature(g1: string, g2: string): string {
-  const salt = "SOTARIUM_2026";
-  const full = `${g1}${g2}${salt}`;
-  const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  let h1 = 17, h2 = 37, h3 = 79;
-  for (let i = 0; i < full.length; i++) {
-    const code = full.charCodeAt(i);
-    h1 = (h1 * 31 + code) % chars.length;
-    h2 = (h2 * 37 + code * (i + 1)) % chars.length;
-    h3 = (h3 * 41 + code * (i + 3)) % chars.length;
-  }
-  return `${chars[h1]}${chars[h2]}${chars[h3]}`;
+interface ProviderApiResponse {
+  url?: string;
+  session?: string;
+  step?: number;
+  accepted?: boolean;
+  key?: string;
+  expires_at?: string;
+  error?: string;
+  retry_after?: number;
 }
 
-// Generate key in XXX-XXX-XXX format with embedded signature
-export const generateFinalKeyString = (): string => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  const genGroup = () =>
-    Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-  const g1 = genGroup();
-  const g2 = genGroup();
-  const g3 = computeKeySignature(g1, g2);
-  return `${g1}-${g2}-${g3}`;
-};
+const EARNPASTE_ICON =
+  "https://images.socialblade.com/128x,q75/https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s192-c-k-c0x00ffffff-no-rj";
+const AD_BLOCKER_TEST_URL = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+const OPERA_DIRECT_INSTALLER_URL = "https://download.opera.com/download/get/?partner=www&opsys=Windows&download_url=&arch=x64&nothanks=yes";
 
 const formatCountdown = (ms: number): string => {
-  if (ms <= 0) return "00:00:00";
-  const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 };
 
-export const ProviderIcon: React.FC<{ name: string; iconUrl?: string; className?: string }> = ({
+const callLootlabsApi = async (
+  action: "start" | "complete",
+  payload: Record<string, string | number> = {},
+): Promise<ProviderApiResponse> => {
+  const response = await fetch(`/api/lootlabs-proxy?action=${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = (await response.json().catch(() => ({}))) as ProviderApiResponse;
+  if (!response.ok) {
+    throw new Error(data.error || "Lootlabs could not complete this request.");
+  }
+  return data;
+};
+
+const callEarnpasteApi = async (
+  action: "start" | "rotate" | "complete",
+  session?: string,
+): Promise<ProviderApiResponse> => {
+  const response = await fetch(`/api/earnpaste?action=${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(session ? { session } : {}),
+  });
+  const data = (await response.json().catch(() => ({}))) as ProviderApiResponse;
+  if (!response.ok) {
+    throw new Error(data.error || "Earnpaste could not complete this request.");
+  }
+  return data;
+};
+
+const callWorkinkApi = async (
+  action: "start" | "advance",
+  payload: Record<string, string | number> = {},
+): Promise<ProviderApiResponse> => {
+  const response = await fetch(`/api/workink?action=${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = (await response.json().catch(() => ({}))) as ProviderApiResponse;
+  if (!response.ok) {
+    throw new Error(data.error || "Work.ink could not complete this request.");
+  }
+  return data;
+};
+
+const ProviderIcon: React.FC<{ name: string; iconUrl?: string; className?: string }> = ({
   name,
   iconUrl,
   className = "h-[42px] w-[42px]",
 }) => {
-  const [imgError, setImgError] = useState(false);
-
-  if (imgError || !iconUrl) {
-    return (
-      <div
-        className={`${className} rounded-full bg-[#181820] border border-[#1AF513]/40 flex items-center justify-center text-[#1AF513] font-black text-xl shadow-md shrink-0`}
-      >
-        ℗
-      </div>
-    );
+  const [failed, setFailed] = useState(false);
+  if (!iconUrl || failed) {
+    return <div className={`${className} rounded-full bg-[#181820] border border-white/10 flex items-center justify-center text-white font-black`}>{name.slice(0, 1)}</div>;
   }
-
   return (
-    <div className={`${className} relative rounded-full overflow-hidden shrink-0 border border-white/10 bg-[#181820]`}>
-      <img
-        src={iconUrl}
-        alt={name}
-        referrerPolicy="no-referrer"
-        crossOrigin="anonymous"
-        className="w-full h-full object-cover"
-        onError={() => setImgError(true)}
-      />
+    <div className={`${className} rounded-full overflow-hidden shrink-0 border border-white/10 bg-[#181820]`}>
+      <img src={iconUrl} alt={name} className="h-full w-full object-cover" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
     </div>
   );
 };
@@ -287,465 +111,382 @@ export const ProviderIcon: React.FC<{ name: string; iconUrl?: string; className?
 export const EarnpasteModal: React.FC<EarnpasteModalProps> = ({
   isOpen,
   onClose,
-  onCaught,
-  onLog,
   providerName = "Earnpaste",
-  providerIcon = "https://yt3.ggpht.com/OV2tg0DmV-NvTvzSr6bxSXMXRG8TMBTOJOzgBfHTzV2x0KPSLDP5yufzsmKEmzfovbSDd3A1=s88-c-k-c0xffffffff-no-rj-mo",
+  providerIcon = EARNPASTE_ICON,
+  providerKind = "earnpaste",
   initialStep = 1,
-  comebackStep = 0,
+  lootlabsSession = null,
+  lootlabsStep = null,
+  earnpasteAction = null,
+  earnpasteSession = null,
+  workinkSession = null,
+  workinkStep = null,
+  workinkToken = null,
 }) => {
-  const [currentStep, setCurrentStep] = useState<number>(initialStep);
+  const isEarnpaste = providerKind === "earnpaste";
+  const isWorkink = providerKind === "workink";
+  const isOpera = providerKind === "opera";
+  const totalSteps = isOpera ? 1 : 2;
+  const hasWorkinkReturn = Boolean(workinkStep === 1 || workinkStep === 2);
+  const [currentStep, setCurrentStep] = useState(initialStep);
+  const [adBlockerStatus, setAdBlockerStatus] = useState<AdBlockerStatus>(() => (isOpera ? "checking" : "clear"));
+  const [adBlockerCheckVersion, setAdBlockerCheckVersion] = useState(0);
+  const handledWorkinkReturn = useRef<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
-  const [isVerifying, setIsVerifying] = useState<boolean>(false);
-  const [showVerificationSuccess, setShowVerificationSuccess] = useState<boolean>(false);
-  const [securityError, setSecurityError] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [keyExpiry, setKeyExpiry] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [copied, setCopied] = useState<boolean>(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [copied, setCopied] = useState(false);
 
-  const userLang = getBrowserLanguage();
-  const t = translations[userLang] || translations.en;
+  const resetUrl = () => window.history.replaceState({}, "", "/");
 
-  // Load existing free key from localStorage if valid
-  useEffect(() => {
+  const unlockVerifiedKey = (result: ProviderApiResponse) => {
+    const key = typeof result.key === "string" ? result.key.trim().toUpperCase() : "";
+    const expiresAt = result.expires_at ? new Date(result.expires_at).getTime() : Number.NaN;
+    if (!key || !/^[A-Z0-9]{3}-[A-Z0-9]{3}-[A-Z0-9]{3}$/.test(key) || !Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+      throw new Error("The provider verified the checkpoint but did not return a valid key.");
+    }
+
+    setGeneratedKey(key);
+    setKeyExpiry(expiresAt);
+    setTimeLeft(expiresAt - Date.now());
+  };
+
+  const finishStep = async (step: number) => {
+    setCompletedSteps((previous) => Array.from(new Set([...previous, step])));
+    setStatusMessage(`Step ${step} verified.`);
+    if (step >= totalSteps) {
+      setStatusMessage("All required checkpoints were verified.");
+      return;
+    }
+    setCurrentStep(step + 1);
+  };
+
+  const handleEarnpasteReturn = async (action: "upgrade" | "completed", session: string) => {
+    setIsRedirecting(false);
+    setIsVerifying(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    resetUrl();
+
     try {
-      const stored = localStorage.getItem(`sotarium_free_key_${providerName}`);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.key && parsed.expiry && parsed.expiry > Date.now()) {
-          setGeneratedKey(parsed.key);
-          setKeyExpiry(parsed.expiry);
-          setTimeLeft(parsed.expiry - Date.now());
-        }
+      if (action === "upgrade") {
+        const result = await callEarnpasteApi("rotate", session);
+        if (!result.url) throw new Error("Earnpaste did not return the step 2 link.");
+        sessionStorage.setItem("sotarium_earnpaste_session", session);
+        setStatusMessage("Step 1 verified. Rotating to step 2...");
+        setIsVerifying(false);
+        setIsRedirecting(true);
+        window.location.assign(result.url);
+        return;
       }
-    } catch {
-      // Ignore
-    }
-  }, [providerName]);
 
-  // Live countdown timer for active key
-  useEffect(() => {
-    if (!keyExpiry) return;
-    const interval = setInterval(() => {
-      const remaining = keyExpiry - Date.now();
-      if (remaining <= 0) {
-        setTimeLeft(0);
-        setGeneratedKey(null);
-        setKeyExpiry(null);
-        clearInterval(interval);
-      } else {
-        setTimeLeft(remaining);
+      const result = await callEarnpasteApi("complete", session);
+      sessionStorage.removeItem("sotarium_earnpaste_session");
+      await finishStep(2);
+      unlockVerifiedKey(result);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Could not verify the Earnpaste step.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleLootlabsReturn = async (session: string, step: number) => {
+    setIsRedirecting(false);
+    setIsVerifying(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    resetUrl();
+
+    try {
+      const result = await callLootlabsApi("complete", { session, step });
+      if (step === 1) {
+        if (!result.url) throw new Error("Lootlabs did not return the second checkpoint link.");
+        setCompletedSteps([1]);
+        setCurrentStep(2);
+        setStatusMessage("Step 1 verified. Opening step 2...");
+        setIsVerifying(false);
+        setIsRedirecting(true);
+        window.location.assign(result.url);
+        return;
       }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [keyExpiry]);
 
-  // Handle comeback step from LootLabs / Lockr / Earnpaste
-  useEffect(() => {
-    if (!isOpen) return;
-    if (comebackStep > 0) {
-      triggerComebackVerification(comebackStep);
+      await finishStep(2);
+      unlockVerifiedKey(result);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Could not verify the Lootlabs checkpoint.");
+    } finally {
+      setIsVerifying(false);
     }
-  }, [isOpen, comebackStep]);
+  };
 
-  // Anti-bypass detection and verification check
+  const handleWorkinkReturn = async (step: number) => {
+    setIsRedirecting(false);
+    setIsVerifying(true);
+    setErrorMessage(null);
+    setStatusMessage(null);
+    resetUrl();
+
+    try {
+      const result = await callWorkinkApi("advance", { step });
+      if (step === 1) {
+        if (!result.url) throw new Error("Work.ink did not return the step 2 link.");
+        setCompletedSteps([1]);
+        setCurrentStep(2);
+        setStatusMessage("Step 1 verified. Opening step 2...");
+        setIsVerifying(false);
+        setIsRedirecting(true);
+        window.location.assign(result.url);
+        return;
+      }
+
+      setCompletedSteps([1]);
+      await finishStep(2);
+      unlockVerifiedKey(result);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Could not complete the Work.ink checkpoint.");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !isEarnpaste || !earnpasteAction || !earnpasteSession) return;
+    void handleEarnpasteReturn(earnpasteAction, earnpasteSession);
+  }, [isOpen, isEarnpaste, earnpasteAction, earnpasteSession]);
 
-    const pathToken = window.location.pathname.replace(/^\//, "");
-    const tokenRegex = /^[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}$/;
-    const search = window.location.search;
+  useEffect(() => {
+    if (!isOpen || !isWorkink || (workinkStep !== 1 && workinkStep !== 2)) return;
+    const returnKey = `workink:${workinkStep}`;
+    if (handledWorkinkReturn.current === returnKey) return;
+    handledWorkinkReturn.current = returnKey;
+    void handleWorkinkReturn(workinkStep);
+  }, [isOpen, isWorkink, workinkStep]);
 
-    if (search.includes("step") || window.location.pathname === "/caught") {
-      onCaught();
+  useEffect(() => {
+    if (!isOpen || !isOpera || hasWorkinkReturn) {
+      setAdBlockerStatus("clear");
       return;
     }
 
-    if (tokenRegex.test(pathToken)) {
-      setShowVerificationSuccess(false);
-      if (!validateTokenSignature(pathToken)) {
-        setSecurityError(t.invalidToken);
-        window.history.replaceState({}, "", "/");
-        return;
+    let cancelled = false;
+    const bait = document.createElement("div");
+    bait.className = "adsbox ad-banner ad-unit ad-slot adsbygoogle";
+    bait.setAttribute("aria-hidden", "true");
+    bait.style.cssText = "position:absolute!important;left:-10000px!important;top:-10000px!important;width:1px!important;height:1px!important;pointer-events:none!important;";
+    document.body.appendChild(bait);
+
+    const check = async () => {
+      setAdBlockerStatus("checking");
+      let networkBlocked = false;
+      try {
+        await fetch(`${AD_BLOCKER_TEST_URL}?sotarium=${Date.now()}`, { mode: "no-cors", cache: "no-store" });
+      } catch {
+        networkBlocked = true;
       }
 
-      if (isTokenAlreadyUsed(pathToken)) {
-        setSecurityError(t.tokenUsed);
-        window.history.replaceState({}, "", "/");
-        return;
+      const baitStyle = window.getComputedStyle(bait);
+      const baitBlocked = baitStyle.display === "none" || baitStyle.visibility === "hidden" || bait.offsetHeight === 0 || bait.offsetWidth === 0;
+      bait.remove();
+      if (!cancelled) setAdBlockerStatus(networkBlocked || baitBlocked ? "detected" : "clear");
+    };
+
+    void check();
+    return () => {
+      cancelled = true;
+      bait.remove();
+    };
+  }, [isOpen, isOpera, hasWorkinkReturn, adBlockerCheckVersion]);
+
+  useEffect(() => {
+    if (!isOpen || providerKind !== "lootlabs" || !lootlabsSession || (lootlabsStep !== 1 && lootlabsStep !== 2)) return;
+    void handleLootlabsReturn(lootlabsSession, lootlabsStep);
+  }, [isOpen, providerKind, lootlabsSession, lootlabsStep]);
+
+  useEffect(() => {
+    if (!keyExpiry) return;
+    const interval = window.setInterval(() => {
+      const remaining = keyExpiry - Date.now();
+      setTimeLeft(Math.max(0, remaining));
+      if (remaining <= 0) {
+        setGeneratedKey(null);
+        setKeyExpiry(null);
+        window.clearInterval(interval);
       }
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [keyExpiry]);
 
-      markTokenAsUsed(pathToken);
-      triggerComebackVerification(currentStep);
-    }
-  }, [isOpen]);
-
-  const triggerComebackVerification = (stepToVerify: number) => {
-    setSecurityError(null);
-    setIsRedirecting(false);
-    setIsVerifying(true);
-    setShowVerificationSuccess(false);
-
-    window.history.replaceState({}, "", "/");
-
-    onLog?.({
-      providerName,
-      providerIcon,
-      status: "pending",
-      message: `Started verification step ${stepToVerify}`,
-    });
-
-    setTimeout(() => {
-      setIsVerifying(false);
-      setShowVerificationSuccess(true);
-
-      setCompletedSteps((prev) => {
-        const updated = Array.from(new Set([...prev, stepToVerify]));
-        if (updated.length >= TOTAL_STEPS) {
-          void generateFinalKey();
-        }
-        return updated;
-      });
-
-      if (stepToVerify < TOTAL_STEPS) {
-        setCurrentStep(stepToVerify + 1);
-      } else {
-        void generateFinalKey();
-      }
-    }, 1200);
-  };
-
-  const generateFinalKey = async () => {
-    const keyStr = generateFinalKeyString();
-    const durationMs = 24 * 60 * 60 * 1000; // 24 Hours
-    const expiryTimestamp = Date.now() + durationMs;
-    const expiresAtIso = new Date(expiryTimestamp).toISOString();
-
-    setGeneratedKey(keyStr);
-    setKeyExpiry(expiryTimestamp);
-    setTimeLeft(durationMs);
+  const startCheckpoint = async () => {
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setIsRedirecting(true);
 
     try {
-      localStorage.setItem(
-        `sotarium_free_key_${providerName}`,
-        JSON.stringify({ key: keyStr, expiry: expiryTimestamp })
-      );
-    } catch {
-      // Ignore storage errors
-    }
-
-    // Save key to Supabase so Roblox can verify it!
-    await saveKeyToDatabase(keyStr, providerName, expiresAtIso, false);
-  };
-
-  const handleStartCheckpoint = async () => {
-    const token = generateCheckpointToken();
-    markTokenAsUsed(token);
-
-    const comebackUrl = `${window.location.origin}/${token}`;
-    const pName = providerName.toLowerCase();
-
-    setIsRedirecting(true);
-    setIsVerifying(false);
-    setShowVerificationSuccess(false);
-
-    if (pName.includes("earnpaste")) {
-      const destinationUrl = await createEarnpasteUrl(comebackUrl);
-      window.location.href = destinationUrl;
-    } else if (pName.includes("lootlabs")) {
-      const destinationUrl = await createLootlabsUrl(comebackUrl, currentStep);
-      if (destinationUrl && destinationUrl.startsWith("http")) {
-        window.location.href = destinationUrl;
-      } else {
-        setIsRedirecting(false);
-        setSecurityError("Failed to generate Lootlabs link. Please check Lootlabs API configuration or try again.");
+      if (isEarnpaste) {
+        const result = await callEarnpasteApi("start");
+        if (!result.url || !result.session) throw new Error("Earnpaste did not return a step 1 link.");
+        sessionStorage.setItem("sotarium_earnpaste_session", result.session);
+        window.location.assign(result.url);
+        return;
       }
-    } else if (pName.includes("lockr")) {
-      const lockrComebackUrl = `${window.location.origin}/lockr?verify${currentStep}&token=${token}`;
-      const destinationUrl = await createLockrUrl(lockrComebackUrl, currentStep);
-      window.location.href = destinationUrl;
-    } else {
-      const verificationPath = `/${token}`;
-      window.history.pushState({}, "", verificationPath);
-      triggerComebackVerification(currentStep);
-    }
-  };
 
-  const handleCopyKey = () => {
-    if (generatedKey) {
-      navigator.clipboard.writeText(generatedKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (isWorkink) {
+        const result = await callWorkinkApi("start");
+        if (!result.url) throw new Error("Work.ink did not return a step 1 link.");
+        window.location.assign(result.url);
+        return;
+      }
+
+      if (isOpera) {
+        if (adBlockerStatus !== "clear") {
+          setIsRedirecting(false);
+          return;
+        }
+        const result = await callWorkinkApi("start", { flow: "opera" });
+        if (!result.url || !result.session) throw new Error("Work.ink did not return the Opera offer link.");
+        sessionStorage.setItem("sotarium_opera_session", result.session);
+        window.location.assign(result.url);
+        return;
+      }
+
+      const result = await callLootlabsApi("start");
+      if (!result.url || !result.session) throw new Error("Lootlabs did not return the first checkpoint link.");
+      sessionStorage.setItem("sotarium_lootlabs_session", result.session);
+      window.location.assign(result.url);
+    } catch (error) {
+      setIsRedirecting(false);
+      setErrorMessage(error instanceof Error ? error.message : "Could not start the checkpoint.");
     }
   };
 
   const resetProgress = () => {
-    try {
-      localStorage.removeItem(`sotarium_free_key_${providerName}`);
-    } catch {
-      // Ignore
-    }
-    setCompletedSteps([]);
     setCurrentStep(1);
+    setCompletedSteps([]);
+    setIsRedirecting(false);
+    setIsVerifying(false);
+    setStatusMessage(null);
+    setErrorMessage(null);
     setGeneratedKey(null);
     setKeyExpiry(null);
     setTimeLeft(0);
-    setIsRedirecting(false);
-    setIsVerifying(false);
-    setShowVerificationSuccess(false);
-    setSecurityError(null);
-    window.history.replaceState({}, "", "/");
+    handledWorkinkReturn.current = null;
+    sessionStorage.removeItem("sotarium_lootlabs_session");
+    sessionStorage.removeItem("sotarium_earnpaste_session");
+    sessionStorage.removeItem("sotarium_workink_session");
+    sessionStorage.removeItem("sotarium_opera_session");
+    if (isOpera) {
+      setAdBlockerStatus("checking");
+      setAdBlockerCheckVersion((version) => version + 1);
+    }
+    resetUrl();
   };
 
+  const copyKey = async () => {
+    if (!generatedKey) return;
+    await navigator.clipboard.writeText(generatedKey);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+
+  const isUnlocked = generatedKey !== null;
+  const isCheckingAdBlocker = isOpera && adBlockerStatus === "checking" && !isUnlocked;
+  const showAdBlockerNotice = isOpera && adBlockerStatus === "detected" && !isUnlocked;
+  const checkpointDescription = isOpera
+    ? "Complete the Work.ink Opera Browser offer. After Work.ink verifies it, the Opera installer downloads and your 24-hour key unlocks."
+    : `Complete two ${providerName} checkpoints to receive your 24-hour key.`;
+  const checkpointButtonText = isOpera
+    ? "Open Work.ink Opera link (Step 1/1)"
+    : `Start checkpoint (Step ${currentStep}/${totalSteps})`;
   if (!isOpen) return null;
 
-  const isFullyUnlocked = completedSteps.length >= TOTAL_STEPS || generatedKey !== null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b] pointer-events-auto animate-fadeIn">
-      {/* Full-screen Dot Grid Background */}
-      <div 
-        className="fixed inset-0 pointer-events-none opacity-[0.28]"
-        style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
-          backgroundSize: "28px 28px"
-        }}
-      />
-      {!isFullyUnlocked ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="key-modal-title"
-          className="pointer-events-auto animate-modal-in relative z-10 flex w-[440px] max-w-full flex-col gap-6 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 shadow-2xl text-white"
-        >
-          <div className="relative z-10 flex items-start justify-between gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#09090b] text-white">
+      <div className="fixed inset-0 pointer-events-none opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
+      {!isUnlocked ? (
+        <div role="dialog" aria-modal="true" className="relative z-10 flex w-[440px] max-w-full flex-col gap-6 rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 shadow-2xl">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3.5">
               <ProviderIcon name={providerName} iconUrl={providerIcon} />
-              <div className="flex flex-col gap-0.5">
-                <h2
-                  id="key-modal-title"
-                  className="text-[19px] font-bold tracking-tight text-[#f2f1f4]"
-                >
-                  {t.unlockKey}
-                </h2>
-                <p className="text-xs text-zinc-400">Provider: {providerName}</p>
+              <div>
+                <h2 className="text-[19px] font-bold tracking-tight">Unlock your key</h2>
+                <p className="text-xs text-zinc-400">Method: {providerName}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={t.closeLabel}
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.05] text-sm leading-none text-[#8b8b93] transition-colors hover:bg-white/[0.1] hover:text-[#f2f1f4]"
-            >
-              ✕
-            </button>
+            <button type="button" onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.05] text-zinc-400 hover:bg-white/[0.1] hover:text-white">✕</button>
           </div>
 
-          <div className="relative flex items-center gap-2.5 px-0.5">
-            {[1, 2].map((stepNum, idx) => {
-              const isDone = completedSteps.includes(stepNum);
-              const isCurrent = currentStep === stepNum && !isDone;
-              const isLastStep = idx === 1;
-
+          <div className="flex items-center gap-2.5 px-0.5">
+            {Array.from({ length: totalSteps }, (_, index) => index + 1).map((step) => {
+              const complete = completedSteps.includes(step);
+              const active = currentStep === step && !complete;
               return (
-                <React.Fragment key={stepNum}>
-                  <div
-                    className={`flex min-w-0 items-center gap-2.5 ${
-                      isLastStep ? "flex-none" : "flex-1"
-                    }`}
-                  >
-                    {isDone ? (
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1AF513] text-white transition-all duration-300">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <path
-                            d="M5 12l4.5 4.5L19 7"
-                            stroke="#ffffff"
-                            strokeWidth="3.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </div>
-                    ) : isCurrent ? (
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] text-[13px] font-bold transition-all duration-300 border-[#f2f1f4] bg-[#f2f1f4] text-[#141417]">
-                        <span>{stepNum}</span>
-                      </div>
-                    ) : (
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-[1.5px] text-[13px] font-bold transition-all duration-300 border-white/[0.08] bg-[#1a1a1e] text-[#56565e]">
-                        <span>{stepNum}</span>
-                      </div>
-                    )}
-
-                    {!isLastStep && (
-                      <div className="relative h-[2px] min-w-[18px] flex-1 overflow-hidden rounded-full bg-white/[0.07]">
-                        <div
-                          className="absolute inset-y-0 left-0 rounded-full bg-[#1AF513] transition-all duration-500"
-                          style={{
-                            width: completedSteps.includes(stepNum) || currentStep > stepNum ? "100%" : "0%",
-                          }}
-                        />
-                      </div>
-                    )}
+                <React.Fragment key={step}>
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[13px] font-bold ${complete ? "bg-[#1AF513] text-white" : active ? "bg-white text-[#141417]" : "border border-white/[0.08] bg-[#1a1a1e] text-zinc-500"}`}>
+                    {complete ? <Check className="h-4 w-4" strokeWidth={3} /> : step}
                   </div>
+                  {step < totalSteps && <div className={`h-[2px] flex-1 rounded-full ${complete ? "bg-[#1AF513]" : "bg-white/[0.08]"}`} />}
                 </React.Fragment>
               );
             })}
           </div>
 
-          <div className="relative flex min-h-[150px] flex-col justify-center items-center rounded-[18px] border border-white/[0.06] bg-white/[0.025] p-6">
-            {securityError ? (
-              <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
-                <AlertCircle className="w-8 h-8 text-rose-500" />
-                <span className="text-sm font-semibold text-rose-400">
-                  {securityError}
-                </span>
-                <button
-                  onClick={() => setSecurityError(null)}
-                  className="mt-2 text-xs text-zinc-400 hover:text-white underline cursor-pointer"
-                >
-                  Try Again
-                </button>
+          <div className="flex min-h-[160px] flex-col items-center justify-center rounded-[18px] border border-white/[0.06] bg-white/[0.025] p-6 text-center">
+            {errorMessage ? (
+              <div className="flex flex-col items-center gap-3 text-rose-400">
+                <AlertCircle className="h-8 w-8" />
+                <p className="text-sm font-semibold">{errorMessage}</p>
+                <button type="button" onClick={resetProgress} className="text-xs text-zinc-300 underline hover:text-white">Start again</button>
               </div>
-            ) : isRedirecting ? (
-              <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
-                <Loader2 className="w-8 h-8 animate-spin text-[#1AF513]" />
-                <span className="text-sm font-semibold text-zinc-300">
-                  Redirecting to {providerName}...
-                </span>
+            ) : isRedirecting || isVerifying ? (
+              <div className="flex flex-col items-center gap-3 text-zinc-300">
+                <Loader2 className="h-8 w-8 animate-spin text-[#1AF513]" />
+                <p className="text-sm font-semibold">{statusMessage || (isRedirecting ? `Opening ${providerName}...` : "Verifying your completed step...")}</p>
               </div>
-            ) : isVerifying ? (
-              <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
-                <Loader2 className="w-8 h-8 animate-spin text-[#1AF513]" />
-                <span className="text-sm font-semibold text-zinc-300">
-                  Verifying step...
-                </span>
-              </div>
-            ) : showVerificationSuccess ? (
-              <div className="flex flex-col items-center justify-center gap-2 text-center py-2">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1AF513] text-white animate-pulse">
-                  <svg
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <path
-                      d="M5 12l4.5 4.5L19 7"
-                      stroke="#ffffff"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                <span className="text-lg font-bold text-[#1AF513] tracking-wide">
-                  {t.verified}
-                </span>
+            ) : statusMessage ? (
+              <div className="flex flex-col items-center gap-3 text-[#1AF513]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#1AF513]"><Check className="h-6 w-6 text-white" strokeWidth={3} /></div>
+                <p className="text-sm font-bold">{statusMessage}</p>
+                <button type="button" onClick={startCheckpoint} className="w-full rounded-full border border-white bg-white px-5 py-3 text-sm font-semibold text-[#141417] hover:bg-zinc-100">Start step {currentStep} of {totalSteps}</button>
               </div>
             ) : (
-              <div className="w-full flex flex-col justify-center">
-                <button
-                  type="button"
-                  onClick={handleStartCheckpoint}
-                  className="inline-flex w-full cursor-pointer items-center justify-center gap-[9px] rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-[26px] py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)] hover:-translate-y-px hover:bg-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_28px_rgba(0,0,0,0.5)] active:translate-y-0"
-                >
-                  {t.startCheckpoint} (Step {currentStep}/{TOTAL_STEPS})
-                </button>
+              <div className="w-full">
+                <p className="mb-4 text-sm text-zinc-300">{checkpointDescription}</p>
+                <button type="button" onClick={startCheckpoint} disabled={isCheckingAdBlocker} className="w-full rounded-full border border-white bg-white px-5 py-3.5 text-sm font-semibold text-[#141417] shadow-lg hover:bg-zinc-100 disabled:cursor-wait disabled:opacity-60">{isCheckingAdBlocker ? "Checking for ad blocker..." : checkpointButtonText}</button>
               </div>
             )}
           </div>
 
-          <div className="relative flex gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isVerifying}
-              className="flex-1 cursor-pointer rounded-full border border-white/[0.07] p-3 text-sm font-semibold text-[#a9a9b0] transition-colors hover:bg-white/[0.04] hover:text-[#f2f1f4] disabled:opacity-50"
-            >
-              {t.cancel}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="pointer-events-auto animate-modal-in relative z-10 flex w-[440px] max-w-full flex-col gap-5 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 shadow-2xl text-white">
-          <header className="relative z-10 flex items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <h3 className="text-[19px] font-bold tracking-tight text-[#f2f1f4]">
-                {t.freeKeyReady}
-              </h3>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.05] text-sm leading-none text-[#8b8b93] transition-colors hover:bg-white/[0.1] hover:text-[#f2f1f4]"
-              aria-label={t.closeLabel}
-            >
-              ✕
-            </button>
-          </header>
+            <button type="button" onClick={onClose} disabled={isRedirecting || isVerifying} className="rounded-full border border-white/[0.07] p-3 text-sm font-semibold text-zinc-400 hover:bg-white/[0.04] hover:text-white disabled:opacity-50">Cancel</button>
 
-          <div className="relative">
-            <div className="flex flex-col items-center text-center gap-4 py-2">
-              <div className="relative flex items-center justify-center my-1">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1AF513] text-white">
-                  <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
-                    <path
-                      d="M5 12.5l4.5 4.5L19 7"
-                      stroke="#ffffff"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-              </div>
-
-              <p className="text-sm font-semibold tracking-wide text-[#8b8b93]">
-                {t.yourKey}
-              </p>
-
-              <div className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#1a1a1e] p-3.5 font-mono text-base tracking-widest text-[#1AF513] shadow-inner">
-                <span className="truncate mr-2 font-bold select-all">{generatedKey}</span>
-                <button
-                  type="button"
-                  onClick={handleCopyKey}
-                  className="px-3 py-1.5 rounded-lg bg-[#1AF513]/20 hover:bg-[#1AF513]/30 text-[#1AF513] text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shrink-0"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  {copied ? t.copied : t.copy}
-                </button>
-              </div>
-
-              {timeLeft > 0 && (
-                <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-mono">
-                  <Clock className="w-3.5 h-3.5 text-[#1AF513]" />
-                  <span>Valid for: <strong className="text-[#1AF513] font-bold">{formatCountdown(timeLeft)}</strong></span>
+            {showAdBlockerNotice && (
+              <div role="alertdialog" aria-modal="true" aria-labelledby="adblocker-title" className="absolute inset-0 z-30 flex flex-col justify-center rounded-[26px] bg-[#121215]/[0.98] p-7 text-center backdrop-blur-sm">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-amber-300/30 bg-amber-300/10 text-amber-200">
+                  <AlertCircle className="h-7 w-7" strokeWidth={2.5} />
                 </div>
-              )}
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-[9px] rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-[26px] py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 ease-[cubic-bezier(0.2,0.9,0.3,1)] hover:-translate-y-px hover:bg-white hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_28px_rgba(0,0,0,0.5)] active:translate-y-0"
-              >
-                {t.close}
-              </button>
-
-              <button
-                type="button"
-                onClick={resetProgress}
-                className="text-xs font-medium text-[#8b8b93] hover:text-[#f2f1f4] transition-colors cursor-pointer pt-1"
-              >
-                {t.obtainNewKey}
-              </button>
-            </div>
+                <h3 id="adblocker-title" className="text-xl font-black tracking-tight">Ad blocker detected</h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">A real browser check found that an ad resource or ad placeholder is being blocked. The Work.ink Opera Browser offer cannot start until the blocker is disabled for Work.ink.</p>
+                <p className="mt-3 text-xs leading-5 text-zinc-500">This detector does not install anything or change browser settings. Disable the blocker if you choose, then run the check again.</p>
+                <button type="button" onClick={() => setAdBlockerCheckVersion((version) => version + 1)} className="mt-6 w-full rounded-full bg-white px-5 py-3 text-sm font-bold text-[#141417] hover:bg-zinc-100">Check again</button>
+                <button type="button" onClick={onClose} className="mt-3 w-full rounded-full border border-white/[0.10] px-5 py-3 text-sm font-semibold text-zinc-300 hover:bg-white/[0.05] hover:text-white">Cancel</button>
+              </div>
+            )}
+          </div>
+      ) : (
+        <div className="relative z-10 flex w-[440px] max-w-full flex-col gap-5 rounded-[26px] border border-white/[0.08] bg-[#121215] p-7 text-white shadow-2xl">
+          <header className="flex items-center justify-between"><h3 className="text-[19px] font-bold">Your Free Key Is Ready</h3><button type="button" onClick={onClose} className="text-zinc-400 hover:text-white">✕</button></header>
+          <div className="flex flex-col items-center gap-4 py-2 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1AF513]"><Check className="h-7 w-7" strokeWidth={3} /></div>
+            <p className="text-sm font-semibold text-zinc-400">Your key</p>
+            <div className="flex w-full items-center justify-between rounded-xl border border-white/[0.08] bg-[#1a1a1e] p-3.5 font-mono text-base font-bold tracking-widest text-[#1AF513]"><span className="truncate mr-2 select-all">{generatedKey}</span><button type="button" onClick={copyKey} className="flex items-center gap-1 rounded-lg bg-[#1AF513]/20 px-3 py-1.5 text-xs font-bold text-[#1AF513] hover:bg-[#1AF513]/30"><Copy className="h-3.5 w-3.5" />{copied ? "Copied" : "Copy"}</button></div>
+            {timeLeft > 0 && <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-400"><Clock className="h-3.5 w-3.5 text-[#1AF513]" />Valid for: <strong className="text-[#1AF513]">{formatCountdown(timeLeft)}</strong></div>}
+            <button type="button" onClick={onClose} className="w-full rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#141417] hover:bg-zinc-100">Close</button>
+            <button type="button" onClick={resetProgress} className="text-xs text-zinc-400 hover:text-white">Obtain a new key</button>
           </div>
         </div>
       )}

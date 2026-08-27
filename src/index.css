@@ -1,6 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+
+/* Midnight Game Index: technical editorial surfaces, restrained motion, and a single Signal Green state color. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  background: #0a0a0d;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .group {
+    transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+}
+
+button:focus-visible {
+  outline: 2px solid #8DF2A3;
+  outline-offset: 3px;
+}
 
 .react-flow__attribution {
   display: none !important;
@@ -48,4 +67,3 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #3f3f4e;
 }
-

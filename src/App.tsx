@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { EarnpasteModal } from "./components/EarnpasteModal";
 import { ProductsPage } from "./components/ProductsPage";
-import { AddGamePage } from "./components/AddGamePage";
 import { ScriptsPage } from "./components/ScriptsPage";
 import { InfosPage } from "./components/InfosPage";
 import { ProviderPage } from "./components/ProviderPage";
 import { KeyProviderPage } from "./components/KeyProviderPage";
+
+// Temporary picker configuration: keep all provider definitions intact, but only show Work.ink.
+const VISIBLE_PROVIDER_IDS: ProviderId[] = ["workink"];
+const VISIBLE_PROVIDERS = PROVIDERS.filter((provider) => VISIBLE_PROVIDER_IDS.includes(provider.id));
 
 function App() {
   const [currentRoute, setCurrentRoute] = useState<{
@@ -24,6 +27,18 @@ function App() {
     }
     return { page: "home" };
   });
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [isProviderPickerOpen, setIsProviderPickerOpen] = useState(false);
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderOption>(PROVIDERS.find((provider) => provider.id === "workink") || PROVIDERS[0]);
+  const [lootlabsSession, setLootlabsSession] = useState<string | null>(null);
+  const [lootlabsStep, setLootlabsStep] = useState<number | null>(null);
+  const [earnpasteAction, setEarnpasteAction] = useState<"upgrade" | "completed" | null>(null);
+  const [earnpasteSession, setEarnpasteSession] = useState<string | null>(null);
+  const [workinkSession, setWorkinkSession] = useState<string | null>(null);
+  const [workinkStep, setWorkinkStep] = useState<number | null>(null);
+  const [workinkToken, setWorkinkToken] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const navigateTo = (
     newPage: "home" | "products" | "add" | "scripts" | "infos" | "provider" | "key",
@@ -69,7 +84,6 @@ function App() {
         setCurrentRoute({ page: "key", providerId: prov });
       } else setCurrentRoute({ page: "home" });
     };
-
     window.addEventListener("popstate", handlePopState);
 
     const path = window.location.pathname;
@@ -143,6 +157,7 @@ function App() {
             Sotarium
           </h1>
         </div>
+      )}
 
         {/* Action Buttons: Get Key navigates to /provider */}
         <div className="flex items-center gap-3 w-full max-w-xs">
