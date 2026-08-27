@@ -356,6 +356,7 @@ local function loadRemoteAsset(fileName, primaryUrl, fallbackUrl)
 end
 
 local SotariumIconAsset = loadRemoteAsset("sotarium_icon.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/assets/icon.png", "https://i.imgur.com/sZZvbs8.png")
+local SotariumWaveAsset = loadRemoteAsset("sotarium_wave.png", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/assets/wave.png", "https://i.imgur.com/8Qp4Vw7.png")
 local SotariumTransitionAsset = loadRemoteAsset("sotarium_transition.mp4", "https://raw.githubusercontent.com/Yousoterium/Sotarium/main/assets/transition.mp4")
 local LucideClockAsset = loadRemoteAsset("lucide_clock.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/clock.png", "rbxassetid://10709790397")
 local LucideTimerOffAsset = loadRemoteAsset("lucide_timer_off.png", "https://raw.githubusercontent.com/latte-soft/lucide-roblox/master/icons/compiled/256px/timer-off.png", "rbxassetid://10747366304")
@@ -1189,9 +1190,16 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- ===========================================
--- Animated Liquid Wave Loading Transition Screen (Realistic Curved Waves)
+-- Animated Liquid Wave Loading Transition Screen (Seamless Sine Wave)
 -- ===========================================
-local LoadingOverlay = Instance.new("Frame")
+local LoadingOverlay = nil
+local cgSuccess = pcall(function()
+    LoadingOverlay = Instance.new("CanvasGroup")
+end)
+if not cgSuccess or not LoadingOverlay then
+    LoadingOverlay = Instance.new("Frame")
+end
+
 LoadingOverlay.Name = "LoadingOverlay"
 LoadingOverlay.Size = UDim2.new(1, 0, 1, 0)
 LoadingOverlay.Position = UDim2.new(0, 0, 0, 0)
@@ -1208,55 +1216,41 @@ LoadingCorner.Parent = LoadingOverlay
 -- Wave Container (Rises slowly from bottom to top)
 local WaveContainer = Instance.new("Frame")
 WaveContainer.Name = "WaveContainer"
-WaveContainer.Size = UDim2.new(2.4, 0, 2.0, 0)
-WaveContainer.Position = UDim2.new(-0.7, 0, 1.15, 0)
+WaveContainer.Size = UDim2.new(2.5, 0, 1.9, 0)
+WaveContainer.Position = UDim2.new(-0.75, 0, 0.95, 0)
 WaveContainer.BackgroundTransparency = 1
 WaveContainer.ZIndex = 91
 WaveContainer.Parent = LoadingOverlay
 
--- Solid Liquid Body underneath wave crests
+-- Smooth Sine Wave Image Layer (Exact smooth continuous wave)
+local WaveImage = Instance.new("ImageLabel")
+WaveImage.Name = "WaveImage"
+WaveImage.Size = UDim2.new(1, 0, 0.45, 0)
+WaveImage.Position = UDim2.new(0, 0, 0, 0)
+WaveImage.BackgroundTransparency = 1
+WaveImage.Image = SotariumWaveAsset
+WaveImage.ScaleType = Enum.ScaleType.Stretch
+WaveImage.ZIndex = 92
+WaveImage.Parent = WaveContainer
+
+-- Solid Liquid Body underneath the wave crest
 local WaveBody = Instance.new("Frame")
 WaveBody.Name = "WaveBody"
-WaveBody.Size = UDim2.new(1, 0, 0.85, 0)
-WaveBody.Position = UDim2.new(0, 0, 0.15, 0)
-WaveBody.BackgroundColor3 = Color3.fromRGB(0, 180, 240)
+WaveBody.Size = UDim2.new(1, 0, 0.65, 0)
+WaveBody.Position = UDim2.new(0, 0, 0.35, 0)
+WaveBody.BackgroundColor3 = Color3.fromRGB(0, 185, 235)
 WaveBody.BorderSizePixel = 0
 WaveBody.ZIndex = 91
 WaveBody.Parent = WaveContainer
 
 local WaveBodyGrad = Instance.new("UIGradient")
 WaveBodyGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 235, 255)),
-    ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0, 185, 245)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 80, 140))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 210, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 175, 235)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 90, 160))
 })
 WaveBodyGrad.Rotation = 90
 WaveBodyGrad.Parent = WaveBody
-
--- Wave Crests (Multiple overlapping sinusoidal curved bubbles forming realistic rolling wave curves)
-local CrestsRow = Instance.new("Frame")
-CrestsRow.Name = "CrestsRow"
-CrestsRow.Size = UDim2.new(1, 0, 0.28, 0)
-CrestsRow.Position = UDim2.new(0, 0, 0, 0)
-CrestsRow.BackgroundTransparency = 1
-CrestsRow.ZIndex = 92
-CrestsRow.Parent = WaveContainer
-
-local NUM_CRESTS = 10
-for i = 1, NUM_CRESTS do
-    local crest = Instance.new("Frame")
-    crest.Name = "Crest_" .. i
-    crest.Size = UDim2.new(1 / (NUM_CRESTS - 1.5), 0, 1, 0)
-    crest.Position = UDim2.new((i - 1) * (1 / (NUM_CRESTS - 1.5)) - 0.05, 0, (i % 2 == 0) and 0.08 or -0.05, 0)
-    crest.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(0, 235, 255) or Color3.fromRGB(0, 205, 250)
-    crest.BorderSizePixel = 0
-    crest.ZIndex = 92
-    crest.Parent = CrestsRow
-
-    local cCorner = Instance.new("UICorner")
-    cCorner.CornerRadius = UDim.new(0.5, 0)
-    cCorner.Parent = crest
-end
 
 -- Mascot Icon (Starts transparent and smoothly takes opacity)
 local LoadingIcon = Instance.new("ImageLabel")
@@ -1286,15 +1280,15 @@ LoadingTitle.Parent = LoadingOverlay
 
 -- Play Slow Bottom-to-Up Liquid Wave Transition with Horizontal Rolling Movement
 task.spawn(function()
-    -- Horizontal rolling wave animation
-    local rollLeft = TweenService:Create(CrestsRow, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
-        Position = UDim2.new(-0.08, 0, 0, 0)
+    -- Smooth horizontal rolling wave animation
+    local rollLeft = TweenService:Create(WaveImage, TweenInfo.new(1.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), {
+        Position = UDim2.new(-0.15, 0, 0, 0)
     })
     rollLeft:Play()
 
     -- 1. Wave fills slowly from bottom to top (over 2.6 seconds)
     local waveFill = TweenService:Create(WaveContainer, TweenInfo.new(2.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-        Position = UDim2.new(-0.7, 0, -0.6, 0)
+        Position = UDim2.new(-0.75, 0, -0.65, 0)
     })
     waveFill:Play()
 
@@ -1318,7 +1312,7 @@ task.spawn(function()
     TweenService:Create(WaveContainer, TweenInfo.new(0.5, Enum.EasingStyle.Quad), { BackgroundTransparency = 1 }):Play()
 
     local overlayFade = TweenService:Create(LoadingOverlay, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {
-        BackgroundTransparency = 1
+        GroupTransparency = 1
     })
     overlayFade:Play()
     overlayFade.Completed:Connect(function()
