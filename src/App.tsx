@@ -14,7 +14,7 @@ function App() {
     if (p === "/infos") return { page: "infos" };
     if (p === "/provider") return { page: "provider" };
     if (p.startsWith("/key/")) {
-      const prov = p.replace("/key/", "").split("/")[0] || "lootlabs";
+      const prov = p.replace("/key/", "").split("/")[0] || "workink";
       return { page: "key", providerId: prov };
     }
     return { page: "home" };
@@ -54,7 +54,7 @@ function App() {
       else if (p === "/infos") setCurrentRoute({ page: "infos" });
       else if (p === "/provider") setCurrentRoute({ page: "provider" });
       else if (p.startsWith("/key/")) {
-        const prov = p.replace("/key/", "").split("/")[0] || "lootlabs";
+        const prov = p.replace("/key/", "").split("/")[0] || "workink";
         setCurrentRoute({ page: "key", providerId: prov });
       } else setCurrentRoute({ page: "home" });
     };
@@ -66,7 +66,7 @@ function App() {
     const params = new URLSearchParams(search);
 
     if (path === "/lootlabs" && (params.has("verify") || params.has("verify1") || params.has("verify2"))) {
-      navigateTo("key", "lootlabs");
+      navigateTo("key", "workink");
     }
 
     return () => window.removeEventListener("popstate", handlePopState);
@@ -84,7 +84,7 @@ function App() {
   if (currentRoute.page === "key") {
     return (
       <KeyProviderPage
-        providerId={currentRoute.providerId || "lootlabs"}
+        providerId={currentRoute.providerId || "workink"}
         onGoHome={() => navigateTo("home")}
       />
     );
@@ -100,7 +100,7 @@ function App() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased">
-      {/* Dot Grid Background */}
+      {/* Background Dot Grid */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -124,8 +124,8 @@ function App() {
           </h1>
         </div>
 
-        {/* Action Buttons: Get Key + Join Discord */}
-        <div className="flex items-center gap-3 w-full max-w-xs">
+        {/* Action Buttons: Get Key + Join Discord (Equal 1-line pill buttons) */}
+        <div className="flex items-center justify-center gap-3 w-full max-w-sm">
           {/* Get Key Button */}
           <a
             href="/provider"
@@ -133,17 +133,17 @@ function App() {
               e.preventDefault();
               navigateTo("provider");
             }}
-            className="flex-1 py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline"
+            className="w-36 h-11 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline whitespace-nowrap"
           >
             Get Key
           </a>
 
-          {/* Join Discord Button */}
+          {/* Join Discord Button (Exact same height/width, single line) */}
           <a
             href="https://discord.gg/3aghbJBybQ"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 py-3 px-6 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline"
+            className="w-36 h-11 rounded-full border border-white/[0.12] bg-[#141417] hover:bg-[#1c1c20] hover:border-white/[0.24] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline whitespace-nowrap"
           >
             Join Discord
           </a>

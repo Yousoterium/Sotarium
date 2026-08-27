@@ -146,14 +146,23 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         }}
       />
 
-      {/* Main Glass Card Container (Exact screenshot replica) */}
-      <div className="relative z-10 w-full max-w-[360px] sm:max-w-[390px] rounded-2xl bg-[#121215]/60 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
-        {/* Top Circular Badge containing Work.ink Icon */}
-        <div className="w-16 h-16 rounded-full bg-black/60 border border-white/[0.1] flex items-center justify-center p-3.5 mb-4 shadow-lg">
+      {/* True Glassmorphism Card (Translucent glass with backdrop-blur & inner glow) */}
+      <div
+        className="relative z-10 w-full max-w-[360px] sm:max-w-[390px] rounded-2xl p-7 sm:p-8 flex flex-col items-center text-center"
+        style={{
+          background: "rgba(18, 18, 22, 0.4)",
+          backdropFilter: "blur(24px) saturate(1.4)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.4)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 70px -30px rgba(0, 0, 0, 0.85)",
+        }}
+      >
+        {/* Floating Work.ink Icon (No circle holder around it) */}
+        <div className="mb-3 flex items-center justify-center">
           <img
             src={provider.icon}
             alt={provider.name}
-            className="w-full h-full object-contain"
+            className="w-12 h-12 object-contain drop-shadow-lg"
             onError={(e) => {
               (e.target as HTMLElement).style.display = "none";
             }}
@@ -161,7 +170,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         </div>
 
         {/* Provider Title */}
-        <h1 className="text-2xl font-bold text-white tracking-tight mb-4">
+        <h1 className="text-2xl font-bold text-white tracking-tight mb-5">
           {provider.name}
         </h1>
 
@@ -172,16 +181,29 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </div>
         )}
 
-        {/* Steps Section in Glass Rectangles */}
+        {/* Steps Section in Pure Glass Rectangles */}
         <div className="w-full flex flex-col gap-2.5">
           {generatedKey ? (
             /* Key Ready Glass Box */
-            <div className="w-full flex flex-col items-center gap-2.5 p-4 rounded-xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
+            <div
+              className="w-full flex flex-col items-center gap-2.5 p-4 rounded-xl"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
               <span className="text-xs font-bold text-emerald-400">
                 Key Ready
               </span>
 
-              <div className="w-full flex items-center justify-between bg-black/50 border border-white/[0.08] rounded-xl px-3 py-2">
+              <div
+                className="w-full flex items-center justify-between rounded-xl px-3 py-2"
+                style={{
+                  background: "rgba(0, 0, 0, 0.4)",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                }}
+              >
                 <code className="text-sm font-mono font-bold text-amber-300 truncate mr-2 select-all">
                   {generatedKey}
                 </code>
@@ -200,7 +222,13 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             </div>
           ) : isGenerating ? (
             /* Generating State */
-            <div className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+            <div
+              className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-xl"
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+              }}
+            >
               <span className="text-xs font-medium text-neutral-300">Generating key...</span>
             </div>
           ) : (
@@ -211,13 +239,18 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                 type="button"
                 disabled={completedSteps.includes(1) || stepLoading !== null}
                 onClick={() => handleStartStep(1)}
-                className={`w-full py-3.5 px-4 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-150 backdrop-blur-md ${
+                className={`w-full py-3.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-150 ${
                   completedSteps.includes(1)
-                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-300 cursor-default"
+                    ? "bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 cursor-default"
                     : currentStep === 1
-                    ? "bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.08] hover:border-white/[0.18] text-white cursor-pointer active:scale-[0.99]"
-                    : "bg-white/[0.02] border-white/[0.04] text-neutral-500 cursor-not-allowed"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.07]"
+                    : "text-neutral-500 cursor-not-allowed"
                 }`}
+                style={{
+                  background: completedSteps.includes(1) ? undefined : "rgba(255, 255, 255, 0.035)",
+                  border: completedSteps.includes(1) ? undefined : "1px solid rgba(255, 255, 255, 0.08)",
+                  backdropFilter: "blur(12px)",
+                }}
               >
                 <span>Checkpoint 1</span>
                 <span className="text-xs text-neutral-400 font-medium">
@@ -230,13 +263,18 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                 type="button"
                 disabled={!completedSteps.includes(1) || completedSteps.includes(2) || stepLoading !== null}
                 onClick={() => handleStartStep(2)}
-                className={`w-full py-3.5 px-4 rounded-xl border text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-150 backdrop-blur-md ${
+                className={`w-full py-3.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-150 ${
                   completedSteps.includes(2)
-                    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-300 cursor-default"
+                    ? "bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 cursor-default"
                     : completedSteps.includes(1)
-                    ? "bg-white/[0.04] hover:bg-white/[0.08] border-white/[0.08] hover:border-white/[0.18] text-white cursor-pointer active:scale-[0.99]"
-                    : "bg-white/[0.02] border-white/[0.04] text-neutral-500 cursor-not-allowed"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.07]"
+                    : "text-neutral-500 cursor-not-allowed"
                 }`}
+                style={{
+                  background: completedSteps.includes(2) ? undefined : "rgba(255, 255, 255, 0.035)",
+                  border: completedSteps.includes(2) ? undefined : "1px solid rgba(255, 255, 255, 0.08)",
+                  backdropFilter: "blur(12px)",
+                }}
               >
                 <span>Checkpoint 2</span>
                 <span className="text-xs text-neutral-400 font-medium">
@@ -253,11 +291,16 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           )}
         </div>
 
-        {/* Go Home Button */}
+        {/* "Go home" Button (Glass style matching Obscura / screenshot) */}
         <button
           type="button"
           onClick={onGoHome}
-          className="w-full mt-4 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] backdrop-blur-md"
+          className="w-full mt-4 py-3 rounded-xl text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
+          style={{
+            background: "rgba(255, 255, 255, 0.035)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            backdropFilter: "blur(12px)",
+          }}
         >
           Go home
         </button>
