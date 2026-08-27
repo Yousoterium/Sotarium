@@ -24,25 +24,25 @@ interface ProviderPageProps {
 export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, onBack }) => {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Background Dot Grid (Identical to Homepage) */}
+      {/* Background Dot Grid */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-[0.28]"
+        className="fixed inset-0 pointer-events-none opacity-[0.35]"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }}
       />
 
-      {/* Obscura Transparent Glass Container */}
+      {/* Ultra-Transparent Glass Container */}
       <div
         className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
         style={{
-          background: "rgba(13, 13, 13, 0.4)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "rgba(255, 255, 255, 0.015)",
+          border: "1px solid rgba(255, 255, 255, 0.16)",
           borderRadius: "20px",
-          WebkitBackdropFilter: "blur(18px) saturate(1.3)",
-          backdropFilter: "blur(18px) saturate(1.3)",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
+          WebkitBackdropFilter: "blur(12px) saturate(1.2)",
+          backdropFilter: "blur(12px) saturate(1.2)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
         }}
       >
         {/* Title */}
@@ -50,7 +50,7 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
           Select Provider
         </h1>
 
-        {/* Work.ink with full square icon fitting placeholder */}
+        {/* Work.ink Option */}
         <div className="w-full flex flex-col gap-2.5">
           {AVAILABLE_PROVIDERS.map((provider) => (
             <a
@@ -60,17 +60,16 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
                 e.preventDefault();
                 onSelectProvider(provider.id);
               }}
-              className="w-full py-3.5 px-4 rounded-[14px] transition-all duration-150 flex items-center justify-between text-left cursor-pointer active:scale-[0.99] no-underline text-white group"
+              className="w-full py-3.5 px-4 rounded-[14px] transition-all duration-150 flex items-center justify-between text-left cursor-pointer active:scale-[0.99] no-underline text-white group hover:bg-white/[0.05] hover:border-white/[0.24]"
               style={{
-                background: "rgba(13, 13, 13, 0.5)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                WebkitBackdropFilter: "blur(16px) saturate(1.35)",
-                backdropFilter: "blur(16px) saturate(1.35)",
-                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+                background: "rgba(255, 255, 255, 0.025)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                WebkitBackdropFilter: "blur(10px)",
+                backdropFilter: "blur(10px)",
               }}
             >
               <div className="flex items-center gap-3">
-                {/* Full Square Work.ink App Icon (fills placeholder completely) */}
+                {/* Full Square Work.ink App Icon */}
                 <div className="w-8 h-8 rounded-[8px] overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
                   <img
                     src={provider.icon}
@@ -94,13 +93,12 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
         <button
           type="button"
           onClick={onBack}
-          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
+          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.05] hover:border-white/[0.24]"
           style={{
-            background: "rgba(13, 13, 13, 0.5)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            WebkitBackdropFilter: "blur(16px) saturate(1.35)",
-            backdropFilter: "blur(16px) saturate(1.35)",
-            boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+            background: "rgba(255, 255, 255, 0.025)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            WebkitBackdropFilter: "blur(10px)",
+            backdropFilter: "blur(10px)",
           }}
         >
           Go home

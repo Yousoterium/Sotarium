@@ -128,28 +128,28 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Background Dot Grid (Identical to Homepage) */}
+      {/* Background Dot Grid */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-[0.28]"
+        className="fixed inset-0 pointer-events-none opacity-[0.35]"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }}
       />
 
-      {/* Obscura Transparent Glass Container */}
+      {/* Ultra-Transparent Glass Container (High transparency + Solid gray outline) */}
       <div
         className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
         style={{
-          background: "rgba(13, 13, 13, 0.4)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "rgba(255, 255, 255, 0.015)",
+          border: "1px solid rgba(255, 255, 255, 0.16)",
           borderRadius: "20px",
-          WebkitBackdropFilter: "blur(18px) saturate(1.3)",
-          backdropFilter: "blur(18px) saturate(1.3)",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
+          WebkitBackdropFilter: "blur(12px) saturate(1.2)",
+          backdropFilter: "blur(12px) saturate(1.2)",
+          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
         }}
       >
-        {/* Floating Work.ink Icon (Directly on GUI with no holder/circle) */}
+        {/* Floating Work.ink Icon */}
         <div className="mb-3.5 flex items-center justify-center">
           <img
             src={provider.icon}
@@ -170,17 +170,17 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </div>
         )}
 
-        {/* Steps Section in Obscura Glass Rectangles */}
+        {/* Steps Section in Ultra-Transparent Glass Rectangles with Gray Outline */}
         <div className="w-full flex flex-col gap-2.5">
           {generatedKey ? (
             /* Key Ready Glass Box */
             <div
               className="w-full flex flex-col items-center gap-2.5 p-4 rounded-[14px]"
               style={{
-                background: "rgba(13, 13, 13, 0.5)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                WebkitBackdropFilter: "blur(16px) saturate(1.35)",
-                backdropFilter: "blur(16px) saturate(1.35)",
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                WebkitBackdropFilter: "blur(10px)",
+                backdropFilter: "blur(10px)",
                 boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
               }}
             >
@@ -191,8 +191,8 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
               <div
                 className="w-full flex items-center justify-between rounded-xl px-3 py-2"
                 style={{
-                  background: "rgba(0, 0, 0, 0.5)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  background: "rgba(0, 0, 0, 0.35)",
+                  border: "1px solid rgba(255, 255, 255, 0.14)",
                 }}
               >
                 <code className="text-sm font-mono font-bold text-amber-300 truncate mr-2 select-all">
@@ -216,14 +216,14 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             <div
               className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-[14px]"
               style={{
-                background: "rgba(13, 13, 13, 0.5)",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
               }}
             >
               <span className="text-xs font-medium text-neutral-300">Generating key...</span>
             </div>
           ) : (
-            /* Steps Rectangular Glass Buttons */
+            /* Steps Rectangular Buttons */
             <>
               {/* Checkpoint 1 */}
               <button
@@ -232,17 +232,16 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                 onClick={() => handleStartStep(1)}
                 className={`w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 ${
                   completedSteps.includes(1)
-                    ? "bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 cursor-default"
+                    ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 cursor-default"
                     : currentStep === 1
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:border-white/[0.18]"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.05] hover:border-white/[0.24]"
                     : "text-neutral-500 cursor-not-allowed"
                 }`}
                 style={{
-                  background: completedSteps.includes(1) ? undefined : "rgba(13, 13, 13, 0.5)",
-                  border: completedSteps.includes(1) ? undefined : "1px solid rgba(255, 255, 255, 0.08)",
-                  WebkitBackdropFilter: "blur(16px) saturate(1.35)",
-                  backdropFilter: "blur(16px) saturate(1.35)",
-                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+                  background: completedSteps.includes(1) ? undefined : "rgba(255, 255, 255, 0.025)",
+                  border: completedSteps.includes(1) ? undefined : "1px solid rgba(255, 255, 255, 0.15)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  backdropFilter: "blur(10px)",
                 }}
               >
                 <span className="font-semibold">Checkpoint 1</span>
@@ -258,17 +257,16 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                 onClick={() => handleStartStep(2)}
                 className={`w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 ${
                   completedSteps.includes(2)
-                    ? "bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 cursor-default"
+                    ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 cursor-default"
                     : completedSteps.includes(1)
-                    ? "text-white cursor-pointer active:scale-[0.99] hover:border-white/[0.18]"
+                    ? "text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.05] hover:border-white/[0.24]"
                     : "text-neutral-500 cursor-not-allowed"
                 }`}
                 style={{
-                  background: completedSteps.includes(2) ? undefined : "rgba(13, 13, 13, 0.5)",
-                  border: completedSteps.includes(2) ? undefined : "1px solid rgba(255, 255, 255, 0.08)",
-                  WebkitBackdropFilter: "blur(16px) saturate(1.35)",
-                  backdropFilter: "blur(16px) saturate(1.35)",
-                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+                  background: completedSteps.includes(2) ? undefined : "rgba(255, 255, 255, 0.025)",
+                  border: completedSteps.includes(2) ? undefined : "1px solid rgba(255, 255, 255, 0.15)",
+                  WebkitBackdropFilter: "blur(10px)",
+                  backdropFilter: "blur(10px)",
                 }}
               >
                 <span className="font-semibold">Checkpoint 2</span>
@@ -290,13 +288,12 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         <button
           type="button"
           onClick={onGoHome}
-          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
+          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.05] hover:border-white/[0.24]"
           style={{
-            background: "rgba(13, 13, 13, 0.5)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            WebkitBackdropFilter: "blur(16px) saturate(1.35)",
-            backdropFilter: "blur(16px) saturate(1.35)",
-            boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+            background: "rgba(255, 255, 255, 0.025)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            WebkitBackdropFilter: "blur(10px)",
+            backdropFilter: "blur(10px)",
           }}
         >
           Go home
