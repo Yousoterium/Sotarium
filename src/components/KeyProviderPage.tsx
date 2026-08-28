@@ -5,6 +5,23 @@ import { saveKeyToDatabase } from "../lib/supabase";
 const WORKINK_STEP_1 = "https://work.ink/2dbK/sotarium-step-1";
 const WORKINK_STEP_2 = "https://work.ink/2dbK/sotarium-step-2";
 
+function generateSecureToken(prefix: string = "s"): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
+  let token = `${prefix}_`;
+  const randomBytes = new Uint8Array(48);
+  if (typeof window !== "undefined" && window.crypto) {
+    window.crypto.getRandomValues(randomBytes);
+    for (let i = 0; i < randomBytes.length; i++) {
+      token += chars[randomBytes[i] % chars.length];
+    }
+  } else {
+    for (let i = 0; i < 48; i++) {
+      token += chars[Math.floor(Math.random() * chars.length)];
+    }
+  }
+  return token;
+}
+
 function computeKeySignature(g1: string, g2: string): string {
   const salt = "SOTARIUM_2026";
   const full = `${g1}${g2}${salt}`;
@@ -95,68 +112,96 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
   };
 
   useEffect(() => {
+    const rawPath = window.location.pathname;
     const search = window.location.search;
     const params = new URLSearchParams(search);
-    const path = window.location.pathname;
 
     const existingKey = localStorage.getItem("sotarium_user_key");
     if (existingKey) {
       setGeneratedKey(existingKey);
       setCompletedSteps([1, 2]);
-      if (search || path === "/workink") {
+      if (search || rawPath !== "/key/workink") {
         window.history.replaceState({}, "", "/key/workink");
       }
       return;
     }
 
+    // Extract dynamic random token from path /workink/:token or /key/workink/:token
+    let pathToken = "";
+    if (rawPath.startsWith("/workink/") && rawPath.length > "/workink/".length) {
+      pathToken = rawPath.replace("/workink/", "").trim();
+    } else if (rawPath.startsWith("/key/workink/") && rawPath.length > "/key/workink/".length) {
+      pathToken = rawPath.replace("/key/workink/", "").trim();
+    }
+
+    const token = pathToken || params.get("token") || params.get("t") || params.get("verify") || "";
     const isExplicitStep2 =
       params.get("step") === "2" ||
       params.get("checkpoint") === "2" ||
       params.get("c") === "2" ||
-      params.get("verify") === "2" ||
-      params.get("ok") === "2" ||
       params.has("step2") ||
       params.has("verify2") ||
       params.has("complete") ||
-      window.location.hash.includes("step2") ||
-      window.location.hash.includes("step=2");
+      window.location.hash.includes("step2");
 
     const isExplicitStep1 =
       params.get("step") === "1" ||
       params.get("checkpoint") === "1" ||
       params.get("c") === "1" ||
-      params.get("verify") === "1" ||
-      params.get("ok") === "1" ||
       params.has("step1") ||
       params.has("verify1") ||
-      window.location.hash.includes("step1") ||
-      window.location.hash.includes("step=1");
+      window.location.hash.includes("step1");
 
     const isGenericCallback =
       params.has("ok") ||
       params.has("t") ||
       params.has("token") ||
       params.has("verify") ||
-      params.has("step");
+      params.has("step") ||
+      pathToken.length > 0;
+
+    // Check if token was already used (One-time use validation)
+    let usedTokens: string[] = [];
+    try {
+      usedTokens = JSON.parse(localStorage.getItem("sotarium_used_tokens") || "[]");
+    } catch {
+      usedTokens = [];
+    }
+
+    if (token && usedTokens.includes(token)) {
+      setErrorMessage("This verification token has already been used.");
+      window.history.replaceState({}, "", "/key/workink");
+      return;
+    }
 
     const step1IsDone = localStorage.getItem("sotarium_step1_done") === "true";
 
     if (isExplicitStep2 || (isGenericCallback && step1IsDone)) {
-      // Step 2 Completed -> Complete Key Generation!
+      // Mark token as consumed (One-Time Use)
+      if (token) {
+        usedTokens.push(token);
+        localStorage.setItem("sotarium_used_tokens", JSON.stringify(usedTokens));
+      }
       localStorage.setItem("sotarium_step1_done", "true");
       localStorage.setItem("sotarium_step2_done", "true");
+      localStorage.removeItem("sotarium_active_step2_token");
       setCompletedSteps([1, 2]);
       handleKeyGeneration();
     } else if (isExplicitStep1 || isGenericCallback) {
-      // Step 1 Completed -> Advance to Step 2!
+      // Mark token as consumed (One-Time Use)
+      if (token) {
+        usedTokens.push(token);
+        localStorage.setItem("sotarium_used_tokens", JSON.stringify(usedTokens));
+      }
       localStorage.setItem("sotarium_step1_done", "true");
+      localStorage.removeItem("sotarium_active_step1_token");
       setCompletedSteps([1]);
     } else if (step1IsDone) {
       setCompletedSteps([1]);
     }
 
-    // Clean URL query parameters
-    if (search || path === "/workink") {
+    // Clean address bar back to /key/workink
+    if (search || rawPath !== "/key/workink") {
       window.history.replaceState({}, "", "/key/workink");
     }
   }, []);
@@ -183,6 +228,14 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     setStepLoading(stepNumber);
 
     try {
+      // Generate cryptographically unique one-time token for this checkpoint run
+      const uniqueToken = generateSecureToken(`s${stepNumber}`);
+      if (stepNumber === 1) {
+        localStorage.setItem("sotarium_active_step1_token", uniqueToken);
+      } else {
+        localStorage.setItem("sotarium_active_step2_token", uniqueToken);
+      }
+
       const dest = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
       window.location.href = dest;
     } catch (err) {
