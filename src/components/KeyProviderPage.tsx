@@ -310,7 +310,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                   onClick={() => handleStartStep(1)}
                   className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer"
                 >
-                  {stepLoading === 1 ? "Loading..." : "Start checkpoint (Step 1/2)"}
+                  {stepLoading === 1 ? "Loading..." : "Start Step"}
                 </button>
               ) : (
                 /* Step 2 Pill Button */
@@ -320,7 +320,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                   onClick={() => handleStartStep(2)}
                   className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer animate-in fade-in zoom-in-95"
                 >
-                  {stepLoading === 2 ? "Loading..." : "Start checkpoint (Step 2/2)"}
+                  {stepLoading === 2 ? "Loading..." : "Start Step"}
                 </button>
               )}
             </>
