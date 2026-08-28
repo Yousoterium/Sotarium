@@ -73,14 +73,32 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     const params = new URLSearchParams(search);
     const path = window.location.pathname;
 
+    const isDirectWorkinkAttempt =
+      path === "/workink" &&
+      !params.has("t") &&
+      !params.has("token") &&
+      !params.has("verify") &&
+      !params.has("verify1") &&
+      !params.has("verify2") &&
+      !params.has("step2") &&
+      !params.has("complete") &&
+      !sessionStorage.getItem("sotarium_step1_started");
+
+    // If player manually typed /workink or /workink?ok without started session
+    if (isDirectWorkinkAttempt) {
+      setErrorMessage("Missing Work.ink verification token.");
+      window.history.replaceState({}, "", "/key/workink");
+      return;
+    }
+
     const hasCompleteParam =
       params.has("complete") ||
       params.has("verify2") ||
       params.get("step") === "2" ||
       params.get("ok") === "2" ||
-      params.has("step2");
+      sessionStorage.getItem("sotarium_step2_started") === "true";
 
-    const hasStepParam =
+    const hasStep1Param =
       params.has("ok") ||
       params.has("verify") ||
       params.has("verify1") ||
@@ -88,20 +106,25 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       params.has("step") ||
       params.has("t") ||
       params.has("token") ||
-      path.includes("ok");
+      sessionStorage.getItem("sotarium_step1_started") === "true";
 
-    const step1WasDone = localStorage.getItem("sotarium_step1_done") === "true";
+    const step1Done = sessionStorage.getItem("sotarium_step1_done") === "true";
 
-    if (hasCompleteParam || (hasStepParam && step1WasDone)) {
-      localStorage.setItem("sotarium_step1_done", "true");
-      localStorage.setItem("sotarium_step2_done", "true");
+    if (hasCompleteParam && step1Done) {
+      sessionStorage.setItem("sotarium_step1_done", "true");
+      sessionStorage.setItem("sotarium_step2_done", "true");
       setCompletedSteps([1, 2]);
       handleKeyGeneration();
-    } else if (hasStepParam) {
-      localStorage.setItem("sotarium_step1_done", "true");
+    } else if (hasStep1Param && !step1Done) {
+      sessionStorage.setItem("sotarium_step1_done", "true");
       setCompletedSteps([1]);
-    } else if (step1WasDone) {
+    } else if (step1Done) {
       setCompletedSteps([1]);
+    }
+
+    // Clean and rotate the URL back to /key/workink so parameters don't stay in the address bar
+    if (window.location.search || window.location.pathname === "/workink") {
+      window.history.replaceState({}, "", "/key/workink");
     }
   }, []);
 
@@ -128,7 +151,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
     try {
       if (stepNumber === 1) {
-        localStorage.setItem("sotarium_step1_started", "true");
+        sessionStorage.setItem("sotarium_step1_started", "true");
+      } else if (stepNumber === 2) {
+        sessionStorage.setItem("sotarium_step2_started", "true");
       }
       const dest = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
       window.location.href = dest;
@@ -167,39 +192,40 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           <div className="w-full flex items-center justify-between px-6 mb-6 relative">
             {/* Connecting Line Track */}
             <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-[1.5px] bg-white/[0.12] z-0">
+              {/* White Progress Line that stops in the middle (50%) when Step 1 is done */}
               <div
-                className="h-full bg-[#00c3ff] transition-all duration-500"
-                style={{ width: isStep1Done ? "100%" : "0%" }}
+                className="h-full bg-white transition-all duration-500"
+                style={{ width: isStep2Done ? "100%" : isStep1Done ? "50%" : "0%" }}
               />
             </div>
 
-            {/* Step 1 Circle (Mascot Blue) */}
+            {/* Step 1 Circle: Lime Green Checkmark when done, Mascot Blue "1" when active */}
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 transition-all duration-300 ${
-                !isStep1Done
-                  ? "bg-[#00c3ff] text-black shadow-md scale-105"
-                  : "bg-[#00c3ff] text-black"
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black relative z-10 transition-all duration-300 ${
+                isStep1Done
+                  ? "bg-[#00e600] text-white shadow-md shadow-[#00e600]/30 scale-105"
+                  : "bg-[#00c3ff] text-black shadow-md scale-105"
               }`}
             >
-              1
+              {isStep1Done ? "✓" : "1"}
             </div>
 
-            {/* Step 2 Circle (Mascot Blue) */}
+            {/* Step 2 Circle: Lime Green Checkmark when done, Mascot Blue "2" when active, dark when locked */}
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 transition-all duration-300 ${
-                isStep1Done && !isStep2Done
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black relative z-10 transition-all duration-300 ${
+                isStep2Done
+                  ? "bg-[#00e600] text-white shadow-md shadow-[#00e600]/30 scale-105"
+                  : isStep1Done
                   ? "bg-[#00c3ff] text-black shadow-md scale-105"
-                  : isStep2Done
-                  ? "bg-[#00c3ff] text-black"
                   : "bg-[#18181b] text-neutral-500 border border-white/[0.08]"
               }`}
             >
-              2
+              {isStep2Done ? "✓" : "2"}
             </div>
           </div>
         )}
 
-        {/* Square Work.ink Logo Holder (Square fitting perfectly) */}
+        {/* Square Work.ink Logo Holder (Square squircle fitting perfectly) */}
         <div className="w-14 h-14 rounded-2xl bg-black/60 border border-white/[0.14] overflow-hidden p-1.5 mb-4 shadow-xl flex items-center justify-center relative group">
           <img
             src={provider.icon}
@@ -214,9 +240,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           {provider.name}
         </h1>
 
-        {/* Error Message if any */}
+        {/* Error Message Alert (Red text box for missing token / invalid attempts) */}
         {errorMessage && (
-          <div className="w-full mb-3 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+          <div className="w-full mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs text-center font-medium shadow-sm">
             {errorMessage}
           </div>
         )}
@@ -295,8 +321,10 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         <button
           type="button"
           onClick={() => {
-            localStorage.removeItem("sotarium_step1_done");
-            localStorage.removeItem("sotarium_step2_done");
+            sessionStorage.removeItem("sotarium_step1_started");
+            sessionStorage.removeItem("sotarium_step1_done");
+            sessionStorage.removeItem("sotarium_step2_started");
+            sessionStorage.removeItem("sotarium_step2_done");
             onGoHome();
           }}
           className="w-full mt-4 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] backdrop-blur-md shadow-sm"
