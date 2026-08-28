@@ -268,7 +268,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     return () => clearInterval(timer);
   }, [generatedKey]);
 
-  const handleStartStep = (stepNumber: number) => {
+  const handleStartStep = async (stepNumber: number) => {
     setErrorMessage("");
     setStepLoading(stepNumber);
 
@@ -280,8 +280,28 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         localStorage.setItem("sotarium_issued_step2_token", secureToken);
       }
 
-      const dest = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
-      window.location.href = dest;
+      const action = stepNumber === 1 ? "start" : "step2";
+      let destUrl = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
+
+      try {
+        const res = await fetch(`/api/workink?action=${action}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.url && typeof data.url === "string") {
+            destUrl = data.url;
+          }
+          if (data?.session) {
+            localStorage.setItem("sotarium_workink_session", data.session);
+          }
+        }
+      } catch (apiErr) {
+        console.warn("API override call failed, using fallback:", apiErr);
+      }
+
+      window.location.href = destUrl;
     } catch (err) {
       console.error("Step error:", err);
       setErrorMessage("Could not launch checkpoint. Please try again.");

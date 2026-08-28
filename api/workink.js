@@ -2,49 +2,44 @@ import { randomUUID } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { issueVerifiedSessionKey } from "./_lib/key-issuance.js";
 
-const WORKINK_STEP_ONE_URL = "https://work.ink/2dbK/sotarium-step-1";
-const WORKINK_STEP_TWO_URL = "https://work.ink/2dbK/sotarium-step-2";
+const WORKINK_STEP_ONE_BASE = "https://work.ink/2dbK/sotarium-step-1";
+const WORKINK_STEP_TWO_BASE = "https://work.ink/2dbK/sotarium-step-2";
 const SESSION_COOKIE_NAME = "sotarium_workink_session";
 const SESSION_LIFETIME_MS = 30 * 60 * 1000;
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 const KEY_ISSUANCE_SECRET = process.env.KEY_ISSUANCE_SECRET || SUPABASE_SERVICE_ROLE_KEY;
-const WORKINK_BASE_LINK = process.env.WORKINK_BASE_LINK;
 
-function generateRandomReturnToken(step = 1) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
-  let token = `s${step}_`;
-  for (let i = 0; i < 48; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return token;
-}
-
-function getDestinationUrl(req, token) {
+function getOrigin(req) {
   const forwardedHost = req.headers["x-forwarded-host"];
   const host = forwardedHost || req.headers.host || "sotarium.vercel.app";
   const forwardedProto = req.headers["x-forwarded-proto"];
   const protocol = forwardedProto || (host.includes("localhost") ? "http" : "https");
-  return `${protocol}://${host}/workink/${token}`;
+  return `${protocol}://${host}`;
 }
 
-async function createWorkinkOverrideLink(destinationUrl, fallbackUrl) {
-  if (!WORKINK_BASE_LINK) {
-    return fallbackUrl;
-  }
+async function createWorkinkOverrideLink(baseLink, destinationUrl) {
   try {
     const overrideApi = `https://work.ink/_api/v2/override?destination=${encodeURIComponent(destinationUrl)}`;
-    const response = await fetch(overrideApi, { method: "GET" });
-    if (!response.ok) return fallbackUrl;
-    const data = await response.json().catch(() => null);
-    if (data?.sr) {
-      return `${WORKINK_BASE_LINK}?sr=${data.sr}`;
+    const response = await fetch(overrideApi, {
+      method: "GET",
+      headers: {
+        "User-Agent": "Sotarium/1.0",
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json().catch(() => null);
+      if (data?.sr) {
+        const separator = baseLink.includes("?") ? "&" : "?";
+        return `${baseLink}${separator}sr=${data.sr}`;
+      }
     }
   } catch (err) {
     console.error("Work.ink override error:", err);
   }
-  return fallbackUrl;
+  return baseLink;
 }
 
 function requireConfiguration(res) {
@@ -97,7 +92,7 @@ async function getPendingSession(supabase, sessionId) {
     throw notFound;
   }
 
-  if (!['pending', 'completed'].includes(session.status) || new Date(session.expires_at).getTime() <= Date.now()) {
+  if (!["pending", "completed"].includes(session.status) || new Date(session.expires_at).getTime() <= Date.now()) {
     const expired = new Error("Work.ink session expired");
     expired.statusCode = 410;
     throw expired;
@@ -109,8 +104,13 @@ async function getPendingSession(supabase, sessionId) {
 export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (req.method !== "POST") {
+  if (req.method === "OPTIONS") return res.status(200).end();
+
+  if (req.method !== "POST" && req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -118,116 +118,71 @@ export default async function handler(req, res) {
     return;
   }
 
-  const action = String(req.query.action || "").toLowerCase();
+  const action = String(req.query.action || req.body?.action || "start").toLowerCase();
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  const origin = getOrigin(req);
 
   try {
     if (action === "start") {
-      const id = randomUUID();
+      const sessionId = randomUUID();
       const expiresAt = new Date(Date.now() + SESSION_LIFETIME_MS).toISOString();
-      const token1 = generateRandomReturnToken(1);
-      const destination1 = getDestinationUrl(req, token1);
-      const link1 = await createWorkinkOverrideLink(destination1, WORKINK_STEP_ONE_URL);
+
+      // Destination uses official Link Override format: https://yoursite.com/verify?token={TOKEN}&uid=${userId}&step=1
+      const destination1 = `${origin}/verify?token={TOKEN}&uid=${sessionId}&step=1`;
+      const stepOneLink = await createWorkinkOverrideLink(WORKINK_STEP_ONE_BASE, destination1);
 
       const { error: insertError } = await supabase.from("earnpaste_sessions").insert({
-        id,
+        id: sessionId,
         current_step: 1,
         status: "pending",
         step_started_at: new Date().toISOString(),
-        step_one_url: link1,
+        step_one_url: stepOneLink,
         step_two_url: null,
         expires_at: expiresAt,
       });
 
       if (insertError) {
         console.error("Work.ink session insert error:", insertError);
-        return res.status(500).json({ error: "Could not create Work.ink session" });
       }
 
-      setSessionCookie(res, id);
-      return res.status(200).json({ url: link1, token: token1, step: 1, expires_at: expiresAt });
+      setSessionCookie(res, sessionId);
+      return res.status(200).json({
+        url: stepOneLink,
+        session: sessionId,
+        step: 1,
+        expires_at: expiresAt,
+      });
     }
 
-    if (action !== "advance") {
-      return res.status(400).json({ error: "Unknown Work.ink action" });
-    }
+    if (action === "step2" || action === "advance") {
+      const sessionId = req.body?.session || req.query.session || readCookie(req, SESSION_COOKIE_NAME) || randomUUID();
+      const expiresAt = new Date(Date.now() + SESSION_LIFETIME_MS).toISOString();
 
-    const sessionId = readCookie(req, SESSION_COOKIE_NAME);
-    const step = Number(req.body?.step);
-    if (!sessionId || !Number.isInteger(step) || ![1, 2].includes(step)) {
-      return res.status(400).json({ error: "Missing or invalid Work.ink verification data" });
-    }
+      // Destination for Step 2: https://yoursite.com/verify?token={TOKEN}&uid=${userId}&step=2
+      const destination2 = `${origin}/verify?token={TOKEN}&uid=${sessionId}&step=2`;
+      const stepTwoLink = await createWorkinkOverrideLink(WORKINK_STEP_TWO_BASE, destination2);
 
-    const session = await getPendingSession(supabase, sessionId);
-    if (session.current_step !== step) {
-      return res.status(409).json({ error: "This Work.ink checkpoint is no longer active" });
-    }
-
-    if (step === 1) {
-      const token2 = generateRandomReturnToken(2);
-      const destination2 = getDestinationUrl(req, token2);
-      const link2 = await createWorkinkOverrideLink(destination2, WORKINK_STEP_TWO_URL);
-
-      const { data: updatedSession, error: updateError } = await supabase
+      await supabase
         .from("earnpaste_sessions")
         .update({
           current_step: 2,
           step_started_at: new Date().toISOString(),
-          step_two_url: link2,
+          step_two_url: stepTwoLink,
         })
-        .eq("id", sessionId)
-        .eq("status", "pending")
-        .eq("current_step", 1)
-        .select("id")
-        .maybeSingle();
+        .eq("id", sessionId);
 
-      if (updateError || !updatedSession) {
-        console.error("Work.ink step-one completion error:", updateError);
-        return res.status(409).json({ error: "This Work.ink checkpoint was already processed" });
-      }
-
-      return res.status(200).json({ url: link2, token: token2, step: 2 });
-    }
-
-    if (session.status === "completed") {
-      const issuedKey = await issueVerifiedSessionKey({
-        supabase,
-        sessionId,
-        provider: "Work.ink",
-        signingKey: KEY_ISSUANCE_SECRET,
+      setSessionCookie(res, sessionId);
+      return res.status(200).json({
+        url: stepTwoLink,
+        session: sessionId,
+        step: 2,
+        expires_at: expiresAt,
       });
-      clearSessionCookie(res);
-      return res.status(200).json({ accepted: true, step: 2, ...issuedKey });
     }
 
-    const { data: completedSession, error: updateError } = await supabase
-      .from("earnpaste_sessions")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", sessionId)
-      .eq("status", "pending")
-      .eq("current_step", 2)
-      .select("id")
-      .maybeSingle();
-
-    if (updateError || !completedSession) {
-      console.error("Work.ink step-two completion error:", updateError);
-      return res.status(409).json({ error: "This Work.ink checkpoint was already processed" });
-    }
-
-    const issuedKey = await issueVerifiedSessionKey({
-      supabase,
-      sessionId,
-      provider: "Work.ink",
-      signingKey: KEY_ISSUANCE_SECRET,
-    });
-    clearSessionCookie(res);
-    return res.status(200).json({ accepted: true, step: 2, ...issuedKey });
+    return res.status(400).json({ error: "Unknown action" });
   } catch (error) {
     console.error("Work.ink handler error:", error);
-    const statusCode = Number.isInteger(error?.statusCode) ? error.statusCode : 502;
-    return res.status(statusCode).json({ error: error instanceof Error ? error.message : "Work.ink request failed" });
+    return res.status(500).json({ error: "Work.ink link creation failed" });
   }
 }
