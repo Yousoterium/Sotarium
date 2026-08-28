@@ -185,7 +185,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       />
 
       {/* Main Unlock Key Modal Container (Exact image layout) */}
-      <div className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] rounded-2xl bg-[#121215]/95 border border-white/[0.08] backdrop-blur-2xl p-6 sm:p-7 flex flex-col gap-5 shadow-2xl text-left">
+      <div className="relative z-10 w-full max-w-[400px] sm:max-w-[430px] rounded-2xl bg-[#121215]/95 border border-white/[0.08] backdrop-blur-2xl p-6 sm:p-7 flex flex-col gap-5 shadow-2xl text-left">
         {/* Header with Circular Work.ink Icon, Title, and Close Button */}
         <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -298,7 +298,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           ) : (
             /* Checkpoint Prompt & Button */
             <>
-              <p className="text-xs text-neutral-300 leading-relaxed max-w-[260px]">
+              <p className="text-xs text-neutral-300 whitespace-nowrap">
                 Complete two Work.ink checkpoints to receive your 24-hour key.
               </p>
 

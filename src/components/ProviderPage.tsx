@@ -7,8 +7,6 @@ export interface ProviderItem {
   name: string;
   icon: string;
   description?: string;
-  badge?: string;
-  badgeColor?: string;
 }
 
 export const AVAILABLE_PROVIDERS: ProviderItem[] = [
@@ -28,7 +26,7 @@ interface ProviderPageProps {
 export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, onBack }) => {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Clean Subtle Dot Grid Background (Same as homepage) */}
+      {/* Clean Subtle Dot Grid Background */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -37,61 +35,58 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
         }}
       />
 
-      {/* Main EarnPaste Glass Card */}
-      <div className="relative z-10 w-full max-w-[380px] sm:max-w-[420px] rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
-        {/* Title */}
-        <h1 className="text-2xl font-bold text-white tracking-tight mb-5">
-          Select Provider
-        </h1>
-
-        {/* Provider Option List */}
-        <div className="w-full flex flex-col gap-2.5">
-          {AVAILABLE_PROVIDERS.map((provider) => (
-            <a
-              key={provider.id}
-              href={`/key/${provider.id}`}
-              onClick={(e) => {
-                e.preventDefault();
-                onSelectProvider(provider.id);
-              }}
-              className="w-full py-3.5 px-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.09] hover:border-white/[0.22] transition-all duration-200 flex items-center justify-between group text-left cursor-pointer active:scale-[0.99] backdrop-blur-md no-underline text-white shadow-sm"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
-                  <img
-                    src={provider.icon}
-                    alt={provider.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-white group-hover:text-amber-400 transition-colors">
-                      {provider.name}
-                    </span>
-                    {provider.badge && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${provider.badgeColor}`}>
-                        {provider.badge}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <span className="text-xs text-neutral-300 font-medium group-hover:text-white transition-colors">
-                Choose
+      {/* Main Select Provider Modal Container (Same as /key/ modal GUI) */}
+      <div className="relative z-10 w-full max-w-[400px] sm:max-w-[430px] rounded-2xl bg-[#121215]/95 border border-white/[0.08] backdrop-blur-2xl p-6 sm:p-7 flex flex-col gap-5 shadow-2xl text-left">
+        {/* Header with Circular Work.ink Icon, Title, and Close Button */}
+        <div className="w-full flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Work.ink Circular Green Icon */}
+            <div className="w-9 h-9 rounded-full bg-[#00B27A] flex items-center justify-center text-white font-black text-sm shadow-md shrink-0">
+              W
+            </div>
+            <div className="flex flex-col">
+              <h2 className="text-base font-bold text-white tracking-tight leading-tight">
+                Select provider
+              </h2>
+              <span className="text-xs text-neutral-400 font-medium leading-tight">
+                Choose verification method
               </span>
-            </a>
-          ))}
+            </div>
+          </div>
+
+          {/* Close (X) Button */}
+          <button
+            type="button"
+            onClick={onBack}
+            className="w-7 h-7 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer text-xs"
+            aria-label="Close"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Go Home Button */}
+        {/* Inner Card Section (Dark recessed container) */}
+        <div className="w-full rounded-xl bg-[#09090b] border border-white/[0.06] p-5 flex flex-col items-center text-center gap-4 shadow-inner">
+          <p className="text-xs text-neutral-300 whitespace-nowrap">
+            Choose Work.ink to start your 2-step verification.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => onSelectProvider("workink")}
+            className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+          >
+            <span>Continue with Work.ink</span>
+          </button>
+        </div>
+
+        {/* Cancel Button */}
         <button
           type="button"
           onClick={onBack}
-          className="w-full mt-4 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] backdrop-blur-md shadow-sm"
+          className="w-full py-2.5 rounded-full border border-white/[0.08] hover:bg-white/[0.04] text-xs font-semibold text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
         >
-          Go home
+          Cancel
         </button>
       </div>
     </div>
