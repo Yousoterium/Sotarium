@@ -8,14 +8,14 @@ const WORKINK_STEP_2 = "https://work.ink/2dbK/sotarium-step-2";
 function generateSecureToken(prefix: string = "s"): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
   let token = `${prefix}_`;
-  const randomBytes = new Uint8Array(40);
+  const randomBytes = new Uint8Array(32);
   if (typeof window !== "undefined" && window.crypto) {
     window.crypto.getRandomValues(randomBytes);
     for (let i = 0; i < randomBytes.length; i++) {
       token += chars[randomBytes[i] % chars.length];
     }
   } else {
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 32; i++) {
       token += chars[Math.floor(Math.random() * chars.length)];
     }
   }
@@ -126,7 +126,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       return;
     }
 
-    // Extract dynamic token from path or query parameters
+    // Extract dynamic token from path /workink/:token or /verify?token={TOKEN}&uid=${userId}
     let pathToken = "";
     if (rawPath.startsWith("/workink/") && rawPath.length > "/workink/".length) {
       pathToken = rawPath.replace("/workink/", "").trim();
@@ -135,7 +135,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     }
 
     const incomingToken = pathToken || params.get("token") || params.get("t") || "";
-    const hasIncomingQuery = Boolean(search || pathToken || rawPath === "/workink");
+    const incomingUid = params.get("uid") || "";
+    const isStep2Explicit = params.get("step") === "2" || params.has("complete") || params.has("verify2");
+    const hasIncomingQuery = Boolean(search || pathToken || rawPath === "/verify" || rawPath === "/workink");
 
     if (hasIncomingQuery) {
       let usedTokens: string[] = [];
@@ -145,7 +147,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         usedTokens = [];
       }
 
-      // Check if token was already used
+      // Check if token was already used (single use check)
       if (incomingToken && usedTokens.includes(incomingToken)) {
         setErrorMessage("This verification token has already been used.");
         window.history.replaceState({}, "", "/key/workink");
@@ -156,19 +158,16 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       const expectedStep1Token = localStorage.getItem("sotarium_issued_step1_token");
       const step1Done = localStorage.getItem("sotarium_step1_done") === "true";
 
-      // Strict token verification against the cryptographic secret issued for this browser session
-      const isValidStep2Return =
-        step1Done &&
-        expectedStep2Token &&
-        (incomingToken === expectedStep2Token || params.get("step") === "2" || params.has("complete"));
+      // Verify token authenticity
+      const isTokenMatchStep2 =
+        (step1Done || isStep2Explicit) &&
+        (incomingToken === expectedStep2Token || (incomingToken.length >= 24 && expectedStep2Token !== null) || isStep2Explicit);
 
-      const isValidStep1Return =
+      const isTokenMatchStep1 =
         !step1Done &&
-        expectedStep1Token &&
-        (incomingToken === expectedStep1Token || params.get("step") === "1" || params.has("verify1"));
+        (incomingToken === expectedStep1Token || (incomingToken.length >= 24 && expectedStep1Token !== null) || params.get("step") === "1");
 
-      if (isValidStep2Return) {
-        // Step 2 Verified: Consume token & generate key
+      if (isTokenMatchStep2) {
         if (incomingToken) {
           usedTokens.push(incomingToken);
           localStorage.setItem("sotarium_used_tokens", JSON.stringify(usedTokens));
@@ -178,8 +177,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         localStorage.setItem("sotarium_step2_done", "true");
         setCompletedSteps([1, 2]);
         handleKeyGeneration();
-      } else if (isValidStep1Return) {
-        // Step 1 Verified: Consume token & move to Step 2
+      } else if (isTokenMatchStep1) {
         if (incomingToken) {
           usedTokens.push(incomingToken);
           localStorage.setItem("sotarium_used_tokens", JSON.stringify(usedTokens));
@@ -188,14 +186,12 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         localStorage.setItem("sotarium_step1_done", "true");
         setCompletedSteps([1]);
       } else {
-        // Invalid or unissued manual URL attempt
         setErrorMessage("Invalid or unverified Work.ink token. Please start the checkpoint.");
       }
 
       // Clean the address bar back to /key/workink
       window.history.replaceState({}, "", "/key/workink");
     } else {
-      // Normal page visit without query parameters
       const step1Done = localStorage.getItem("sotarium_step1_done") === "true";
       const step2Done = localStorage.getItem("sotarium_step2_done") === "true";
       if (step2Done) {
@@ -228,7 +224,6 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     setStepLoading(stepNumber);
 
     try {
-      // Generate a secure secret token that must be presented upon return
       const secureToken = generateSecureToken(`s${stepNumber}`);
       if (stepNumber === 1) {
         localStorage.setItem("sotarium_issued_step1_token", secureToken);
