@@ -43,7 +43,6 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     icon: WORKINK_SQUARE_ICON,
   };
 
-  const [currentStep, setCurrentStep] = useState<number>(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [generatedKey, setGeneratedKey] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
@@ -52,22 +51,57 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [timeLeftMs, setTimeLeftMs] = useState<number>(24 * 60 * 60 * 1000);
 
+  const handleKeyGeneration = async () => {
+    if (generatedKey) return;
+    setIsGenerating(true);
+    try {
+      const newKey = generateFinalKeyString();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      await saveKeyToDatabase(newKey, provider.name, expiresAt, false);
+      setGeneratedKey(newKey);
+    } catch (err) {
+      console.error("Key generation error:", err);
+      const fallbackKey = generateFinalKeyString();
+      setGeneratedKey(fallbackKey);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   useEffect(() => {
     const search = window.location.search;
     const params = new URLSearchParams(search);
+    const path = window.location.pathname;
 
-    if (params.has("verify") || params.has("verify1") || params.has("verify2") || params.has("step2") || params.has("complete") || params.has("t")) {
-      const isComplete = params.has("verify2") || params.has("complete");
-      const isStep1Done = params.has("verify1") || params.has("step2") || params.has("t");
+    const hasCompleteParam =
+      params.has("complete") ||
+      params.has("verify2") ||
+      params.get("step") === "2" ||
+      params.get("ok") === "2" ||
+      params.has("step2");
 
-      if (isComplete) {
-        setCompletedSteps([1, 2]);
-        setCurrentStep(3);
-        handleKeyGeneration();
-      } else if (isStep1Done) {
-        setCompletedSteps([1]);
-        setCurrentStep(2);
-      }
+    const hasStepParam =
+      params.has("ok") ||
+      params.has("verify") ||
+      params.has("verify1") ||
+      params.has("step1") ||
+      params.has("step") ||
+      params.has("t") ||
+      params.has("token") ||
+      path.includes("ok");
+
+    const step1WasDone = localStorage.getItem("sotarium_step1_done") === "true";
+
+    if (hasCompleteParam || (hasStepParam && step1WasDone)) {
+      localStorage.setItem("sotarium_step1_done", "true");
+      localStorage.setItem("sotarium_step2_done", "true");
+      setCompletedSteps([1, 2]);
+      handleKeyGeneration();
+    } else if (hasStepParam) {
+      localStorage.setItem("sotarium_step1_done", "true");
+      setCompletedSteps([1]);
+    } else if (step1WasDone) {
+      setCompletedSteps([1]);
     }
   }, []);
 
@@ -88,28 +122,14 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     return () => clearInterval(timer);
   }, [generatedKey]);
 
-  const handleKeyGeneration = async () => {
-    if (generatedKey) return;
-    setIsGenerating(true);
-    try {
-      const newKey = generateFinalKeyString();
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      await saveKeyToDatabase(newKey, provider.name, expiresAt, false);
-      setGeneratedKey(newKey);
-    } catch (err) {
-      console.error("Key generation error:", err);
-      const fallbackKey = generateFinalKeyString();
-      setGeneratedKey(fallbackKey);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleStartStep = (stepNumber: number) => {
     setErrorMessage("");
     setStepLoading(stepNumber);
 
     try {
+      if (stepNumber === 1) {
+        localStorage.setItem("sotarium_step1_started", "true");
+      }
       const dest = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
       window.location.href = dest;
     } catch (err) {
@@ -130,12 +150,12 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
   const isStep2Done = completedSteps.includes(2);
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#000] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Bright Pure White Dot Grid Background */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
+      {/* Soft Gray Dot Grid Background (Same as homepage) */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-90"
+        className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.75) 1.25px, transparent 1.25px)",
+          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
           backgroundSize: "28px 28px",
         }}
       />
@@ -150,7 +170,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
         }}
       >
-        {/* Progress Step Bar on Top (Exact image layout) */}
+        {/* Progress Step Bar on Top */}
         {!generatedKey && (
           <div className="w-full flex items-center justify-between px-6 mb-6 relative">
             {/* Connecting Line Track */}
@@ -298,7 +318,11 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         {/* Go home Button */}
         <button
           type="button"
-          onClick={onGoHome}
+          onClick={() => {
+            localStorage.removeItem("sotarium_step1_done");
+            localStorage.removeItem("sotarium_step2_done");
+            onGoHome();
+          }}
           className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
           style={{
             background: "rgba(0, 0, 0, 0.2)",

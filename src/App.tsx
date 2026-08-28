@@ -13,6 +13,9 @@ function App() {
     if (p === "/scripts") return { page: "scripts" };
     if (p === "/infos") return { page: "infos" };
     if (p === "/provider") return { page: "provider" };
+    if (p === "/workink" || p.startsWith("/workink") || p === "/lootlabs" || p.startsWith("/lootlabs")) {
+      return { page: "key", providerId: "workink" };
+    }
     if (p.startsWith("/key/")) {
       const prov = p.replace("/key/", "").split("/")[0] || "workink";
       return { page: "key", providerId: prov };
@@ -53,7 +56,9 @@ function App() {
       if (p === "/scripts") setCurrentRoute({ page: "scripts" });
       else if (p === "/infos") setCurrentRoute({ page: "infos" });
       else if (p === "/provider") setCurrentRoute({ page: "provider" });
-      else if (p.startsWith("/key/")) {
+      else if (p === "/workink" || p.startsWith("/workink") || p === "/lootlabs" || p.startsWith("/lootlabs")) {
+        setCurrentRoute({ page: "key", providerId: "workink" });
+      } else if (p.startsWith("/key/")) {
         const prov = p.replace("/key/", "").split("/")[0] || "workink";
         setCurrentRoute({ page: "key", providerId: prov });
       } else setCurrentRoute({ page: "home" });
@@ -62,11 +67,8 @@ function App() {
     window.addEventListener("popstate", handlePopState);
 
     const path = window.location.pathname;
-    const search = window.location.search;
-    const params = new URLSearchParams(search);
-
-    if (path === "/lootlabs" && (params.has("verify") || params.has("verify1") || params.has("verify2"))) {
-      navigateTo("key", "workink");
+    if (path === "/workink" || path === "/lootlabs") {
+      setCurrentRoute({ page: "key", providerId: "workink" });
     }
 
     return () => window.removeEventListener("popstate", handlePopState);
