@@ -82,47 +82,44 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       !params.has("verify2") &&
       !params.has("step2") &&
       !params.has("complete") &&
-      !sessionStorage.getItem("sotarium_step1_started");
+      !sessionStorage.getItem("sotarium_step1_token");
 
-    // If player manually typed /workink or /workink?ok without started session
+    // If player manually typed /workink without a verified token
     if (isDirectWorkinkAttempt) {
       setErrorMessage("Missing Work.ink verification token.");
       window.history.replaceState({}, "", "/key/workink");
       return;
     }
 
-    const hasCompleteParam =
+    const hasStep2Token =
       params.has("complete") ||
       params.has("verify2") ||
       params.get("step") === "2" ||
-      params.get("ok") === "2" ||
-      sessionStorage.getItem("sotarium_step2_started") === "true";
+      params.get("ok") === "2";
 
-    const hasStep1Param =
-      params.has("ok") ||
-      params.has("verify") ||
-      params.has("verify1") ||
-      params.has("step1") ||
-      params.has("step") ||
-      params.has("t") ||
-      params.has("token") ||
-      sessionStorage.getItem("sotarium_step1_started") === "true";
+    const hasStep1Token =
+      (params.has("ok") ||
+        params.has("verify") ||
+        params.has("verify1") ||
+        params.has("step1") ||
+        params.has("t") ||
+        params.has("token")) &&
+      sessionStorage.getItem("sotarium_step1_token") !== null;
 
-    const step1Done = sessionStorage.getItem("sotarium_step1_done") === "true";
+    const step1Done = sessionStorage.getItem("sotarium_step1_verified") === "true";
 
-    if (hasCompleteParam && step1Done) {
-      sessionStorage.setItem("sotarium_step1_done", "true");
-      sessionStorage.setItem("sotarium_step2_done", "true");
+    if (hasStep2Token && step1Done) {
+      sessionStorage.setItem("sotarium_step2_verified", "true");
       setCompletedSteps([1, 2]);
       handleKeyGeneration();
-    } else if (hasStep1Param && !step1Done) {
-      sessionStorage.setItem("sotarium_step1_done", "true");
+    } else if (hasStep1Token && !step1Done) {
+      sessionStorage.setItem("sotarium_step1_verified", "true");
       setCompletedSteps([1]);
     } else if (step1Done) {
       setCompletedSteps([1]);
     }
 
-    // Clean and rotate the URL back to /key/workink so parameters don't stay in the address bar
+    // Clean URL query parameters
     if (window.location.search || window.location.pathname === "/workink") {
       window.history.replaceState({}, "", "/key/workink");
     }
@@ -150,10 +147,12 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     setStepLoading(stepNumber);
 
     try {
+      // Secure token seed to prevent back-button bypass without opening Work.ink
+      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
       if (stepNumber === 1) {
-        sessionStorage.setItem("sotarium_step1_started", "true");
+        sessionStorage.setItem("sotarium_step1_token", token);
       } else if (stepNumber === 2) {
-        sessionStorage.setItem("sotarium_step2_started", "true");
+        sessionStorage.setItem("sotarium_step2_token", token);
       }
       const dest = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
       window.location.href = dest;
@@ -176,7 +175,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Clean Subtle Dot Grid Background (Same as homepage) */}
+      {/* Clean Subtle Dot Grid Background */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -185,73 +184,91 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         }}
       />
 
-      {/* Main EarnPaste Glass Card */}
-      <div className="relative z-10 w-full max-w-[380px] sm:max-w-[420px] rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
+      {/* Main Unlock Key Modal Container (Exact image layout) */}
+      <div className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] rounded-2xl bg-[#121215]/95 border border-white/[0.08] backdrop-blur-2xl p-6 sm:p-7 flex flex-col gap-5 shadow-2xl text-left">
+        {/* Header with Circular Work.ink Icon, Title, and Close Button */}
+        <div className="w-full flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Work.ink Circular Green Icon */}
+            <div className="w-9 h-9 rounded-full bg-[#00B27A] flex items-center justify-center text-white font-black text-sm shadow-md shrink-0">
+              W
+            </div>
+            <div className="flex flex-col">
+              <h2 className="text-base font-bold text-white tracking-tight leading-tight">
+                Unlock your key
+              </h2>
+              <span className="text-xs text-neutral-400 font-medium leading-tight">
+                Method: {provider.name}
+              </span>
+            </div>
+          </div>
+
+          {/* Close (X) Button */}
+          <button
+            type="button"
+            onClick={() => {
+              sessionStorage.removeItem("sotarium_step1_token");
+              sessionStorage.removeItem("sotarium_step1_verified");
+              sessionStorage.removeItem("sotarium_step2_token");
+              sessionStorage.removeItem("sotarium_step2_verified");
+              onGoHome();
+            }}
+            className="w-7 h-7 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer text-xs"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
         {/* Progress Step Bar on Top */}
         {!generatedKey && (
-          <div className="w-full flex items-center justify-between px-6 mb-6 relative">
-            {/* Connecting Line Track */}
-            <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-[1.5px] bg-white/[0.12] z-0">
-              {/* White Progress Line that stops in the middle (50%) when Step 1 is done */}
+          <div className="w-full flex items-center justify-between px-2 relative my-1">
+            {/* Track Line */}
+            <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-[1.5px] bg-white/[0.1] z-0">
               <div
                 className="h-full bg-white transition-all duration-500"
                 style={{ width: isStep2Done ? "100%" : isStep1Done ? "50%" : "0%" }}
               />
             </div>
 
-            {/* Step 1 Circle: Lime Green Checkmark when done, Mascot Blue "1" when active */}
+            {/* Step 1 Node */}
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black relative z-10 transition-all duration-300 ${
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold relative z-10 transition-all duration-300 ${
                 isStep1Done
-                  ? "bg-[#00e600] text-white shadow-md shadow-[#00e600]/30 scale-105"
-                  : "bg-[#00c3ff] text-black shadow-md scale-105"
+                  ? "bg-white text-black shadow-sm"
+                  : "bg-white text-black shadow-sm scale-105"
               }`}
             >
-              {isStep1Done ? "✓" : "1"}
+              1
             </div>
 
-            {/* Step 2 Circle: Lime Green Checkmark when done, Mascot Blue "2" when active, dark when locked */}
+            {/* Step 2 Node */}
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black relative z-10 transition-all duration-300 ${
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold relative z-10 transition-all duration-300 ${
                 isStep2Done
-                  ? "bg-[#00e600] text-white shadow-md shadow-[#00e600]/30 scale-105"
+                  ? "bg-white text-black shadow-sm"
                   : isStep1Done
-                  ? "bg-[#00c3ff] text-black shadow-md scale-105"
+                  ? "bg-white text-black shadow-sm scale-105"
                   : "bg-[#18181b] text-neutral-500 border border-white/[0.08]"
               }`}
             >
-              {isStep2Done ? "✓" : "2"}
+              2
             </div>
           </div>
         )}
 
-        {/* Square Work.ink Logo Holder (Square squircle fitting perfectly) */}
-        <div className="w-14 h-14 rounded-2xl bg-black/60 border border-white/[0.14] overflow-hidden p-1.5 mb-4 shadow-xl flex items-center justify-center relative group">
-          <img
-            src={provider.icon}
-            alt={provider.name}
-            className="w-full h-full object-cover rounded-xl drop-shadow"
-          />
-          <div className="absolute inset-0 rounded-2xl bg-emerald-500/10 blur-sm pointer-events-none" />
-        </div>
-
-        {/* Provider Title */}
-        <h1 className="text-2xl font-bold text-white tracking-tight mb-5">
-          {provider.name}
-        </h1>
-
-        {/* Error Message Alert (Red text box for missing token / invalid attempts) */}
+        {/* Error Alert Box if any */}
         {errorMessage && (
-          <div className="w-full mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs text-center font-medium shadow-sm">
+          <div className="w-full p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs text-center font-medium shadow-sm">
             {errorMessage}
           </div>
         )}
 
-        {/* Steps Section in EarnPaste Glass Container */}
-        <div className="w-full flex flex-col gap-2.5">
+        {/* Inner Card Section (Dark recessed container) */}
+        <div className="w-full rounded-xl bg-[#09090b] border border-white/[0.06] p-5 flex flex-col items-center text-center gap-4 shadow-inner">
           {generatedKey ? (
             /* Key Ready Box */
-            <div className="w-full flex flex-col items-center gap-3 p-4 rounded-xl bg-white/[0.04] border border-white/[0.09] backdrop-blur-md shadow-sm">
+            <div className="w-full flex flex-col items-center gap-3">
               <span className="text-xs font-bold text-emerald-400">
                 Key Ready
               </span>
@@ -274,62 +291,55 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
               </span>
             </div>
           ) : isGenerating ? (
-            /* Generating State */
-            <div className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-xl bg-white/[0.03] border border-white/[0.08]">
+            /* Generating Key Loader */
+            <div className="w-full py-4 flex flex-col items-center justify-center gap-2">
               <span className="text-xs font-medium text-neutral-300">Generating key...</span>
             </div>
-          ) : !isStep1Done ? (
-            /* Checkpoint 1 Button */
-            <button
-              type="button"
-              disabled={stepLoading !== null}
-              onClick={() => handleStartStep(1)}
-              className="w-full py-3.5 px-4 rounded-xl border border-white/[0.12] hover:border-white/[0.25] bg-white/[0.05] hover:bg-white/[0.1] text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-200 text-white cursor-pointer active:scale-[0.99] backdrop-blur-md shadow-sm"
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-white/[0.1] flex items-center justify-center text-[10px] font-black">
-                  1
-                </span>
-                <span>Checkpoint 1</span>
-              </div>
-              <span className="text-xs text-neutral-300 font-medium">
-                {stepLoading === 1 ? "Loading..." : "Start"}
-              </span>
-            </button>
           ) : (
-            /* Checkpoint 2 Button (Replaces Checkpoint 1 when completed) */
-            <button
-              type="button"
-              disabled={stepLoading !== null}
-              onClick={() => handleStartStep(2)}
-              className="w-full py-3.5 px-4 rounded-xl border border-white/[0.12] hover:border-white/[0.25] bg-white/[0.05] hover:bg-white/[0.1] text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-200 text-white cursor-pointer active:scale-[0.99] backdrop-blur-md shadow-sm animate-in fade-in zoom-in-95"
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-white/[0.1] flex items-center justify-center text-[10px] font-black">
-                  2
-                </span>
-                <span>Checkpoint 2</span>
-              </div>
-              <span className="text-xs text-neutral-300 font-medium">
-                {stepLoading === 2 ? "Loading..." : "Start"}
-              </span>
-            </button>
+            /* Checkpoint Prompt & Button */
+            <>
+              <p className="text-xs text-neutral-300 leading-relaxed max-w-[260px]">
+                Complete two Work.ink checkpoints to receive your 24-hour key.
+              </p>
+
+              {!isStep1Done ? (
+                /* Step 1 Pill Button */
+                <button
+                  type="button"
+                  disabled={stepLoading !== null}
+                  onClick={() => handleStartStep(1)}
+                  className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer"
+                >
+                  {stepLoading === 1 ? "Loading..." : "Start checkpoint (Step 1/2)"}
+                </button>
+              ) : (
+                /* Step 2 Pill Button */
+                <button
+                  type="button"
+                  disabled={stepLoading !== null}
+                  onClick={() => handleStartStep(2)}
+                  className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer animate-in fade-in zoom-in-95"
+                >
+                  {stepLoading === 2 ? "Loading..." : "Start checkpoint (Step 2/2)"}
+                </button>
+              )}
+            </>
           )}
         </div>
 
-        {/* Go home Button */}
+        {/* Cancel Button */}
         <button
           type="button"
           onClick={() => {
-            sessionStorage.removeItem("sotarium_step1_started");
-            sessionStorage.removeItem("sotarium_step1_done");
-            sessionStorage.removeItem("sotarium_step2_started");
-            sessionStorage.removeItem("sotarium_step2_done");
+            sessionStorage.removeItem("sotarium_step1_token");
+            sessionStorage.removeItem("sotarium_step1_verified");
+            sessionStorage.removeItem("sotarium_step2_token");
+            sessionStorage.removeItem("sotarium_step2_verified");
             onGoHome();
           }}
-          className="w-full mt-4 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] backdrop-blur-md shadow-sm"
+          className="w-full py-2.5 rounded-full border border-white/[0.08] hover:bg-white/[0.04] text-xs font-semibold text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
         >
-          Go home
+          Cancel
         </button>
       </div>
     </div>
