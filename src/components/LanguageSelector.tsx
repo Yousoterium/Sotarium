@@ -38,6 +38,24 @@ export const LANGUAGES: LanguageItem[] = [
   { code: "ms", name: "Malay", nativeName: "Bahasa Melayu", flag: "🇲🇾" },
 ];
 
+function getBrowserLanguage(): string {
+  try {
+    const raw = (navigator.languages && navigator.languages[0]) || navigator.language || "";
+    if (!raw) return "en";
+    const lower = raw.toLowerCase();
+
+    if (lower.startsWith("zh-tw") || lower.startsWith("zh-hk") || lower.startsWith("zh-hant")) return "zh-TW";
+    if (lower.startsWith("zh")) return "zh-CN";
+    if (lower.startsWith("fil") || lower.startsWith("tl")) return "tl";
+
+    const base = lower.split("-")[0];
+    const match = LANGUAGES.find((l) => l.code.toLowerCase() === base || l.code.toLowerCase().startsWith(base));
+    return match ? match.code : "en";
+  } catch {
+    return "en";
+  }
+}
+
 declare global {
   interface Window {
     googleTranslateElementInit?: () => void;
@@ -54,7 +72,23 @@ export const LanguageSelector: React.FC = () => {
         const parts = match[2].split("/");
         return parts[parts.length - 1] || "en";
       }
-      return localStorage.getItem("sotarium_lang") || "en";
+
+      const stored = localStorage.getItem("sotarium_lang");
+      if (stored) return stored;
+
+      // Auto-detect browser language on first visit
+      const browserLang = getBrowserLanguage();
+      if (browserLang && browserLang !== "en") {
+        const value = `/en/${browserLang}`;
+        const domain = window.location.hostname;
+        document.cookie = `googtrans=${value}; path=/;`;
+        document.cookie = `googtrans=${value}; path=/; domain=${domain};`;
+        document.cookie = `googtrans=${value}; path=/; domain=.${domain};`;
+        localStorage.setItem("sotarium_lang", browserLang);
+        return browserLang;
+      }
+
+      return "en";
     } catch {
       return "en";
     }
@@ -65,6 +99,21 @@ export const LanguageSelector: React.FC = () => {
 
   // Initialize Google Translate Script
   useEffect(() => {
+    // Check if auto-detect needs to set cookie
+    const hasExplicitChoice = localStorage.getItem("sotarium_lang");
+    if (!hasExplicitChoice) {
+      const autoLang = getBrowserLanguage();
+      if (autoLang && autoLang !== "en") {
+        setCurrentLang(autoLang);
+        const value = `/en/${autoLang}`;
+        const domain = window.location.hostname;
+        document.cookie = `googtrans=${value}; path=/;`;
+        document.cookie = `googtrans=${value}; path=/; domain=${domain};`;
+        document.cookie = `googtrans=${value}; path=/; domain=.${domain};`;
+        localStorage.setItem("sotarium_lang", autoLang);
+      }
+    }
+
     if (document.getElementById("google-translate-script")) return;
 
     window.googleTranslateElementInit = () => {
