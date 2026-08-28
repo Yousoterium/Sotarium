@@ -162,39 +162,39 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
       {/* Main EarnPaste Glass Card */}
       <div className="relative z-10 w-full max-w-[380px] sm:max-w-[420px] rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
-        {/* Tuff High-Tech Progress Step Bar on Top */}
+        {/* Progress Step Bar on Top */}
         {!generatedKey && (
-          <div className="w-full flex items-center justify-between px-4 mb-6 relative">
-            {/* Connecting Track Line */}
-            <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-[2px] bg-white/[0.08] rounded-full overflow-hidden z-0">
+          <div className="w-full flex items-center justify-between px-6 mb-6 relative">
+            {/* Connecting Line Track */}
+            <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-[1.5px] bg-white/[0.12] z-0">
               <div
-                className="h-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 transition-all duration-500 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                className="h-full bg-[#00c3ff] transition-all duration-500"
                 style={{ width: isStep1Done ? "100%" : "0%" }}
               />
             </div>
 
-            {/* Step 1 Node */}
+            {/* Step 1 Circle (Mascot Blue) */}
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black relative z-10 transition-all duration-300 ${
-                isStep1Done
-                  ? "bg-emerald-500 text-black shadow-[0_0_12px_rgba(16,185,129,0.6)]"
-                  : "bg-white text-black ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-[#09090b] shadow-[0_0_14px_rgba(255,255,255,0.4)] scale-105"
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 transition-all duration-300 ${
+                !isStep1Done
+                  ? "bg-[#00c3ff] text-black shadow-md scale-105"
+                  : "bg-[#00c3ff] text-black"
               }`}
             >
-              {isStep1Done ? "✓" : "1"}
+              1
             </div>
 
-            {/* Step 2 Node */}
+            {/* Step 2 Circle (Mascot Blue) */}
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black relative z-10 transition-all duration-300 ${
-                isStep2Done
-                  ? "bg-emerald-500 text-black shadow-[0_0_12px_rgba(16,185,129,0.6)]"
-                  : isStep1Done
-                  ? "bg-white text-black ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-[#09090b] shadow-[0_0_14px_rgba(255,255,255,0.4)] scale-105"
-                  : "bg-[#141418] text-neutral-500 border border-white/[0.12] shadow-inner"
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 transition-all duration-300 ${
+                isStep1Done && !isStep2Done
+                  ? "bg-[#00c3ff] text-black shadow-md scale-105"
+                  : isStep2Done
+                  ? "bg-[#00c3ff] text-black"
+                  : "bg-[#18181b] text-neutral-500 border border-white/[0.08]"
               }`}
             >
-              {isStep2Done ? "✓" : "2"}
+              2
             </div>
           </div>
         )}
