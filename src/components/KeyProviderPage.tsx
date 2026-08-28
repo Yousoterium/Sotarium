@@ -64,7 +64,6 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     try {
       const savedExpiresAt = localStorage.getItem("sotarium_key_expires_at");
       if (savedExpiresAt && parseInt(savedExpiresAt, 10) <= Date.now()) {
-        // Expired
         localStorage.removeItem("sotarium_user_key");
         localStorage.removeItem("sotarium_key_expires_at");
         localStorage.removeItem("sotarium_step1_done");
@@ -161,7 +160,6 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       return;
     }
 
-    // Extract dynamic token from path or query parameters
     let pathToken = "";
     if (rawPath.startsWith("/workink/") && rawPath.length > "/workink/".length) {
       pathToken = rawPath.replace("/workink/", "").trim();
@@ -242,25 +240,26 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
-  // Live countdown timer based on actual expiration timestamp in localStorage
   useEffect(() => {
     if (!generatedKey) return;
 
     const tick = () => {
-      const savedExpiresAt = localStorage.getItem("sotarium_key_expires_at");
-      if (savedExpiresAt) {
-        const remaining = parseInt(savedExpiresAt, 10) - Date.now();
-        if (remaining <= 0) {
-          setTimeLeftMs(0);
-          localStorage.removeItem("sotarium_user_key");
-          localStorage.removeItem("sotarium_key_expires_at");
-          localStorage.removeItem("sotarium_step1_done");
-          localStorage.removeItem("sotarium_step2_done");
-          setGeneratedKey("");
-          setCompletedSteps([]);
-        } else {
-          setTimeLeftMs(remaining);
-        }
+      let savedExpiresAt = localStorage.getItem("sotarium_key_expires_at");
+      if (!savedExpiresAt) {
+        savedExpiresAt = (Date.now() + 24 * 60 * 60 * 1000).toString();
+        localStorage.setItem("sotarium_key_expires_at", savedExpiresAt);
+      }
+      const remaining = parseInt(savedExpiresAt, 10) - Date.now();
+      if (remaining <= 0) {
+        setTimeLeftMs(0);
+        localStorage.removeItem("sotarium_user_key");
+        localStorage.removeItem("sotarium_key_expires_at");
+        localStorage.removeItem("sotarium_step1_done");
+        localStorage.removeItem("sotarium_step2_done");
+        setGeneratedKey("");
+        setCompletedSteps([]);
+      } else {
+        setTimeLeftMs(remaining);
       }
     };
 
@@ -297,6 +296,17 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const resetProgress = () => {
+    localStorage.removeItem("sotarium_user_key");
+    localStorage.removeItem("sotarium_key_expires_at");
+    localStorage.removeItem("sotarium_step1_done");
+    localStorage.removeItem("sotarium_step2_done");
+    localStorage.removeItem("sotarium_issued_step1_token");
+    localStorage.removeItem("sotarium_issued_step2_token");
+    setGeneratedKey("");
+    setCompletedSteps([]);
+  };
+
   const isStep1Done = completedSteps.includes(1);
   const isStep2Done = completedSteps.includes(2);
 
@@ -311,40 +321,110 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         }}
       />
 
-      {/* Main Unlock Key Modal Container (Exact image layout) */}
-      <div className="relative z-10 w-full max-w-[400px] sm:max-w-[430px] rounded-2xl bg-[#121215]/95 border border-white/[0.08] backdrop-blur-2xl p-6 sm:p-7 flex flex-col gap-5 shadow-2xl text-left">
-        {/* Header with Circular Work.ink Icon, Title, and Close Button */}
-        <div className="w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Work.ink Circular Green Icon */}
-            <div className="w-9 h-9 rounded-full bg-[#00B27A] flex items-center justify-center text-white font-black text-sm shadow-md shrink-0">
-              W
-            </div>
-            <div className="flex flex-col">
-              <h2 className="text-base font-bold text-white tracking-tight leading-tight">
-                Unlock your key
-              </h2>
-              <span className="text-xs text-neutral-400 font-medium leading-tight">
-                Method: {provider.name}
+      {generatedKey ? (
+        /* Original "Free key ready" Floating Panel GUI (Exact commit layout) */
+        <div className="relative z-10 w-full max-w-[420px] sm:max-w-[440px] rounded-[26px] bg-[#131317] border border-white/[0.08] backdrop-blur-2xl p-7 flex flex-col gap-5 shadow-2xl text-white">
+          <header className="relative flex items-center justify-between">
+            <h3 className="text-[19px] font-bold tracking-tight text-[#f2f1f4]">
+              Free key ready
+            </h3>
+            <button
+              type="button"
+              onClick={onGoHome}
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.05] text-sm leading-none text-[#8b8b93] transition-colors hover:bg-white/[0.1] hover:text-[#f2f1f4]"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </header>
+
+          <div className="relative flex flex-col items-center text-center gap-4 py-2">
+            {/* Pop-in Animated Green Checkmark Badge */}
+            <div className="relative flex items-center justify-center my-1">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1AF513] text-white shadow-[0_0_20px_rgba(26,245,19,0.4)]">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+                  <path
+                    d="M5 12.5l4.5 4.5L19 7"
+                    stroke="#ffffff"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </span>
             </div>
+
+            <p className="text-sm font-semibold tracking-wide text-[#8b8b93]">
+              Your Key
+            </p>
+
+            {/* Key Box with Copy functionality */}
+            <div className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#1a1a1e] p-3.5 font-mono text-base tracking-widest text-[#1AF513] shadow-inner">
+              <span className="truncate mr-2 font-bold select-all">{generatedKey}</span>
+              <button
+                type="button"
+                onClick={handleCopyKey}
+                className="px-3.5 py-1.5 rounded-lg bg-[#1AF513]/20 hover:bg-[#1AF513]/30 text-[#1AF513] text-xs font-bold transition-colors cursor-pointer shrink-0"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+
+            {/* Live Expiration Countdown */}
+            <span className="text-xs text-neutral-400 font-mono">
+              Expires in: {formatCountdown(timeLeftMs)}
+            </span>
+
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={onGoHome}
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-6 py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 hover:bg-white active:scale-[0.98]"
+            >
+              Close
+            </button>
+
+            {/* Obtain a new key button */}
+            <button
+              type="button"
+              onClick={resetProgress}
+              className="text-xs font-medium text-[#8b8b93] hover:text-[#f2f1f4] transition-colors cursor-pointer pt-1"
+            >
+              Obtain a new key
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Main Unlock Key Modal Container */
+        <div className="relative z-10 w-full max-w-[400px] sm:max-w-[430px] rounded-2xl bg-[#121215]/95 border border-white/[0.08] backdrop-blur-2xl p-6 sm:p-7 flex flex-col gap-5 shadow-2xl text-left">
+          {/* Header with Circular Work.ink Icon, Title, and Close Button */}
+          <div className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-[#00B27A] flex items-center justify-center text-white font-black text-sm shadow-md shrink-0">
+                W
+              </div>
+              <div className="flex flex-col">
+                <h2 className="text-base font-bold text-white tracking-tight leading-tight">
+                  Unlock your key
+                </h2>
+                <span className="text-xs text-neutral-400 font-medium leading-tight">
+                  Method: {provider.name}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onGoHome}
+              className="w-7 h-7 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer text-xs"
+              aria-label="Close"
+            >
+              ✕
+            </button>
           </div>
 
-          {/* Close (X) Button */}
-          <button
-            type="button"
-            onClick={onGoHome}
-            className="w-7 h-7 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer text-xs"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Progress Step Bar on Top (Hidden when key is ready) */}
-        {!generatedKey && (
+          {/* Progress Step Bar on Top */}
           <div className="w-full flex items-center justify-between px-2 relative my-1">
-            {/* Track Line */}
             <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-[1.5px] bg-white/[0.1] z-0">
               <div
                 className="h-full bg-white transition-all duration-500"
@@ -376,89 +456,59 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
               2
             </div>
           </div>
-        )}
 
-        {/* Error Alert Box if any */}
-        {errorMessage && (
-          <div className="w-full p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs text-center font-medium shadow-sm">
-            {errorMessage}
-          </div>
-        )}
-
-        {/* Inner Card Section (Dark recessed container) */}
-        <div className="w-full rounded-xl bg-[#09090b] border border-white/[0.06] p-5 flex flex-col items-center text-center gap-4 shadow-inner">
-          {generatedKey ? (
-            /* Key Ready Box (Exact layout of media_1787892208714.png) */
-            <div className="w-full flex flex-col items-center gap-3.5 py-1">
-              <span className="text-xs font-bold text-emerald-400 tracking-wide">
-                Key Ready
-              </span>
-
-              {/* Key Row Container */}
-              <div className="w-full flex items-center justify-between bg-black/60 border border-white/[0.12] rounded-xl px-4 py-2.5 shadow-inner">
-                <code className="text-sm font-mono font-bold tracking-wider text-amber-300 truncate mr-2 select-all">
-                  {generatedKey}
-                </code>
-                <button
-                  type="button"
-                  onClick={handleCopyKey}
-                  className="px-4 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.16] text-xs font-semibold text-white transition-all cursor-pointer shrink-0 active:scale-95 shadow-sm"
-                >
-                  {copied ? "Copied!" : "Copy"}
-                </button>
-              </div>
-
-              {/* Live Expiration Countdown */}
-              <span className="text-xs text-neutral-400 font-mono">
-                Expires: {formatCountdown(timeLeftMs)}
-              </span>
+          {/* Error Alert Box if any */}
+          {errorMessage && (
+            <div className="w-full p-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs text-center font-medium shadow-sm">
+              {errorMessage}
             </div>
-          ) : isGenerating ? (
-            /* Generating Key Loader */
-            <div className="w-full py-4 flex flex-col items-center justify-center gap-2">
-              <span className="text-xs font-medium text-neutral-300">Generating key...</span>
-            </div>
-          ) : (
-            /* Checkpoint Prompt & Button */
-            <>
-              <p className="text-xs text-neutral-300 whitespace-nowrap">
-                Complete two Work.ink checkpoints to receive your 24-hour key.
-              </p>
-
-              {!isStep1Done ? (
-                /* Step 1 Pill Button */
-                <button
-                  type="button"
-                  disabled={stepLoading !== null}
-                  onClick={() => handleStartStep(1)}
-                  className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer"
-                >
-                  {stepLoading === 1 ? "Loading..." : "Start Step"}
-                </button>
-              ) : (
-                /* Step 2 Pill Button */
-                <button
-                  type="button"
-                  disabled={stepLoading !== null}
-                  onClick={() => handleStartStep(2)}
-                  className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer animate-in fade-in zoom-in-95"
-                >
-                  {stepLoading === 2 ? "Loading..." : "Start Step"}
-                </button>
-              )}
-            </>
           )}
-        </div>
 
-        {/* Cancel Button */}
-        <button
-          type="button"
-          onClick={onGoHome}
-          className="w-full py-2.5 rounded-full border border-white/[0.08] hover:bg-white/[0.04] text-xs font-semibold text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
-        >
-          Cancel
-        </button>
-      </div>
+          {/* Inner Card Section */}
+          <div className="w-full rounded-xl bg-[#09090b] border border-white/[0.06] p-5 flex flex-col items-center text-center gap-4 shadow-inner">
+            {isGenerating ? (
+              <div className="w-full py-4 flex flex-col items-center justify-center gap-2">
+                <span className="text-xs font-medium text-neutral-300">Generating key...</span>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-neutral-300 whitespace-nowrap">
+                  Complete two Work.ink checkpoints to receive your 24-hour key.
+                </p>
+
+                {!isStep1Done ? (
+                  <button
+                    type="button"
+                    disabled={stepLoading !== null}
+                    onClick={() => handleStartStep(1)}
+                    className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer"
+                  >
+                    {stepLoading === 1 ? "Loading..." : "Start Step"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={stepLoading !== null}
+                    onClick={() => handleStartStep(2)}
+                    className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer animate-in fade-in zoom-in-95"
+                  >
+                    {stepLoading === 2 ? "Loading..." : "Start Step"}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Cancel Button */}
+          <button
+            type="button"
+            onClick={onGoHome}
+            className="w-full py-2.5 rounded-full border border-white/[0.08] hover:bg-white/[0.04] text-xs font-semibold text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 };
