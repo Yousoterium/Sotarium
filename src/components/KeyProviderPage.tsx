@@ -43,8 +43,28 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     icon: WORKINK_SQUARE_ICON,
   };
 
-  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [generatedKey, setGeneratedKey] = useState<string>("");
+  const [completedSteps, setCompletedSteps] = useState<number[]>(() => {
+    try {
+      const savedKey = localStorage.getItem("sotarium_user_key");
+      if (savedKey) return [1, 2];
+      const step2 = localStorage.getItem("sotarium_step2_done") === "true";
+      if (step2) return [1, 2];
+      const step1 = localStorage.getItem("sotarium_step1_done") === "true";
+      if (step1) return [1];
+    } catch {
+      // ignore
+    }
+    return [];
+  });
+
+  const [generatedKey, setGeneratedKey] = useState<string>(() => {
+    try {
+      return localStorage.getItem("sotarium_user_key") || "";
+    } catch {
+      return "";
+    }
+  });
+
   const [copied, setCopied] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [stepLoading, setStepLoading] = useState<number | null>(null);
@@ -59,10 +79,16 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       await saveKeyToDatabase(newKey, provider.name, expiresAt, false);
       setGeneratedKey(newKey);
+      localStorage.setItem("sotarium_user_key", newKey);
+      localStorage.setItem("sotarium_step1_done", "true");
+      localStorage.setItem("sotarium_step2_done", "true");
     } catch (err) {
       console.error("Key generation error:", err);
       const fallbackKey = generateFinalKeyString();
       setGeneratedKey(fallbackKey);
+      localStorage.setItem("sotarium_user_key", fallbackKey);
+      localStorage.setItem("sotarium_step1_done", "true");
+      localStorage.setItem("sotarium_step2_done", "true");
     } finally {
       setIsGenerating(false);
     }
@@ -73,54 +99,47 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     const params = new URLSearchParams(search);
     const path = window.location.pathname;
 
-    const isDirectWorkinkAttempt =
-      path === "/workink" &&
-      !params.has("t") &&
-      !params.has("token") &&
-      !params.has("verify") &&
-      !params.has("verify1") &&
-      !params.has("verify2") &&
-      !params.has("step2") &&
-      !params.has("complete") &&
-      !sessionStorage.getItem("sotarium_step1_token");
-
-    // If player manually typed /workink without a verified token
-    if (isDirectWorkinkAttempt) {
-      setErrorMessage("Missing Work.ink verification token.");
-      window.history.replaceState({}, "", "/key/workink");
+    const existingKey = localStorage.getItem("sotarium_user_key");
+    if (existingKey) {
+      setGeneratedKey(existingKey);
+      setCompletedSteps([1, 2]);
+      if (search || path === "/workink") {
+        window.history.replaceState({}, "", "/key/workink");
+      }
       return;
     }
 
-    const hasStep2Token =
-      params.has("complete") ||
+    const isWorkinkCallback =
+      params.has("ok") ||
+      params.has("t") ||
+      params.has("token") ||
+      params.has("verify") ||
+      params.has("verify1") ||
       params.has("verify2") ||
-      params.get("step") === "2" ||
-      params.get("ok") === "2";
+      params.has("step") ||
+      params.has("step1") ||
+      params.has("step2") ||
+      params.has("complete");
 
-    const hasStep1Token =
-      (params.has("ok") ||
-        params.has("verify") ||
-        params.has("verify1") ||
-        params.has("step1") ||
-        params.has("t") ||
-        params.has("token")) &&
-      sessionStorage.getItem("sotarium_step1_token") !== null;
+    const step1IsDone = localStorage.getItem("sotarium_step1_done") === "true";
 
-    const step1Done = sessionStorage.getItem("sotarium_step1_verified") === "true";
-
-    if (hasStep2Token && step1Done) {
-      sessionStorage.setItem("sotarium_step2_verified", "true");
-      setCompletedSteps([1, 2]);
-      handleKeyGeneration();
-    } else if (hasStep1Token && !step1Done) {
-      sessionStorage.setItem("sotarium_step1_verified", "true");
-      setCompletedSteps([1]);
-    } else if (step1Done) {
+    if (isWorkinkCallback) {
+      if (step1IsDone) {
+        // Step 2 Completed -> Generate Key!
+        localStorage.setItem("sotarium_step2_done", "true");
+        setCompletedSteps([1, 2]);
+        handleKeyGeneration();
+      } else {
+        // Step 1 Completed -> Move to Step 2!
+        localStorage.setItem("sotarium_step1_done", "true");
+        setCompletedSteps([1]);
+      }
+    } else if (step1IsDone) {
       setCompletedSteps([1]);
     }
 
     // Clean URL query parameters
-    if (window.location.search || window.location.pathname === "/workink") {
+    if (search || path === "/workink") {
       window.history.replaceState({}, "", "/key/workink");
     }
   }, []);
@@ -147,13 +166,6 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     setStepLoading(stepNumber);
 
     try {
-      // Secure token seed to prevent back-button bypass without opening Work.ink
-      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      if (stepNumber === 1) {
-        sessionStorage.setItem("sotarium_step1_token", token);
-      } else if (stepNumber === 2) {
-        sessionStorage.setItem("sotarium_step2_token", token);
-      }
       const dest = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
       window.location.href = dest;
     } catch (err) {
@@ -206,13 +218,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           {/* Close (X) Button */}
           <button
             type="button"
-            onClick={() => {
-              sessionStorage.removeItem("sotarium_step1_token");
-              sessionStorage.removeItem("sotarium_step1_verified");
-              sessionStorage.removeItem("sotarium_step2_token");
-              sessionStorage.removeItem("sotarium_step2_verified");
-              onGoHome();
-            }}
+            onClick={onGoHome}
             className="w-7 h-7 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-neutral-400 hover:text-white flex items-center justify-center transition-all cursor-pointer text-xs"
             aria-label="Close"
           >
@@ -330,13 +336,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         {/* Cancel Button */}
         <button
           type="button"
-          onClick={() => {
-            sessionStorage.removeItem("sotarium_step1_token");
-            sessionStorage.removeItem("sotarium_step1_verified");
-            sessionStorage.removeItem("sotarium_step2_token");
-            sessionStorage.removeItem("sotarium_step2_verified");
-            onGoHome();
-          }}
+          onClick={onGoHome}
           className="w-full py-2.5 rounded-full border border-white/[0.08] hover:bg-white/[0.04] text-xs font-semibold text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
         >
           Cancel
