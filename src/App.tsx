@@ -4,6 +4,7 @@ import { InfosPage } from "./components/InfosPage";
 import { ProviderPage } from "./components/ProviderPage";
 import { KeyProviderPage } from "./components/KeyProviderPage";
 import { LiveSupportWidget } from "./components/LiveSupportWidget";
+import { LanguageSelector } from "./components/LanguageSelector";
 
 function App() {
   const [currentRoute, setCurrentRoute] = useState<{
@@ -173,6 +174,7 @@ function App() {
 
   return (
     <>
+      <LanguageSelector />
       {renderPage()}
       <LiveSupportWidget />
     </>

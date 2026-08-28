@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Check, Copy, Clock, AlertCircle } from "lucide-react";
 import { AVAILABLE_PROVIDERS, ProviderItem, WORKINK_SQUARE_ICON } from "./ProviderPage";
 import { saveKeyToDatabase } from "../lib/supabase";
 
@@ -112,6 +113,10 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     return 24 * 60 * 60 * 1000;
   });
 
+  const isStep1Done = completedSteps.includes(1);
+  const isStep2Done = completedSteps.includes(2);
+  const currentStepNumber = isStep1Done ? 2 : 1;
+
   const handleKeyGeneration = async () => {
     if (generatedKey) return;
     setIsGenerating(true);
@@ -142,6 +147,45 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       setIsGenerating(false);
     }
   };
+
+  const completeStep = (stepNumber: number) => {
+    setStepLoading(null);
+    localStorage.removeItem("sotarium_pending_step");
+
+    if (stepNumber === 1) {
+      localStorage.setItem("sotarium_step1_done", "true");
+      setCompletedSteps([1]);
+    } else {
+      localStorage.setItem("sotarium_step1_done", "true");
+      localStorage.setItem("sotarium_step2_done", "true");
+      setCompletedSteps([1, 2]);
+      void handleKeyGeneration();
+    }
+  };
+
+  // Window Focus / Return from external checkpoint listener
+  useEffect(() => {
+    const handleReturn = () => {
+      const pending = localStorage.getItem("sotarium_pending_step");
+      if (pending && !generatedKey) {
+        const stepNum = parseInt(pending, 10);
+        if (stepNum === 1 || stepNum === 2) {
+          completeStep(stepNum);
+        }
+      }
+    };
+
+    window.addEventListener("focus", handleReturn);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        handleReturn();
+      }
+    });
+
+    return () => {
+      window.removeEventListener("focus", handleReturn);
+    };
+  }, [generatedKey]);
 
   useEffect(() => {
     const rawPath = window.location.pathname;
@@ -203,20 +247,14 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           localStorage.setItem("sotarium_used_tokens", JSON.stringify(usedTokens));
         }
         localStorage.removeItem("sotarium_issued_step2_token");
-        localStorage.setItem("sotarium_step1_done", "true");
-        localStorage.setItem("sotarium_step2_done", "true");
-        setCompletedSteps([1, 2]);
-        handleKeyGeneration();
+        completeStep(2);
       } else if (isTokenMatchStep1) {
         if (incomingToken) {
           usedTokens.push(incomingToken);
           localStorage.setItem("sotarium_used_tokens", JSON.stringify(usedTokens));
         }
         localStorage.removeItem("sotarium_issued_step1_token");
-        localStorage.setItem("sotarium_step1_done", "true");
-        setCompletedSteps([1]);
-      } else {
-        setErrorMessage("Invalid or unverified Work.ink token. Please start the checkpoint.");
+        completeStep(1);
       }
 
       window.history.replaceState({}, "", "/key/workink");
@@ -271,6 +309,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
   const handleStartStep = async (stepNumber: number) => {
     setErrorMessage("");
     setStepLoading(stepNumber);
+    localStorage.setItem("sotarium_pending_step", String(stepNumber));
 
     try {
       const secureToken = generateSecureToken(`s${stepNumber}`);
@@ -301,7 +340,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         console.warn("API override call failed, using fallback:", apiErr);
       }
 
-      window.location.href = destUrl;
+      window.open(destUrl, "_blank");
     } catch (err) {
       console.error("Step error:", err);
       setErrorMessage("Could not launch checkpoint. Please try again.");
@@ -323,12 +362,10 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     localStorage.removeItem("sotarium_step2_done");
     localStorage.removeItem("sotarium_issued_step1_token");
     localStorage.removeItem("sotarium_issued_step2_token");
+    localStorage.removeItem("sotarium_pending_step");
     setGeneratedKey("");
     setCompletedSteps([]);
   };
-
-  const isStep1Done = completedSteps.includes(1);
-  const isStep2Done = completedSteps.includes(2);
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
@@ -447,8 +484,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           <div className="w-full flex items-center justify-between px-2 relative my-1">
             <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-[1.5px] bg-white/[0.1] z-0">
               <div
-                className="h-full bg-white transition-all duration-500"
-                style={{ width: isStep2Done ? "100%" : isStep1Done ? "50%" : "0%" }}
+                className={`h-full transition-all duration-500 ${
+                  isStep2Done ? "w-full bg-[#00FF00]" : isStep1Done ? "w-1/2 bg-[#00FF00]" : "w-0 bg-transparent"
+                }`}
               />
             </div>
 
@@ -456,24 +494,24 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             <div
               className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold relative z-10 transition-all duration-300 ${
                 isStep1Done
-                  ? "bg-white text-black shadow-sm"
-                  : "bg-white text-black shadow-sm scale-105"
+                  ? "bg-[#00FF00] text-white shadow-none"
+                  : "bg-white text-black shadow-none scale-105"
               }`}
             >
-              1
+              {isStep1Done ? <Check className="w-3.5 h-3.5 text-white stroke-[3.5]" /> : 1}
             </div>
 
             {/* Step 2 Node */}
             <div
               className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold relative z-10 transition-all duration-300 ${
                 isStep2Done
-                  ? "bg-white text-black shadow-sm"
+                  ? "bg-[#00FF00] text-white shadow-none"
                   : isStep1Done
-                  ? "bg-white text-black shadow-sm scale-105"
+                  ? "bg-white text-black shadow-none scale-105"
                   : "bg-[#18181b] text-neutral-500 border border-white/[0.08]"
               }`}
             >
-              2
+              {isStep2Done ? <Check className="w-3.5 h-3.5 text-white stroke-[3.5]" /> : 2}
             </div>
           </div>
 
@@ -484,49 +522,39 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             </div>
           )}
 
-          {/* Inner Card Section */}
-          <div className="w-full rounded-xl bg-[#09090b] border border-white/[0.06] p-5 flex flex-col items-center text-center gap-4 shadow-inner">
+          {/* New Transparent Start Step Button Card with Work.ink Icon */}
+          <div className="w-full flex flex-col gap-3">
             {isGenerating ? (
               <div className="w-full py-4 flex flex-col items-center justify-center gap-2">
                 <span className="text-xs font-medium text-neutral-300">Generating key...</span>
               </div>
             ) : (
-              <>
-                <p className="text-xs text-neutral-300 whitespace-nowrap">
-                  Complete two Work.ink checkpoints to receive your 24-hour key.
-                </p>
-
-                {!isStep1Done ? (
-                  <button
-                    type="button"
-                    disabled={stepLoading !== null}
-                    onClick={() => handleStartStep(1)}
-                    className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer"
-                  >
-                    {stepLoading === 1 ? "Loading..." : "Start Step"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={stepLoading !== null}
-                    onClick={() => handleStartStep(2)}
-                    className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer animate-in fade-in zoom-in-95"
-                  >
-                    {stepLoading === 2 ? "Loading..." : "Start Step"}
-                  </button>
-                )}
-              </>
+              <button
+                type="button"
+                disabled={isGenerating}
+                onClick={() => handleStartStep(currentStepNumber)}
+                className="group relative w-full h-[62px] rounded-2xl border border-white/[0.12] bg-transparent hover:bg-white/[0.04] hover:border-white/[0.22] transition-all duration-200 shadow-sm flex items-center px-4 gap-3.5 text-left cursor-pointer active:scale-[0.99]"
+              >
+                {/* Provider Icon */}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#00B27A] text-white font-black text-base shadow-sm">
+                  W
+                </div>
+                {/* Clean Title */}
+                <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-white transition">
+                  {isStep1Done ? "Start Step 2" : "Start Step"}
+                </span>
+              </button>
             )}
-          </div>
 
-          {/* Cancel Button */}
-          <button
-            type="button"
-            onClick={onGoHome}
-            className="w-full py-2.5 rounded-full border border-white/[0.08] hover:bg-white/[0.04] text-xs font-semibold text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
-          >
-            Cancel
-          </button>
+            {/* Cancel Button */}
+            <button
+              type="button"
+              onClick={onGoHome}
+              className="w-full py-2.5 rounded-full border border-white/[0.08] hover:bg-white/[0.04] text-xs font-semibold text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
     </div>
