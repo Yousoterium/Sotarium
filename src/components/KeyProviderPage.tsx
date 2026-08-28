@@ -322,11 +322,11 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       />
 
       {generatedKey ? (
-        /* Original "Free key ready" Floating Panel GUI (Exact commit layout) */
+        /* Original "Your key :" Floating Panel GUI */
         <div className="relative z-10 w-full max-w-[420px] sm:max-w-[440px] rounded-[26px] bg-[#131317] border border-white/[0.08] backdrop-blur-2xl p-7 flex flex-col gap-5 shadow-2xl text-white">
           <header className="relative flex items-center justify-between">
             <h3 className="text-[19px] font-bold tracking-tight text-[#f2f1f4]">
-              Free key ready
+              Your key :
             </h3>
             <button
               type="button"
@@ -339,9 +339,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </header>
 
           <div className="relative flex flex-col items-center text-center gap-4 py-2">
-            {/* Pop-in Animated Green Checkmark Badge */}
+            {/* Clean Non-Fluo Emerald Checkmark Badge */}
             <div className="relative flex items-center justify-center my-1">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1AF513] text-white shadow-[0_0_20px_rgba(26,245,19,0.4)]">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-500/25">
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
                   <path
                     d="M5 12.5l4.5 4.5L19 7"
@@ -359,12 +359,12 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             </p>
 
             {/* Key Box with Copy functionality */}
-            <div className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#1a1a1e] p-3.5 font-mono text-base tracking-widest text-[#1AF513] shadow-inner">
+            <div className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#1a1a1e] p-3.5 font-mono text-base tracking-widest text-amber-300 shadow-inner">
               <span className="truncate mr-2 font-bold select-all">{generatedKey}</span>
               <button
                 type="button"
                 onClick={handleCopyKey}
-                className="px-3.5 py-1.5 rounded-lg bg-[#1AF513]/20 hover:bg-[#1AF513]/30 text-[#1AF513] text-xs font-bold transition-colors cursor-pointer shrink-0"
+                className="px-3.5 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.16] text-white text-xs font-bold transition-colors cursor-pointer shrink-0 active:scale-95 shadow-sm"
               >
                 {copied ? "Copied!" : "Copy"}
               </button>
