@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Copy, Clock, Loader2 } from "lucide-react";
 import { saveKeyToDatabase } from "../lib/supabase";
 
 const POLAR_PRODUCT_ID = "1b890555-420e-4ca2-9d00-c59f3b38d67a";
@@ -209,7 +210,7 @@ export const ProductsPage: React.FC<ProductsPageProps> = ({ onBack }) => {
         )}
 
         {/* Action Buttons: Back and Buy key Side-by-Side inside Card */}
-        {hasActiveKey ? (
+        {activeKey ? (
           <div className="flex flex-col items-center gap-3.5 w-full">
             <div className="w-full flex items-center justify-between rounded-full border border-white/[0.12] bg-[#18181d] px-5 py-3 font-mono text-sm tracking-widest text-[#1AF513] shadow-md">
               <span className="truncate mr-2 font-bold select-all">{storedKey!.key}</span>
