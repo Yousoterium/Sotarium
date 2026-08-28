@@ -10,6 +10,42 @@ const SESSION_LIFETIME_MS = 30 * 60 * 1000;
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 const KEY_ISSUANCE_SECRET = process.env.KEY_ISSUANCE_SECRET || SUPABASE_SERVICE_ROLE_KEY;
+const WORKINK_BASE_LINK = process.env.WORKINK_BASE_LINK;
+
+function generateRandomReturnToken(step = 1) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_";
+  let token = `s${step}_`;
+  for (let i = 0; i < 48; i++) {
+    token += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return token;
+}
+
+function getDestinationUrl(req, token) {
+  const forwardedHost = req.headers["x-forwarded-host"];
+  const host = forwardedHost || req.headers.host || "sotarium.vercel.app";
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const protocol = forwardedProto || (host.includes("localhost") ? "http" : "https");
+  return `${protocol}://${host}/workink/${token}`;
+}
+
+async function createWorkinkOverrideLink(destinationUrl, fallbackUrl) {
+  if (!WORKINK_BASE_LINK) {
+    return fallbackUrl;
+  }
+  try {
+    const overrideApi = `https://work.ink/_api/v2/override?destination=${encodeURIComponent(destinationUrl)}`;
+    const response = await fetch(overrideApi, { method: "GET" });
+    if (!response.ok) return fallbackUrl;
+    const data = await response.json().catch(() => null);
+    if (data?.sr) {
+      return `${WORKINK_BASE_LINK}?sr=${data.sr}`;
+    }
+  } catch (err) {
+    console.error("Work.ink override error:", err);
+  }
+  return fallbackUrl;
+}
 
 function requireConfiguration(res) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -67,12 +103,6 @@ async function getPendingSession(supabase, sessionId) {
     throw expired;
   }
 
-  if (session.step_one_url !== WORKINK_STEP_ONE_URL) {
-    const notFound = new Error("Work.ink session not found");
-    notFound.statusCode = 404;
-    throw notFound;
-  }
-
   return session;
 }
 
@@ -95,12 +125,16 @@ export default async function handler(req, res) {
     if (action === "start") {
       const id = randomUUID();
       const expiresAt = new Date(Date.now() + SESSION_LIFETIME_MS).toISOString();
+      const token1 = generateRandomReturnToken(1);
+      const destination1 = getDestinationUrl(req, token1);
+      const link1 = await createWorkinkOverrideLink(destination1, WORKINK_STEP_ONE_URL);
+
       const { error: insertError } = await supabase.from("earnpaste_sessions").insert({
         id,
         current_step: 1,
         status: "pending",
         step_started_at: new Date().toISOString(),
-        step_one_url: WORKINK_STEP_ONE_URL,
+        step_one_url: link1,
         step_two_url: null,
         expires_at: expiresAt,
       });
@@ -111,7 +145,7 @@ export default async function handler(req, res) {
       }
 
       setSessionCookie(res, id);
-      return res.status(200).json({ url: WORKINK_STEP_ONE_URL, step: 1, expires_at: expiresAt });
+      return res.status(200).json({ url: link1, token: token1, step: 1, expires_at: expiresAt });
     }
 
     if (action !== "advance") {
@@ -130,12 +164,16 @@ export default async function handler(req, res) {
     }
 
     if (step === 1) {
+      const token2 = generateRandomReturnToken(2);
+      const destination2 = getDestinationUrl(req, token2);
+      const link2 = await createWorkinkOverrideLink(destination2, WORKINK_STEP_TWO_URL);
+
       const { data: updatedSession, error: updateError } = await supabase
         .from("earnpaste_sessions")
         .update({
           current_step: 2,
           step_started_at: new Date().toISOString(),
-          step_two_url: WORKINK_STEP_TWO_URL,
+          step_two_url: link2,
         })
         .eq("id", sessionId)
         .eq("status", "pending")
@@ -148,7 +186,7 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: "This Work.ink checkpoint was already processed" });
       }
 
-      return res.status(200).json({ url: WORKINK_STEP_TWO_URL, step: 2 });
+      return res.status(200).json({ url: link2, token: token2, step: 2 });
     }
 
     if (session.status === "completed") {
