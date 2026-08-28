@@ -109,31 +109,48 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       return;
     }
 
-    const isWorkinkCallback =
+    const isExplicitStep2 =
+      params.get("step") === "2" ||
+      params.get("checkpoint") === "2" ||
+      params.get("c") === "2" ||
+      params.get("verify") === "2" ||
+      params.get("ok") === "2" ||
+      params.has("step2") ||
+      params.has("verify2") ||
+      params.has("complete") ||
+      window.location.hash.includes("step2") ||
+      window.location.hash.includes("step=2");
+
+    const isExplicitStep1 =
+      params.get("step") === "1" ||
+      params.get("checkpoint") === "1" ||
+      params.get("c") === "1" ||
+      params.get("verify") === "1" ||
+      params.get("ok") === "1" ||
+      params.has("step1") ||
+      params.has("verify1") ||
+      window.location.hash.includes("step1") ||
+      window.location.hash.includes("step=1");
+
+    const isGenericCallback =
       params.has("ok") ||
       params.has("t") ||
       params.has("token") ||
       params.has("verify") ||
-      params.has("verify1") ||
-      params.has("verify2") ||
-      params.has("step") ||
-      params.has("step1") ||
-      params.has("step2") ||
-      params.has("complete");
+      params.has("step");
 
     const step1IsDone = localStorage.getItem("sotarium_step1_done") === "true";
 
-    if (isWorkinkCallback) {
-      if (step1IsDone) {
-        // Step 2 Completed -> Generate Key!
-        localStorage.setItem("sotarium_step2_done", "true");
-        setCompletedSteps([1, 2]);
-        handleKeyGeneration();
-      } else {
-        // Step 1 Completed -> Move to Step 2!
-        localStorage.setItem("sotarium_step1_done", "true");
-        setCompletedSteps([1]);
-      }
+    if (isExplicitStep2 || (isGenericCallback && step1IsDone)) {
+      // Step 2 Completed -> Complete Key Generation!
+      localStorage.setItem("sotarium_step1_done", "true");
+      localStorage.setItem("sotarium_step2_done", "true");
+      setCompletedSteps([1, 2]);
+      handleKeyGeneration();
+    } else if (isExplicitStep1 || isGenericCallback) {
+      // Step 1 Completed -> Advance to Step 2!
+      localStorage.setItem("sotarium_step1_done", "true");
+      setCompletedSteps([1]);
     } else if (step1IsDone) {
       setCompletedSteps([1]);
     }
