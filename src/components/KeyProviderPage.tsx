@@ -151,7 +151,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Soft Gray Dot Grid Background (Same as homepage) */}
+      {/* Clean Subtle Dot Grid Background (Same as homepage) */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -160,16 +160,8 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         }}
       />
 
-      {/* Transparent Glass Container */}
-      <div
-        className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
-        style={{
-          background: "rgba(0, 0, 0, 0.25)",
-          border: "1px solid rgba(255, 255, 255, 0.22)",
-          borderRadius: "20px",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
-        }}
-      >
+      {/* Main EarnPaste Glass Card */}
+      <div className="relative z-10 w-full max-w-[380px] sm:max-w-[420px] rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
         {/* Progress Step Bar on Top */}
         {!generatedKey && (
           <div className="w-full flex items-center justify-between px-6 mb-6 relative">
@@ -207,13 +199,14 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </div>
         )}
 
-        {/* Floating Work.ink Icon */}
-        <div className="mb-3.5 flex items-center justify-center">
+        {/* Provider Icon Circular Badge */}
+        <div className="w-16 h-16 rounded-full bg-black/60 border border-white/[0.12] flex items-center justify-center p-3 mb-4 shadow-xl relative group">
           <img
             src={provider.icon}
             alt={provider.name}
-            className="w-12 h-12 rounded-[12px] object-cover drop-shadow-md"
+            className="w-full h-full object-contain rounded-lg drop-shadow"
           />
+          <div className="absolute inset-0 rounded-full bg-emerald-500/10 blur-sm pointer-events-none" />
         </div>
 
         {/* Provider Title */}
@@ -228,36 +221,23 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </div>
         )}
 
-        {/* Single Step Section (Only 1 Step shown at a time) */}
+        {/* Steps Section in EarnPaste Glass Container */}
         <div className="w-full flex flex-col gap-2.5">
           {generatedKey ? (
             /* Key Ready Box */
-            <div
-              className="w-full flex flex-col items-center gap-2.5 p-4 rounded-[14px]"
-              style={{
-                background: "rgba(0, 0, 0, 0.2)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.08)",
-              }}
-            >
+            <div className="w-full flex flex-col items-center gap-3 p-4 rounded-xl bg-white/[0.04] border border-white/[0.09] backdrop-blur-md shadow-sm">
               <span className="text-xs font-bold text-emerald-400">
                 Key Ready
               </span>
 
-              <div
-                className="w-full flex items-center justify-between rounded-xl px-3 py-2"
-                style={{
-                  background: "rgba(0, 0, 0, 0.5)",
-                  border: "1px solid rgba(255, 255, 255, 0.18)",
-                }}
-              >
-                <code className="text-sm font-mono font-bold text-amber-300 truncate mr-2 select-all">
+              <div className="w-full flex items-center justify-between bg-black/60 border border-white/[0.12] rounded-xl px-3.5 py-2.5">
+                <code className="text-sm font-mono font-bold tracking-wider text-amber-300 truncate mr-2 select-all">
                   {generatedKey}
                 </code>
                 <button
                   type="button"
                   onClick={handleCopyKey}
-                  className="px-3 py-1 rounded-lg bg-white/[0.1] hover:bg-white/[0.2] text-xs font-bold text-white transition-all cursor-pointer shrink-0"
+                  className="px-3 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.16] text-xs font-bold text-white transition-all cursor-pointer shrink-0 active:scale-95"
                 >
                   {copied ? "Copied!" : "Copy"}
                 </button>
@@ -269,45 +249,41 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             </div>
           ) : isGenerating ? (
             /* Generating State */
-            <div
-              className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-[14px]"
-              style={{
-                background: "rgba(0, 0, 0, 0.2)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
-            >
+            <div className="w-full py-6 flex flex-col items-center justify-center gap-2 rounded-xl bg-white/[0.03] border border-white/[0.08]">
               <span className="text-xs font-medium text-neutral-300">Generating key...</span>
             </div>
           ) : !isStep1Done ? (
-            /* Only Checkpoint 1 Visible Initially */
+            /* Checkpoint 1 Button */
             <button
               type="button"
               disabled={stepLoading !== null}
               onClick={() => handleStartStep(1)}
-              className="w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
-              style={{
-                background: "rgba(0, 0, 0, 0.2)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
+              className="w-full py-3.5 px-4 rounded-xl border border-white/[0.12] hover:border-white/[0.25] bg-white/[0.05] hover:bg-white/[0.1] text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-200 text-white cursor-pointer active:scale-[0.99] backdrop-blur-md shadow-sm"
             >
-              <span className="font-semibold">Checkpoint 1</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-white/[0.1] flex items-center justify-center text-[10px] font-black">
+                  1
+                </span>
+                <span>Checkpoint 1</span>
+              </div>
               <span className="text-xs text-neutral-300 font-medium">
                 {stepLoading === 1 ? "Loading..." : "Start"}
               </span>
             </button>
           ) : (
-            /* Checkpoint 2 Appears and Takes Placement When Step 1 Done */
+            /* Checkpoint 2 Button (Replaces Checkpoint 1 when completed) */
             <button
               type="button"
               disabled={stepLoading !== null}
               onClick={() => handleStartStep(2)}
-              className="w-full py-3.5 px-4 rounded-[12px] text-xs sm:text-sm font-medium flex items-center justify-between transition-all duration-150 text-white cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35] animate-in fade-in zoom-in-95 duration-200"
-              style={{
-                background: "rgba(0, 0, 0, 0.2)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
+              className="w-full py-3.5 px-4 rounded-xl border border-white/[0.12] hover:border-white/[0.25] bg-white/[0.05] hover:bg-white/[0.1] text-xs sm:text-sm font-bold flex items-center justify-between transition-all duration-200 text-white cursor-pointer active:scale-[0.99] backdrop-blur-md shadow-sm animate-in fade-in zoom-in-95"
             >
-              <span className="font-semibold">Checkpoint 2</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-5 h-5 rounded-full bg-white/[0.1] flex items-center justify-center text-[10px] font-black">
+                  2
+                </span>
+                <span>Checkpoint 2</span>
+              </div>
               <span className="text-xs text-neutral-300 font-medium">
                 {stepLoading === 2 ? "Loading..." : "Start"}
               </span>
@@ -323,11 +299,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             localStorage.removeItem("sotarium_step2_done");
             onGoHome();
           }}
-          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
-          style={{
-            background: "rgba(0, 0, 0, 0.2)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-          }}
+          className="w-full mt-4 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] backdrop-blur-md shadow-sm"
         >
           Go home
         </button>

@@ -6,6 +6,9 @@ export interface ProviderItem {
   id: string;
   name: string;
   icon: string;
+  description?: string;
+  badge?: string;
+  badgeColor?: string;
 }
 
 export const AVAILABLE_PROVIDERS: ProviderItem[] = [
@@ -13,6 +16,9 @@ export const AVAILABLE_PROVIDERS: ProviderItem[] = [
     id: "workink",
     name: "Work.ink",
     icon: WORKINK_SQUARE_ICON,
+    description: "Fast 2-step verification with instant key generation",
+    badge: "Official",
+    badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   },
 ];
 
@@ -24,7 +30,7 @@ interface ProviderPageProps {
 export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, onBack }) => {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Soft Gray Dot Grid Background (Reverted, No Planet) */}
+      {/* Clean Subtle Dot Grid Background (Same as homepage) */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.28]"
         style={{
@@ -33,22 +39,14 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
         }}
       />
 
-      {/* Fully See-Through Transparent Glass Container (Shows background dots directly) */}
-      <div
-        className="relative z-10 w-full max-w-[360px] sm:max-w-[380px] p-7 sm:p-8 flex flex-col items-center text-center transition-all duration-200"
-        style={{
-          background: "rgba(0, 0, 0, 0.25)",
-          border: "1px solid rgba(255, 255, 255, 0.22)",
-          borderRadius: "20px",
-          boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 30px 70px -30px rgba(0, 0, 0, 0.9)",
-        }}
-      >
+      {/* Main EarnPaste Glass Card */}
+      <div className="relative z-10 w-full max-w-[380px] sm:max-w-[420px] rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
         {/* Title */}
         <h1 className="text-2xl font-bold text-white tracking-tight mb-5">
           Select Provider
         </h1>
 
-        {/* Work.ink Option */}
+        {/* Provider Option List */}
         <div className="w-full flex flex-col gap-2.5">
           {AVAILABLE_PROVIDERS.map((provider) => (
             <a
@@ -58,27 +56,31 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
                 e.preventDefault();
                 onSelectProvider(provider.id);
               }}
-              className="w-full py-3.5 px-4 rounded-[14px] transition-all duration-150 flex items-center justify-between text-left cursor-pointer active:scale-[0.99] no-underline text-white group hover:bg-white/[0.08] hover:border-white/[0.35]"
-              style={{
-                background: "rgba(0, 0, 0, 0.2)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
+              className="w-full py-3.5 px-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.09] hover:border-white/[0.22] transition-all duration-200 flex items-center justify-between group text-left cursor-pointer active:scale-[0.99] backdrop-blur-md no-underline text-white shadow-sm"
             >
               <div className="flex items-center gap-3">
-                {/* Full Square Work.ink App Icon */}
-                <div className="w-8 h-8 rounded-[8px] overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
                   <img
                     src={provider.icon}
                     alt={provider.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <span className="font-semibold text-sm text-neutral-100 group-hover:text-white transition-colors">
-                  {provider.name}
-                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-white group-hover:text-amber-400 transition-colors">
+                      {provider.name}
+                    </span>
+                    {provider.badge && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${provider.badgeColor}`}>
+                        {provider.badge}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
 
-              <span className="text-xs text-neutral-300 font-medium group-hover:text-white">
+              <span className="text-xs text-neutral-300 font-medium group-hover:text-white transition-colors">
                 Choose
               </span>
             </a>
@@ -89,11 +91,7 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
         <button
           type="button"
           onClick={onBack}
-          className="w-full mt-4 py-3 rounded-[12px] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] hover:bg-white/[0.08] hover:border-white/[0.35]"
-          style={{
-            background: "rgba(0, 0, 0, 0.2)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-          }}
+          className="w-full mt-4 py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.18] text-xs font-semibold text-neutral-300 hover:text-white transition-all cursor-pointer active:scale-[0.99] backdrop-blur-md shadow-sm"
         >
           Go home
         </button>
