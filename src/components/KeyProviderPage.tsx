@@ -62,6 +62,15 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
   const [completedSteps, setCompletedSteps] = useState<number[]>(() => {
     try {
+      const savedExpiresAt = localStorage.getItem("sotarium_key_expires_at");
+      if (savedExpiresAt && parseInt(savedExpiresAt, 10) <= Date.now()) {
+        // Expired
+        localStorage.removeItem("sotarium_user_key");
+        localStorage.removeItem("sotarium_key_expires_at");
+        localStorage.removeItem("sotarium_step1_done");
+        localStorage.removeItem("sotarium_step2_done");
+        return [];
+      }
       const savedKey = localStorage.getItem("sotarium_user_key");
       if (savedKey) return [1, 2];
       const step2 = localStorage.getItem("sotarium_step2_done") === "true";
@@ -76,6 +85,10 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
   const [generatedKey, setGeneratedKey] = useState<string>(() => {
     try {
+      const savedExpiresAt = localStorage.getItem("sotarium_key_expires_at");
+      if (savedExpiresAt && parseInt(savedExpiresAt, 10) <= Date.now()) {
+        return "";
+      }
       return localStorage.getItem("sotarium_user_key") || "";
     } catch {
       return "";
@@ -86,24 +99,44 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [stepLoading, setStepLoading] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [timeLeftMs, setTimeLeftMs] = useState<number>(24 * 60 * 60 * 1000);
+
+  const [timeLeftMs, setTimeLeftMs] = useState<number>(() => {
+    try {
+      const savedExpiresAt = localStorage.getItem("sotarium_key_expires_at");
+      if (savedExpiresAt) {
+        const remaining = parseInt(savedExpiresAt, 10) - Date.now();
+        return Math.max(0, remaining);
+      }
+    } catch {
+      // ignore
+    }
+    return 24 * 60 * 60 * 1000;
+  });
 
   const handleKeyGeneration = async () => {
     if (generatedKey) return;
     setIsGenerating(true);
     try {
       const newKey = generateFinalKeyString();
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      await saveKeyToDatabase(newKey, provider.name, expiresAt, false);
+      const expiresAtTimestamp = Date.now() + 24 * 60 * 60 * 1000;
+      const expiresAtIso = new Date(expiresAtTimestamp).toISOString();
+
+      await saveKeyToDatabase(newKey, provider.name, expiresAtIso, false);
+
       setGeneratedKey(newKey);
+      setTimeLeftMs(24 * 60 * 60 * 1000);
       localStorage.setItem("sotarium_user_key", newKey);
+      localStorage.setItem("sotarium_key_expires_at", expiresAtTimestamp.toString());
       localStorage.setItem("sotarium_step1_done", "true");
       localStorage.setItem("sotarium_step2_done", "true");
     } catch (err) {
       console.error("Key generation error:", err);
       const fallbackKey = generateFinalKeyString();
+      const expiresAtTimestamp = Date.now() + 24 * 60 * 60 * 1000;
       setGeneratedKey(fallbackKey);
+      setTimeLeftMs(24 * 60 * 60 * 1000);
       localStorage.setItem("sotarium_user_key", fallbackKey);
+      localStorage.setItem("sotarium_key_expires_at", expiresAtTimestamp.toString());
       localStorage.setItem("sotarium_step1_done", "true");
       localStorage.setItem("sotarium_step2_done", "true");
     } finally {
@@ -117,7 +150,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     const params = new URLSearchParams(search);
 
     const existingKey = localStorage.getItem("sotarium_user_key");
-    if (existingKey) {
+    const savedExpiresAt = localStorage.getItem("sotarium_key_expires_at");
+
+    if (existingKey && savedExpiresAt && parseInt(savedExpiresAt, 10) > Date.now()) {
       setGeneratedKey(existingKey);
       setCompletedSteps([1, 2]);
       if (search || rawPath !== "/key/workink") {
@@ -126,7 +161,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       return;
     }
 
-    // Extract dynamic token from path /workink/:token or /verify?token={TOKEN}&uid=${userId}
+    // Extract dynamic token from path or query parameters
     let pathToken = "";
     if (rawPath.startsWith("/workink/") && rawPath.length > "/workink/".length) {
       pathToken = rawPath.replace("/workink/", "").trim();
@@ -135,7 +170,6 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     }
 
     const incomingToken = pathToken || params.get("token") || params.get("t") || "";
-    const incomingUid = params.get("uid") || "";
     const isStep2Explicit = params.get("step") === "2" || params.has("complete") || params.has("verify2");
     const hasIncomingQuery = Boolean(search || pathToken || rawPath === "/verify" || rawPath === "/workink");
 
@@ -147,7 +181,6 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         usedTokens = [];
       }
 
-      // Check if token was already used (single use check)
       if (incomingToken && usedTokens.includes(incomingToken)) {
         setErrorMessage("This verification token has already been used.");
         window.history.replaceState({}, "", "/key/workink");
@@ -158,14 +191,13 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
       const expectedStep1Token = localStorage.getItem("sotarium_issued_step1_token");
       const step1Done = localStorage.getItem("sotarium_step1_done") === "true";
 
-      // Verify token authenticity
       const isTokenMatchStep2 =
         (step1Done || isStep2Explicit) &&
-        (incomingToken === expectedStep2Token || (incomingToken.length >= 24 && expectedStep2Token !== null) || isStep2Explicit);
+        (incomingToken === expectedStep2Token || (incomingToken.length >= 20 && expectedStep2Token !== null) || isStep2Explicit);
 
       const isTokenMatchStep1 =
         !step1Done &&
-        (incomingToken === expectedStep1Token || (incomingToken.length >= 24 && expectedStep1Token !== null) || params.get("step") === "1");
+        (incomingToken === expectedStep1Token || (incomingToken.length >= 20 && expectedStep1Token !== null) || params.get("step") === "1");
 
       if (isTokenMatchStep2) {
         if (incomingToken) {
@@ -189,7 +221,6 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         setErrorMessage("Invalid or unverified Work.ink token. Please start the checkpoint.");
       }
 
-      // Clean the address bar back to /key/workink
       window.history.replaceState({}, "", "/key/workink");
     } else {
       const step1Done = localStorage.getItem("sotarium_step1_done") === "true";
@@ -211,11 +242,30 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
+  // Live countdown timer based on actual expiration timestamp in localStorage
   useEffect(() => {
     if (!generatedKey) return;
-    const timer = setInterval(() => {
-      setTimeLeftMs((prev) => Math.max(0, prev - 1000));
-    }, 1000);
+
+    const tick = () => {
+      const savedExpiresAt = localStorage.getItem("sotarium_key_expires_at");
+      if (savedExpiresAt) {
+        const remaining = parseInt(savedExpiresAt, 10) - Date.now();
+        if (remaining <= 0) {
+          setTimeLeftMs(0);
+          localStorage.removeItem("sotarium_user_key");
+          localStorage.removeItem("sotarium_key_expires_at");
+          localStorage.removeItem("sotarium_step1_done");
+          localStorage.removeItem("sotarium_step2_done");
+          setGeneratedKey("");
+          setCompletedSteps([]);
+        } else {
+          setTimeLeftMs(remaining);
+        }
+      }
+    };
+
+    tick();
+    const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, [generatedKey]);
 
@@ -291,7 +341,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </button>
         </div>
 
-        {/* Progress Step Bar on Top */}
+        {/* Progress Step Bar on Top (Hidden when key is ready) */}
         {!generatedKey && (
           <div className="w-full flex items-center justify-between px-2 relative my-1">
             {/* Track Line */}
@@ -338,26 +388,28 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
         {/* Inner Card Section (Dark recessed container) */}
         <div className="w-full rounded-xl bg-[#09090b] border border-white/[0.06] p-5 flex flex-col items-center text-center gap-4 shadow-inner">
           {generatedKey ? (
-            /* Key Ready Box */
-            <div className="w-full flex flex-col items-center gap-3">
-              <span className="text-xs font-bold text-emerald-400">
+            /* Key Ready Box (Exact layout of media_1787892208714.png) */
+            <div className="w-full flex flex-col items-center gap-3.5 py-1">
+              <span className="text-xs font-bold text-emerald-400 tracking-wide">
                 Key Ready
               </span>
 
-              <div className="w-full flex items-center justify-between bg-black/60 border border-white/[0.12] rounded-xl px-3.5 py-2.5">
+              {/* Key Row Container */}
+              <div className="w-full flex items-center justify-between bg-black/60 border border-white/[0.12] rounded-xl px-4 py-2.5 shadow-inner">
                 <code className="text-sm font-mono font-bold tracking-wider text-amber-300 truncate mr-2 select-all">
                   {generatedKey}
                 </code>
                 <button
                   type="button"
                   onClick={handleCopyKey}
-                  className="px-3 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.16] text-xs font-bold text-white transition-all cursor-pointer shrink-0 active:scale-95"
+                  className="px-4 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.16] text-xs font-semibold text-white transition-all cursor-pointer shrink-0 active:scale-95 shadow-sm"
                 >
                   {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
 
-              <span className="text-[11px] text-neutral-400 font-mono">
+              {/* Live Expiration Countdown */}
+              <span className="text-xs text-neutral-400 font-mono">
                 Expires: {formatCountdown(timeLeftMs)}
               </span>
             </div>
