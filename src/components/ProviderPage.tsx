@@ -44,14 +44,9 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
             <div className="w-9 h-9 rounded-full bg-[#00B27A] flex items-center justify-center text-white font-black text-sm shadow-md shrink-0">
               W
             </div>
-            <div className="flex flex-col">
-              <h2 className="text-base font-bold text-white tracking-tight leading-tight">
-                Select provider
-              </h2>
-              <span className="text-xs text-neutral-400 font-medium leading-tight">
-                Choose verification method
-              </span>
-            </div>
+            <h2 className="text-base font-bold text-white tracking-tight">
+              Select provider
+            </h2>
           </div>
 
           {/* Close (X) Button */}
@@ -65,19 +60,29 @@ export const ProviderPage: React.FC<ProviderPageProps> = ({ onSelectProvider, on
           </button>
         </div>
 
-        {/* Inner Card Section (Dark recessed container) */}
-        <div className="w-full rounded-xl bg-[#09090b] border border-white/[0.06] p-5 flex flex-col items-center text-center gap-4 shadow-inner">
-          <p className="text-xs text-neutral-300 whitespace-nowrap">
-            Choose Work.ink to start your 2-step verification.
-          </p>
+        {/* Inner Card Section with Left-to-Right Provider Rows */}
+        <div className="w-full rounded-xl bg-[#09090b] border border-white/[0.06] p-3 sm:p-3.5 flex flex-col gap-2.5 shadow-inner">
+          {AVAILABLE_PROVIDERS.map((provider) => (
+            <button
+              key={provider.id}
+              type="button"
+              onClick={() => onSelectProvider(provider.id)}
+              className="w-full py-3 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.22] transition-all duration-150 flex items-center justify-between group cursor-pointer active:scale-[0.99] text-left shadow-sm"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#00B27A] flex items-center justify-center text-white font-black text-xs shadow-sm shrink-0">
+                  W
+                </div>
+                <span className="font-bold text-sm text-white group-hover:text-white transition-colors">
+                  {provider.name}
+                </span>
+              </div>
 
-          <button
-            type="button"
-            onClick={() => onSelectProvider("workink")}
-            className="w-full py-3 rounded-full bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm transition-all duration-150 shadow-md active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-          >
-            <span>Continue with Work.ink</span>
-          </button>
+              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white text-black hover:bg-neutral-200 transition-all shadow-sm">
+                Choose
+              </span>
+            </button>
+          ))}
         </div>
 
         {/* Cancel Button */}
