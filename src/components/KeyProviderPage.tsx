@@ -162,51 +162,51 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
       {/* Main EarnPaste Glass Card */}
       <div className="relative z-10 w-full max-w-[380px] sm:max-w-[420px] rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-2xl p-7 sm:p-8 flex flex-col items-center text-center shadow-2xl">
-        {/* Progress Step Bar on Top */}
+        {/* Tuff High-Tech Progress Step Bar on Top */}
         {!generatedKey && (
-          <div className="w-full flex items-center justify-between px-6 mb-6 relative">
-            {/* Connecting Line Track */}
-            <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-[1.5px] bg-white/[0.12] z-0">
+          <div className="w-full flex items-center justify-between px-4 mb-6 relative">
+            {/* Connecting Track Line */}
+            <div className="absolute left-10 right-10 top-1/2 -translate-y-1/2 h-[2px] bg-white/[0.08] rounded-full overflow-hidden z-0">
               <div
-                className="h-full bg-white transition-all duration-500"
+                className="h-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 transition-all duration-500 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
                 style={{ width: isStep1Done ? "100%" : "0%" }}
               />
             </div>
 
-            {/* Step 1 Circle */}
+            {/* Step 1 Node */}
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 transition-all duration-300 ${
-                !isStep1Done
-                  ? "bg-white text-black shadow-md scale-105"
-                  : "bg-white text-black"
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black relative z-10 transition-all duration-300 ${
+                isStep1Done
+                  ? "bg-emerald-500 text-black shadow-[0_0_12px_rgba(16,185,129,0.6)]"
+                  : "bg-white text-black ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-[#09090b] shadow-[0_0_14px_rgba(255,255,255,0.4)] scale-105"
               }`}
             >
-              1
+              {isStep1Done ? "✓" : "1"}
             </div>
 
-            {/* Step 2 Circle */}
+            {/* Step 2 Node */}
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold relative z-10 transition-all duration-300 ${
-                isStep1Done && !isStep2Done
-                  ? "bg-white text-black shadow-md scale-105"
-                  : isStep2Done
-                  ? "bg-white text-black"
-                  : "bg-[#18181b] text-neutral-500 border border-white/[0.08]"
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black relative z-10 transition-all duration-300 ${
+                isStep2Done
+                  ? "bg-emerald-500 text-black shadow-[0_0_12px_rgba(16,185,129,0.6)]"
+                  : isStep1Done
+                  ? "bg-white text-black ring-2 ring-emerald-400/80 ring-offset-2 ring-offset-[#09090b] shadow-[0_0_14px_rgba(255,255,255,0.4)] scale-105"
+                  : "bg-[#141418] text-neutral-500 border border-white/[0.12] shadow-inner"
               }`}
             >
-              2
+              {isStep2Done ? "✓" : "2"}
             </div>
           </div>
         )}
 
-        {/* Provider Icon Circular Badge */}
-        <div className="w-16 h-16 rounded-full bg-black/60 border border-white/[0.12] flex items-center justify-center p-3 mb-4 shadow-xl relative group">
+        {/* Square Work.ink Logo Holder (Square fitting perfectly) */}
+        <div className="w-14 h-14 rounded-2xl bg-black/60 border border-white/[0.14] overflow-hidden p-1.5 mb-4 shadow-xl flex items-center justify-center relative group">
           <img
             src={provider.icon}
             alt={provider.name}
-            className="w-full h-full object-contain rounded-lg drop-shadow"
+            className="w-full h-full object-cover rounded-xl drop-shadow"
           />
-          <div className="absolute inset-0 rounded-full bg-emerald-500/10 blur-sm pointer-events-none" />
+          <div className="absolute inset-0 rounded-2xl bg-emerald-500/10 blur-sm pointer-events-none" />
         </div>
 
         {/* Provider Title */}

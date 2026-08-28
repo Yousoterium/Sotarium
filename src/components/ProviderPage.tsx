@@ -17,8 +17,6 @@ export const AVAILABLE_PROVIDERS: ProviderItem[] = [
     name: "Work.ink",
     icon: WORKINK_SQUARE_ICON,
     description: "Fast 2-step verification with instant key generation",
-    badge: "Official",
-    badgeColor: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   },
 ];
 
