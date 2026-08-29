@@ -127,6 +127,15 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
       await saveKeyToDatabase(newKey, provider.name, expiresAtIso, false);
 
+      const savedSession = localStorage.getItem("sotarium_workink_session");
+      if (savedSession) {
+        void fetch("/api/workink?action=complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session: savedSession }),
+        }).catch(() => {});
+      }
+
       setGeneratedKey(newKey);
       setTimeLeftMs(24 * 60 * 60 * 1000);
       localStorage.setItem("sotarium_user_key", newKey);
@@ -321,11 +330,13 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
 
       const action = stepNumber === 1 ? "start" : "step2";
       let destUrl = stepNumber === 1 ? WORKINK_STEP_1 : WORKINK_STEP_2;
+      const sessionId = localStorage.getItem("sotarium_workink_session") || "";
 
       try {
         const res = await fetch(`/api/workink?action=${action}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session: sessionId, step: stepNumber }),
         });
         if (res.ok) {
           const data = await res.json();

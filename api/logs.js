@@ -3,8 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-const DEFAULT_ALLOWED_IPS = ["24.49.252.230"];
+const DEFAULT_ALLOWED_IPS = ["24.49.252.230", "127.0.0.1", "::1", "localhost", "::ffff:127.0.0.1"];
 const PAGE_SIZE = 1000;
+const SIXTEEN_MINUTES_MS = 16 * 60 * 1000;
 
 function normalizeIp(value) {
   if (!value || typeof value !== "string") return null;
@@ -40,7 +41,7 @@ function getAllowedIps() {
 }
 
 function toLogStatus(value, fallback) {
-  return value === "success" || value === "error" || value === "info" || value === "pending"
+  return value === "success" || value === "error" || value === "info" || value === "pending" || value === "processing" || value === "expired"
     ? value
     : fallback;
 }
@@ -48,7 +49,130 @@ function toLogStatus(value, fallback) {
 function getSessionProvider(session) {
   if (session.step_two_url === "opera") return "Opera";
   if (typeof session.step_one_url === "string" && session.step_one_url.includes("work.ink")) return "Work.ink";
-  return "Earnpaste";
+  if (typeof session.step_two_url === "string" && session.step_two_url.includes("work.ink")) return "Work.ink";
+  return "Work.ink";
+}
+
+function getSessionUrlLogs(session) {
+  const providerName = getSessionProvider(session);
+  const now = Date.now();
+  const logs = [];
+
+  const isSessionCompleted = session.status === "completed" || Boolean(session.completed_at);
+
+  // Step 1 URL Log
+  if (session.step_one_url) {
+    const step1Start = session.created_at || session.step_started_at || new Date().toISOString();
+    const step1StartTime = new Date(step1Start).getTime();
+    const isStep1Completed = isSessionCompleted || session.current_step >= 2 || Boolean(session.step_two_url);
+    const isStep1Expired = !isStep1Completed && (
+      (now - step1StartTime > SIXTEEN_MINUTES_MS) ||
+      (session.expires_at && now > new Date(session.expires_at).getTime()) ||
+      session.status === "expired"
+    );
+
+    let status = "processing";
+    if (isStep1Completed) {
+      status = "success";
+    } else if (isStep1Expired) {
+      status = "expired";
+    }
+
+    const expiresAtIso = new Date(step1StartTime + SIXTEEN_MINUTES_MS).toISOString();
+
+    logs.push({
+      id: `url:${session.id}:step1`,
+      sessionId: session.id,
+      step: 1,
+      time: step1Start,
+      completedAt: isStep1Completed ? (session.completed_at || step1Start) : null,
+      expiresAt: expiresAtIso,
+      providerName,
+      url: session.step_one_url,
+      message: isStep1Completed
+        ? `Step 1 verification URL completed successfully`
+        : isStep1Expired
+        ? `Step 1 verification URL expired after 16 minutes`
+        : `Step 1 verification URL started — in Processing state (expires in 16m)`,
+      status,
+      source: "verification-url",
+    });
+  }
+
+  // Step 2 URL Log
+  if (session.step_two_url && session.step_two_url !== "opera") {
+    const step2Start = session.step_started_at || session.created_at || new Date().toISOString();
+    const step2StartTime = new Date(step2Start).getTime();
+    const isStep2Completed = isSessionCompleted;
+    const isStep2Expired = !isStep2Completed && (
+      (now - step2StartTime > SIXTEEN_MINUTES_MS) ||
+      (session.expires_at && now > new Date(session.expires_at).getTime()) ||
+      session.status === "expired"
+    );
+
+    let status = "processing";
+    if (isStep2Completed) {
+      status = "success";
+    } else if (isStep2Expired) {
+      status = "expired";
+    }
+
+    const expiresAtIso = new Date(step2StartTime + SIXTEEN_MINUTES_MS).toISOString();
+
+    logs.push({
+      id: `url:${session.id}:step2`,
+      sessionId: session.id,
+      step: 2,
+      time: step2Start,
+      completedAt: isStep2Completed ? (session.completed_at || step2Start) : null,
+      expiresAt: expiresAtIso,
+      providerName,
+      url: session.step_two_url,
+      message: isStep2Completed
+        ? `Step 2 verification URL completed successfully`
+        : isStep2Expired
+        ? `Step 2 verification URL expired after 16 minutes`
+        : `Step 2 verification URL started — in Processing state (expires in 16m)`,
+      status,
+      source: "verification-url",
+    });
+  }
+
+  // Fallback if session has no specific step URLs
+  if (logs.length === 0) {
+    const sessionStart = session.created_at || session.step_started_at || new Date().toISOString();
+    const sessionStartTime = new Date(sessionStart).getTime();
+    const isExpired = !isSessionCompleted && (
+      (now - sessionStartTime > SIXTEEN_MINUTES_MS) ||
+      (session.expires_at && now > new Date(session.expires_at).getTime()) ||
+      session.status === "expired"
+    );
+
+    let status = "processing";
+    if (isSessionCompleted) {
+      status = "success";
+    } else if (isExpired) {
+      status = "expired";
+    }
+
+    logs.push({
+      id: `session:${session.id}`,
+      sessionId: session.id,
+      step: session.current_step || 1,
+      time: isSessionCompleted && session.completed_at ? session.completed_at : sessionStart,
+      expiresAt: new Date(sessionStartTime + SIXTEEN_MINUTES_MS).toISOString(),
+      providerName,
+      message: isSessionCompleted
+        ? `Verification completed — key issued`
+        : isExpired
+        ? `Verification session expired after 16 minutes`
+        : `Verification session started — in Processing state`,
+      status,
+      source: "verification-session",
+    });
+  }
+
+  return logs;
 }
 
 async function fetchAllRows(queryFactory) {
@@ -114,7 +238,7 @@ export default async function handler(req, res) {
           fetchAllRows(() =>
             supabase
               .from("earnpaste_sessions")
-              .select("id, current_step, status, created_at, completed_at, step_one_url, step_two_url")
+              .select("id, current_step, status, created_at, completed_at, step_started_at, expires_at, step_one_url, step_two_url")
               .order("created_at", { ascending: false }),
           ).catch((error) => {
             console.warn("Could not read verification session history:", error.message || error);
@@ -129,7 +253,7 @@ export default async function handler(req, res) {
           return {
             id: `key:${key.id}`,
             time: key.created_at,
-            providerName: key.provider || "Lootlabs",
+            providerName: key.provider || "Work.ink",
             message: key.claimed
               ? `Key ${key.key_string} claimed by Roblox user: ${owner}${expiry}`
               : `Key generated: ${key.key_string}${expiry}`,
@@ -141,30 +265,15 @@ export default async function handler(req, res) {
         const eventLogs = providerEvents.map((event) => ({
           id: `event:${event.id}`,
           time: event.created_at,
-          providerName: event.provider_name || "Unknown",
+          providerName: event.provider_name || "Work.ink",
           message: event.message || "Provider event recorded",
           status: toLogStatus(event.status, "info"),
           source: "provider-event",
         }));
 
-        const sessionLogs = verificationSessions.map((session) => {
-          const providerName = getSessionProvider(session);
-          const stepCount = providerName === "Opera" ? 1 : 2;
-          const completed = session.status === "completed";
+        const sessionLogs = verificationSessions.flatMap((session) => getSessionUrlLogs(session));
 
-          return {
-            id: `session:${session.id}`,
-            time: completed && session.completed_at ? session.completed_at : session.created_at,
-            providerName,
-            message: completed
-              ? `Verification completed — key issued after ${stepCount} required ${stepCount === 1 ? "checkpoint" : "checkpoints"}.`
-              : `Verification pending — checkpoint ${session.current_step} of ${stepCount}.`,
-            status: completed ? "success" : "pending",
-            source: "verification-session",
-          };
-        });
-
-        const logs = [...keyLogs, ...eventLogs, ...sessionLogs].sort((left, right) => {
+        const logs = [...sessionLogs, ...keyLogs, ...eventLogs].sort((left, right) => {
           return new Date(right.time).getTime() - new Date(left.time).getTime();
         });
 

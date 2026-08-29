@@ -1,3 +1,8 @@
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -14,6 +19,7 @@ export default async function handler(req, res) {
   }
 
   const cleanToken = token.trim();
+  let isValid = false;
 
   // Call Work.ink token verification API if real token
   try {
@@ -28,15 +34,44 @@ export default async function handler(req, res) {
     if (response.ok) {
       const data = await response.json().catch(() => null);
       if (data && (data.valid === true || data.success === true || data.status === "valid")) {
-        return res.status(200).json({ valid: true, step: step || 1, uid });
+        isValid = true;
       }
     }
   } catch (err) {
     console.error("Work.ink validation API error:", err);
   }
 
-  // Fallback: If token has valid length and format (30+ alphanumeric chars), accept as verified
-  if (cleanToken.length >= 24) {
+  // Fallback: If token has valid length and format (24+ alphanumeric chars), accept as verified
+  if (!isValid && cleanToken.length >= 24) {
+    isValid = true;
+  }
+
+  if (isValid) {
+    if (uid && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const stepNum = parseInt(String(step), 10) || 1;
+        if (stepNum >= 2) {
+          await supabase
+            .from("earnpaste_sessions")
+            .update({
+              status: "completed",
+              completed_at: new Date().toISOString(),
+            })
+            .eq("id", uid);
+        } else {
+          await supabase
+            .from("earnpaste_sessions")
+            .update({
+              current_step: 2,
+            })
+            .eq("id", uid);
+        }
+      } catch (dbErr) {
+        console.warn("Could not update session record in Supabase:", dbErr);
+      }
+    }
+
     return res.status(200).json({ valid: true, step: step || 1, uid });
   }
 

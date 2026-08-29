@@ -3,14 +3,16 @@ import { ScriptsPage } from "./components/ScriptsPage";
 import { InfosPage } from "./components/InfosPage";
 import { ProviderPage } from "./components/ProviderPage";
 import { KeyProviderPage } from "./components/KeyProviderPage";
+import { LogsPage } from "./components/LogsPage";
 import { LanguageSelector } from "./components/LanguageSelector";
 
 function App() {
   const [currentRoute, setCurrentRoute] = useState<{
-    page: "home" | "scripts" | "infos" | "provider" | "key";
+    page: "home" | "scripts" | "infos" | "provider" | "key" | "logs";
     providerId?: string;
   }>(() => {
     const p = window.location.pathname;
+    if (p === "/logs" || p.startsWith("/logs")) return { page: "logs" };
     if (p === "/scripts") return { page: "scripts" };
     if (p === "/infos") return { page: "infos" };
     if (p === "/provider") return { page: "provider" };
@@ -32,7 +34,7 @@ function App() {
   });
 
   const navigateTo = (
-    newPage: "home" | "scripts" | "infos" | "provider" | "key",
+    newPage: "home" | "scripts" | "infos" | "provider" | "key" | "logs",
     providerId?: string
   ) => {
     setCurrentRoute({ page: newPage, providerId });
@@ -51,6 +53,8 @@ function App() {
           ? "Infos · Sotarium"
           : newPage === "provider"
           ? "Select Provider · Sotarium"
+          : newPage === "logs"
+          ? "Logs · Sotarium"
           : "Sotarium";
     }
 
@@ -61,7 +65,8 @@ function App() {
   useEffect(() => {
     const handlePopState = () => {
       const p = window.location.pathname;
-      if (p === "/scripts") setCurrentRoute({ page: "scripts" });
+      if (p === "/logs" || p.startsWith("/logs")) setCurrentRoute({ page: "logs" });
+      else if (p === "/scripts") setCurrentRoute({ page: "scripts" });
       else if (p === "/infos") setCurrentRoute({ page: "infos" });
       else if (p === "/provider") setCurrentRoute({ page: "provider" });
       else if (
@@ -82,7 +87,9 @@ function App() {
     window.addEventListener("popstate", handlePopState);
 
     const path = window.location.pathname;
-    if (path === "/workink" || path.startsWith("/workink") || path === "/verify" || path.startsWith("/verify") || path === "/lootlabs") {
+    if (path === "/logs" || path.startsWith("/logs")) {
+      setCurrentRoute({ page: "logs" });
+    } else if (path === "/workink" || path.startsWith("/workink") || path === "/verify" || path.startsWith("/verify") || path === "/lootlabs") {
       setCurrentRoute({ page: "key", providerId: "workink" });
     }
 
@@ -90,6 +97,16 @@ function App() {
   }, []);
 
   const renderPage = () => {
+    if (currentRoute.page === "logs") {
+      return (
+        <LogsPage
+          logs={[]}
+          onBack={() => navigateTo("home")}
+          onClear={() => {}}
+        />
+      );
+    }
+
     if (currentRoute.page === "provider") {
       return (
         <ProviderPage

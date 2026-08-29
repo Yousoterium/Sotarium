@@ -5,7 +5,7 @@ import { issueVerifiedSessionKey } from "./_lib/key-issuance.js";
 const WORKINK_STEP_ONE_BASE = "https://work.ink/2dbK/sotarium-step-1";
 const WORKINK_STEP_TWO_BASE = "https://work.ink/2dbK/sotarium-step-2";
 const SESSION_COOKIE_NAME = "sotarium_workink_session";
-const SESSION_LIFETIME_MS = 30 * 60 * 1000;
+const SESSION_LIFETIME_MS = 16 * 60 * 1000;
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
@@ -92,7 +92,7 @@ async function getPendingSession(supabase, sessionId) {
     throw notFound;
   }
 
-  if (!["pending", "completed"].includes(session.status) || new Date(session.expires_at).getTime() <= Date.now()) {
+  if (!["pending", "completed", "processing"].includes(session.status) || new Date(session.expires_at).getTime() <= Date.now()) {
     const expired = new Error("Work.ink session expired");
     expired.statusCode = 410;
     throw expired;
@@ -168,6 +168,7 @@ export default async function handler(req, res) {
           current_step: 2,
           step_started_at: new Date().toISOString(),
           step_two_url: stepTwoLink,
+          expires_at: expiresAt,
         })
         .eq("id", sessionId);
 
@@ -178,6 +179,20 @@ export default async function handler(req, res) {
         step: 2,
         expires_at: expiresAt,
       });
+    }
+
+    if (action === "complete") {
+      const sessionId = req.body?.session || req.query.session || readCookie(req, SESSION_COOKIE_NAME);
+      if (sessionId) {
+        await supabase
+          .from("earnpaste_sessions")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", sessionId);
+      }
+      return res.status(200).json({ success: true, session: sessionId });
     }
 
     return res.status(400).json({ error: "Unknown action" });
