@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { DEFAULT_VERIFIED_LOADSTRING_URL, generateFullKeySystemScript } from "../lib/scriptGenerator";
+import { AsciiCanvas } from "./AsciiCanvas";
 
 const ALLOWED_IP = "24.49.252.230";
 const STORAGE_KEY = "sotarium_game_loadstrings";
@@ -211,8 +212,7 @@ export const ScriptsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   }
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-[#09090b] font-sans text-white select-none">
-      <div className="pointer-events-none fixed inset-0 opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px,transparent 1px)", backgroundSize: "28px 28px" }} />
+    <div className="relative isolate min-h-screen overflow-hidden font-sans select-none">
       <div className="relative z-10 flex min-h-screen flex-col items-center px-4 py-8">
         <header className="mb-8 flex w-full max-w-6xl items-center justify-between border-b border-white/[0.08] pb-5">
           <div className="flex items-center gap-3">

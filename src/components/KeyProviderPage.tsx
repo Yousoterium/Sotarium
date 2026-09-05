@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Check, Copy, Clock, AlertCircle } from "lucide-react";
 import { AVAILABLE_PROVIDERS, ProviderItem, WORKINK_SQUARE_ICON } from "./ProviderPage";
 import { saveKeyToDatabase } from "../lib/supabase";
+import { AsciiCanvas } from "./AsciiCanvas";
 
 const WORKINK_STEP_1 = "https://work.ink/2dbK/sotarium-step-1";
 const WORKINK_STEP_2 = "https://work.ink/2dbK/sotarium-step-2";
@@ -379,19 +380,11 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
-      {/* Clean Subtle Dot Grid Background */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-[0.28]"
-        style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center font-sans select-none antialiased px-4 py-8">
 
       {generatedKey ? (
-        /* Original "Your key :" Floating Panel GUI */
-        <div className="relative z-10 w-full max-w-[420px] sm:max-w-[440px] rounded-[26px] bg-[#131317] border border-white/[0.08] backdrop-blur-2xl p-7 flex flex-col gap-5 shadow-2xl text-white">
+        /* Original "Your key :" Floating Panel GUI with edge, panel-glow, star-border */
+        <div className="relative z-10 w-full max-w-[420px] sm:max-w-[440px] rounded-2xl edge panel-glow star-border p-7 flex flex-col gap-5 shadow-2xl text-white">
           <header className="relative flex items-center justify-between">
             <h3 className="text-[19px] font-bold tracking-tight text-[#f2f1f4]">
               Your key :
@@ -407,7 +400,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </header>
 
           <div className="relative flex flex-col items-center text-center gap-4 py-2">
-            {/* Clean Non-Fluo Emerald Checkmark Badge */}
+            {/* Clean Emerald Checkmark Badge */}
             <div className="relative flex items-center justify-center my-1">
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-500/25">
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
@@ -427,12 +420,12 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             </p>
 
             {/* Key Box with Copy functionality */}
-            <div className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#1a1a1e] p-3.5 font-mono text-base tracking-widest text-amber-300 shadow-inner">
+            <div className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-[#08090d] p-3.5 font-mono text-base tracking-widest text-[#0099ff] shadow-inner">
               <span className="truncate mr-2 font-bold select-all">{generatedKey}</span>
               <button
                 type="button"
                 onClick={handleCopyKey}
-                className="px-3.5 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.16] text-white text-xs font-bold transition-colors cursor-pointer shrink-0 active:scale-95 shadow-sm"
+                className="px-3.5 py-1.5 rounded-lg btn-zebra text-xs font-bold transition-colors cursor-pointer shrink-0 active:scale-95 shadow-sm"
               >
                 {copied ? "Copied!" : "Copy"}
               </button>
@@ -447,7 +440,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             <button
               type="button"
               onClick={onGoHome}
-              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white bg-gradient-to-b from-white to-[#e9e8ec] px-6 py-3.5 text-[14.5px] font-semibold text-[#141417] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_8px_22px_rgba(0,0,0,0.4)] transition-all duration-200 hover:bg-white active:scale-[0.98]"
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl btn-zebra py-3.5 text-[14.5px] font-semibold text-white transition-all duration-200"
             >
               Close
             </button>
@@ -463,13 +456,13 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
           </div>
         </div>
       ) : (
-        /* Main Unlock Key Modal Container */
-        <div className="relative z-10 w-full max-w-[400px] sm:max-w-[430px] rounded-2xl bg-[#121215]/95 border border-white/[0.08] backdrop-blur-2xl p-6 sm:p-7 flex flex-col gap-5 shadow-2xl text-left">
+        /* Main Unlock Key Modal Container with edge, panel-glow, star-border */
+        <div className="relative z-10 w-full max-w-[400px] sm:max-w-[430px] rounded-2xl edge panel-glow star-border p-6 sm:p-7 flex flex-col gap-5 shadow-2xl text-left">
           {/* Header with Circular Work.ink Icon, Title, and Close Button */}
           <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-[#00B27A] flex items-center justify-center text-white font-black text-sm shadow-md shrink-0">
-                W
+              <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-md shrink-0 bg-[#00B27A]">
+                <img src={provider.icon} alt={provider.name} className="w-full h-full object-cover" />
               </div>
               <div className="flex flex-col">
                 <h2 className="text-base font-bold text-white tracking-tight leading-tight">
@@ -496,7 +489,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-[1.5px] bg-white/[0.1] z-0">
               <div
                 className={`h-full transition-all duration-500 ${
-                  isStep2Done ? "w-full bg-[#00FF00]" : isStep1Done ? "w-1/2 bg-[#00FF00]" : "w-0 bg-transparent"
+                  isStep2Done ? "w-full bg-[#0099ff]" : isStep1Done ? "w-1/2 bg-[#0099ff]" : "w-0 bg-transparent"
                 }`}
               />
             </div>
@@ -505,7 +498,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             <div
               className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold relative z-10 transition-all duration-300 ${
                 isStep1Done
-                  ? "bg-[#00FF00] text-white shadow-none"
+                  ? "bg-[#0099ff] text-white shadow-none"
                   : "bg-white text-black shadow-none scale-105"
               }`}
             >
@@ -516,7 +509,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             <div
               className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold relative z-10 transition-all duration-300 ${
                 isStep2Done
-                  ? "bg-[#00FF00] text-white shadow-none"
+                  ? "bg-[#0099ff] text-white shadow-none"
                   : isStep1Done
                   ? "bg-white text-black shadow-none scale-105"
                   : "bg-[#18181b] text-neutral-500 border border-white/[0.08]"
@@ -533,7 +526,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             </div>
           )}
 
-          {/* New Transparent Start Step Button Card with Work.ink Icon */}
+          {/* Start Step Button Card with Provider Icon in Circle on Left like screenshot */}
           <div className="w-full flex flex-col gap-3">
             {isGenerating ? (
               <div className="w-full py-4 flex flex-col items-center justify-center gap-2">
@@ -544,14 +537,9 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
                 type="button"
                 disabled={isGenerating}
                 onClick={() => handleStartStep(currentStepNumber)}
-                className="group relative w-full h-[62px] rounded-2xl border border-white/[0.12] bg-transparent hover:bg-white/[0.04] hover:border-white/[0.22] transition-all duration-200 shadow-sm flex items-center px-4 gap-3.5 text-left cursor-pointer active:scale-[0.99]"
+                className="group relative w-full h-[50px] rounded-xl btn-zebra border border-white/[0.12] transition-all duration-200 shadow-sm flex items-center justify-center text-center cursor-pointer active:scale-[0.99]"
               >
-                {/* Provider Icon */}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#00B27A] text-white font-black text-base shadow-sm">
-                  W
-                </div>
-                {/* Clean Title */}
-                <span className="text-[15px] font-bold text-white tracking-tight group-hover:text-white transition">
+                <span className="text-[14.5px] font-bold text-white tracking-tight group-hover:text-white transition">
                   {isStep1Done ? "Start Step 2" : "Start Step"}
                 </span>
               </button>
@@ -561,7 +549,7 @@ export const KeyProviderPage: React.FC<KeyProviderPageProps> = ({ providerId, on
             <button
               type="button"
               onClick={onGoHome}
-              className="w-full py-2.5 rounded-full border border-white/[0.08] hover:bg-white/[0.04] text-xs font-semibold text-neutral-400 hover:text-white transition-all cursor-pointer active:scale-[0.99]"
+              className="w-full py-2.5 rounded-xl btn-zebra text-xs font-semibold cursor-pointer active:scale-[0.99]"
             >
               Cancel
             </button>

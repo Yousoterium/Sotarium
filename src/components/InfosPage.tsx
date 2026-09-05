@@ -13,6 +13,7 @@ import {
   ChevronUp,
   ArrowLeft
 } from "lucide-react";
+import { AsciiCanvas } from "./AsciiCanvas";
 
 interface PlayerStat {
   roblox_id: string | null;
@@ -139,15 +140,7 @@ export const InfosPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   );
 
   return (
-    <div className="min-h-screen w-full bg-[#09090b] text-white flex flex-col font-sans select-none antialiased">
-      {/* Background Grid Pattern */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-[0.22]"
-        style={{
-          backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
+    <div className="relative min-h-screen w-full flex flex-col font-sans select-none antialiased">
 
       {/* Top Navbar */}
       <header className="relative z-10 w-full border-b border-white/[0.08] bg-[#0c0c0e]/80 backdrop-blur-md px-6 py-4 flex items-center justify-between">

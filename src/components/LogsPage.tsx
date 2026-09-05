@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   AlertTriangle,
 } from "lucide-react";
+import { AsciiCanvas } from "./AsciiCanvas";
 
 export type LogStatus = "info" | "pending" | "processing" | "success" | "expired" | "error";
 
@@ -324,8 +325,7 @@ export const LogsPage: React.FC<LogsPageProps> = ({ logs: propLogs, onBack, onCl
   };
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white px-4 sm:px-6 py-8 select-none font-sans">
-      <div className="fixed inset-0 pointer-events-none opacity-[0.28]" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+    <div className="relative min-h-screen px-4 sm:px-6 py-8 select-none font-sans overflow-hidden">
 
       <div className="relative z-10 mx-auto w-full max-w-4xl">
         {/* Floating Top Control Bar */}

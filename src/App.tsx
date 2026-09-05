@@ -4,7 +4,7 @@ import { InfosPage } from "./components/InfosPage";
 import { ProviderPage } from "./components/ProviderPage";
 import { KeyProviderPage } from "./components/KeyProviderPage";
 import { LogsPage } from "./components/LogsPage";
-import { LanguageSelector } from "./components/LanguageSelector";
+import { AsciiCanvas } from "./components/AsciiCanvas";
 
 function App() {
   const [currentRoute, setCurrentRoute] = useState<{
@@ -134,65 +134,61 @@ function App() {
     }
 
     return (
-      <div className="relative min-h-screen w-full overflow-hidden bg-[#09090b] text-white flex flex-col items-center justify-center font-sans select-none antialiased">
-        {/* Soft Gray Dot Grid Background (Reverted, No Planet) */}
-        <div
-          className="fixed inset-0 pointer-events-none opacity-[0.28]"
-          style={{
-            backgroundImage: "radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
+      <div className="relative z-10 flex flex-col items-center justify-center gap-6 max-w-xl">
+        {/* Mascot */}
+        <img
+          src="https://i.imgur.com/sZZvbs8.png"
+          alt="Sotarium"
+          className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
         />
 
-        {/* Main Centered Content */}
-        <main className="relative z-10 flex flex-col items-center justify-center px-6 text-center gap-9 py-12">
-          {/* Mascot & Title */}
-          <div className="flex flex-col items-center gap-4">
-            <img
-              src="https://i.imgur.com/sZZvbs8.png"
-              alt="Sotarium"
-              className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-md rounded-full"
-            />
+        {/* Title */}
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight text-white drop-shadow-sm">
+          Sotarium
+        </h1>
 
-            <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-white">
-              Sotarium
-            </h1>
-          </div>
+        {/* Action Buttons */}
+        <div className="flex items-center justify-center gap-4 w-full max-w-sm mt-3">
+          <a
+            href="/provider"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateTo("provider");
+            }}
+            className="btn-zebra w-36 h-12 cursor-pointer no-underline select-none"
+          >
+            Get Key
+          </a>
 
-          {/* Action Buttons: Get Key + Join Discord */}
-          <div className="flex items-center justify-center gap-3 w-full max-w-sm">
-            {/* Get Key Button */}
-            <a
-              href="/provider"
-              onClick={(e) => {
-                e.preventDefault();
-                navigateTo("provider");
-              }}
-              className="w-36 h-11 rounded-full border border-white/[0.18] bg-[#141417]/80 hover:bg-[#1c1c20] hover:border-white/[0.3] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline whitespace-nowrap"
-            >
-              Get Key
-            </a>
-
-            {/* Join Discord Button */}
-            <a
-              href="https://discord.gg/3aghbJBybQ"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-36 h-11 rounded-full border border-white/[0.18] bg-[#141417]/80 hover:bg-[#1c1c20] hover:border-white/[0.3] transition-all duration-200 shadow-md active:scale-95 cursor-pointer font-bold text-sm text-zinc-100 hover:text-white flex items-center justify-center no-underline whitespace-nowrap"
-            >
-              Join Discord
-            </a>
-          </div>
-        </main>
+          <a
+            href="https://discord.gg/3aghbJBybQ"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-zebra w-36 h-12 cursor-pointer no-underline select-none"
+          >
+            Join Discord
+          </a>
+        </div>
       </div>
     );
   };
 
   return (
-    <>
-      <LanguageSelector />
-      {renderPage()}
-    </>
+    <div className="relative w-screen h-screen overflow-hidden bg-[#0a0a0d] text-white flex flex-col items-center justify-center select-none antialiased">
+      {/* Global Persistent Animated Dot Canvas - Never resets or shifts across URLs */}
+      <AsciiCanvas
+        className="pointer-events-none fixed inset-0 opacity-[0.75] [mask-image:radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.15)_0%,rgba(0,0,0,0.35)_18%,rgba(0,0,0,0.85)_45%,#000_70%)] [-webkit-mask-image:radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.15)_0%,rgba(0,0,0,0.35)_18%,rgba(0,0,0,0.85)_45%,#000_70%)]"
+        color="#0099ff"
+        speed={18}
+        cellSize={16}
+        mode="dots"
+      />
+
+      {/* Main Page Viewport */}
+      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-4 sm:px-6 py-8 text-center pointer-events-auto">
+        {renderPage()}
+      </div>
+    </div>
   );
 }
 
